@@ -1,3 +1,5 @@
+
+
 import torch                                    # 导入torch
 import torch.nn as nn                           # 导入torch.nn
 import torch.nn.functional as F                 # 导入torch.nn.functional
@@ -11,7 +13,7 @@ EPSILON = 0.9                                   # greedy policy
 GAMMA = 0.9                                     # reward discount
 TARGET_REPLACE_ITER = 100                       # 目标网络更新频率
 MEMORY_CAPACITY = 2000                          # 记忆库容量
-# 使用gym库中的环境：CartPole，且打开封装(若想了解该环境，请自行百度)
+# 使用gym库中的环境：CartPole，且打开封装
 env = gym.make('CartPole-v0').unwrapped
 N_ACTIONS = env.action_space.n                  # 杆子动作个数 (2个)
 N_STATES = env.observation_space.shape[0]       # 杆子状态个数 (4个)
@@ -28,11 +30,13 @@ nn.Module是nn中十分重要的类，包含网络各层的定义及forward方�
 
 
 # 定义Net类 (定义网络)
+# 网络输入->N个状态
+# 网络输出->N个动作对应的概率
 class Net(nn.Module):
     # 定义Net的一系列属性
     def __init__(self):
         # nn.Module的子类函数必须在构造函数中执行父类的构造函数
-        # 等价与nn.Module.__init__()
+        # 等价与nn.Module.__init__() 在python3以上这么写可以，2好像不行
         super(Net, self).__init__()
 
         # 设置第一个全连接层(输入层到隐藏层): 状态数个神经元到50个神经元
@@ -50,7 +54,7 @@ class Net(nn.Module):
         x = F.relu(self.fc1(x))
         # 连接隐藏层到输出层，获得最终的输出值 (即动作值)
         actions_value = self.out(x)
-        return actions_value                                                    # 返回动作值
+        return actions_value  # 返回动作值
 
 
 # 定义DQN类 (定义两个网络)
@@ -176,3 +180,32 @@ for i in range(400):                                                    # 400个
             print('episode%s---reward_sum: %s' %
                   (i, round(episode_reward_sum, 2)))
             break                                             # 该episode结束
+
+"""
+Deep Q Network
+融合Qlearning和神经网络（好像并不DEEP）
+
+1、传统方法劣势
+    状态过多的时候无法完全枚举（围棋）
+
+2、神经网络如何处理该问题？
+    Q值=网络（tuple（状态，动作））
+    动作=网络（状态）
+    两种方法都省去了Q表的构建操作
+
+3、输入输出
+网络输入->状态
+输出->每个动作的权重   ，根据最大的权重选择下一步的动作
+
+4、更新策略
+ q_eval = self.eval_net(b_s).gather(1, b_a)
+
+q_next = self.target_net(b_s_).detach()
+
+q_target = b_r + GAMMA * q_next.max(1)[0].view(BATCH_SIZE, 1)
+
+loss = self.loss_func(q_eval, q_target)
+
+MSE（估计值，实际值），再进行反向传播
+
+"""
