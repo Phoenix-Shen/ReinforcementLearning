@@ -1,27 +1,43 @@
-import torch as t
-import numpy as np
+import gym
 import matplotlib.pyplot as plt
-import visdom
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
+from RL_brain import PolicyGradient
+RENDER=False
+DISPLAY_REWARD_THRESHOLD=400
 
+env=gym.make("CartPole-v0").unwrapped
+env.seed(1)
 
-class PolicyGradient(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
+print(env.action_space)
+print(env.observation_space)
+print(env.observation_space.high)
+print(env.observation_space.low)
 
-    def _build_net(self):
-        pass
+PG=PolicyGradient(2,4,learning_rate=0.02,reward_decay=0.99)
 
-    def choose_action(self, observation):
-        pass
+for i_episode in range(3000):
+    observation=env.reset()
+    
+    while True:
+        action=PG.choose_action(observation=observation)
+        observation_, reward, done, info = env.step(action)
+        PG.store_transition(observation, action, reward)  
+        if done:
+            ep_rs_sum = sum(PG.ep_rs)
 
-    def store_transition(self, s, a, r):
-        pass
+            if 'running_reward' not in globals():
+                running_reward = ep_rs_sum
+            else:
+                running_reward = running_reward * 0.99 + ep_rs_sum * 0.01
+            if running_reward > DISPLAY_REWARD_THRESHOLD: RENDER = True     # 判断是否显示模拟
+            print("episode:", i_episode, "  reward:", int(running_reward))
 
-    def learn(self, s, a, r, _s):
-        pass
+            vt = PG.learn() # 学习, 输出 vt, 我们下节课讲这个 vt 的作用
 
-    def _discount_and_norm_rewards(self):
-        pass
+            if i_episode == 0:
+                plt.plot(vt)    # plot 这个回合的 vt
+                plt.xlabel('episode steps')
+                plt.ylabel('normalized state-action value')
+                plt.show()
+            break
+
+        observation = observation_
