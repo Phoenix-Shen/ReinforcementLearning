@@ -50,8 +50,8 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 
 核心思想：让好的行为多被选择，坏的行为少被选择。<br>
 采用一个参数 vt，让好的行为权重更大<br>
-![](./PolicyGradient/5-1-1.png)
+![](./PolicyGradient/5-1-1.png)<br>
 
 ## ActorCritic
 
-使用神经网络来生成 vt
+使用神经网络来生成 vt，瞎子背着瘸子

@@ -36,7 +36,7 @@ for i_episode in range(3000):
             #print("episode:", i_episode, "  reward:", int(running_reward))
             print("epoch:{},epreward:{},actionLength:{}".format(
                 i_episode, ep_rs_sum, len(PG.ep_rs)))
-            vt = PG.learn()  # 学习, 输出 vt, 我们下节课讲这个 vt 的作用
+            vt = PG.learn()  # 学习, 输出 vt
 
             if i_episode == 0:
                 plt.plot(vt)    # plot 这个回合的 vt
