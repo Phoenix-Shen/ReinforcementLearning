@@ -183,7 +183,7 @@ for i in range(400):                                                    # 400个
 
 """
 Deep Q Network
-融合Qlearning和神经网络（好像并不DEEP）
+融合Qlearning和神经网络
 
 1、传统方法劣势
     状态过多的时候无法完全枚举（围棋）
@@ -195,10 +195,10 @@ Deep Q Network
 
 3、输入输出
 网络输入->状态
-输出->每个动作的权重   ，根据最大的权重选择下一步的动作
+输出->每个动作的权重 ，根据最大的权重选择下一步的动作
 
 4、更新策略
- q_eval = self.eval_net(b_s).gather(1, b_a)
+q_eval = self.eval_net(b_s).gather(1, b_a)
 
 q_next = self.target_net(b_s_).detach()
 

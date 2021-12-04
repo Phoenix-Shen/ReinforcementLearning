@@ -4,6 +4,13 @@ import pandas as pd
 import time
 
 
+"""
+state  1 2 3 4 5
+left   0 0 0 0 0
+right  0 0 0 1 0
+"""
+
+
 np.random.seed(2)
 
 

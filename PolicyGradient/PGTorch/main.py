@@ -50,7 +50,6 @@ def discount_and_norm_rewards(ep_rs):
 def choose_action(net: PG, observation: list) -> None:
     observation_tensor_unsqueeze = t.unsqueeze(t.FloatTensor(observation), 0)
     # 注意 不能使用DETACH！！！！！！！！！！！！
-    # 致命步骤Detach
     # 使用detach会导致梯度消失
     prob_weights = net(observation_tensor_unsqueeze)
     action = np.random.choice(
