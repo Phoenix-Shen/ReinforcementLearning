@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 GAMMA = 0.99
-RENDER = False
+RENDER = True
 LR = 0.01
 REWARD_DECAY = 0.95
 LOG_INTERVAL = 10
@@ -16,10 +16,10 @@ env = gym.make("CartPole-v0").unwrapped
 env.seed(1)
 
 
-class PG(nn.Module):
+class PG(nn.Module):  # 继承torch.nn.Module
     def __init__(self, n_actions, n_features) -> None:
-        super().__init__()
-        self.affline1 = nn.Linear(n_actions, 128)
+        super().__init__()  # 运行基类的初始化函数即nn.Module.__init__()
+        self.affline1 = nn.Linear(n_actions, 128)  # self.xxxx即类内部的Public变量
         self.dropout = nn.Dropout(p=0.6)
         self.affline2 = nn.Linear(128, n_features)
 
@@ -68,10 +68,15 @@ def train_net(net: PG, optimizer: optim) -> None:
     for r in net.rewards[::-1]:
         R = r + GAMMA * R
         returns.insert(0, R)        # 将R插入到指定的位置0处
+    """
+    returns 数组的最后形式应该是 [1.5.1.4...-1.5]类似这个样子
+    这是为了提醒网络，多走前面几步，不要走使杆子立不起来的那几步，所以在前面多更新，后面少更新。
+    """
     returns = torch.tensor(returns)
     returns = (returns - returns.mean()) / (returns.std())     # 归一化
     for log_prob, R in zip(net.saved_log_probs, returns):
-        policy_loss.append(-log_prob * R)          # 损失函数为交叉熵
+        policy_loss.append(-log_prob * R)          # 损失函数为交叉熵 nn.CrossEntropy
+
     optimizer.zero_grad()
     policy_loss = torch.cat(policy_loss).sum()
     # policy_loss.requires_grad_(True)         # 求和
