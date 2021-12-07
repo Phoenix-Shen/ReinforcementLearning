@@ -9,3 +9,7 @@
 - 使用 SumTree 这种数据结构来存储 Memory，从而减少计算
 
 `SumTree可以在model.py里面看到`
+
+# 调试未能通过，暂时搁置
+
+`拿来主义，在github上面抄了一个`

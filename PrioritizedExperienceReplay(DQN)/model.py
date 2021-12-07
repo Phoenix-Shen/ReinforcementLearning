@@ -48,20 +48,20 @@ class SumTree(object):
         [0,1,2,3,4,5,6]
         """
         parent_idx = 0
-        # 退出条件——>一直搜索到子节点
-        while True:
-            cl_idx = 2*parent_idx+1
-            cr_idx = 2*parent_idx+2
-            if cl_idx > len(self.tree):
-                leaf_idx = parent_idx  # 如果大于了，说明它就是叶子节点了，就不用继续向下找了
+        while True:     # the while loop is faster than the method in the reference code
+            cl_idx = 2 * parent_idx + 1         # this leaf's left and right kids
+            cr_idx = cl_idx + 1
+            if cl_idx >= len(self.tree):        # reach bottom, end search
+                leaf_idx = parent_idx
                 break
-            else:
+            else:       # downward search, always search for a higher priority node
                 if v <= self.tree[cl_idx]:
                     parent_idx = cl_idx
                 else:
                     v -= self.tree[cl_idx]
                     parent_idx = cr_idx
-        data_idx = leaf_idx-self.capacity+1  # 肯定不会出错，因为叶子节点肯定比capacity大
+
+        data_idx = leaf_idx - self.capacity + 1
         return leaf_idx, self.tree[leaf_idx], self.data[data_idx]
 
     @property  # 这个就跟vue里面的计算属性一样？？
@@ -162,6 +162,8 @@ class DQNwithPER(nn.Module):
             self.memory = Memory(capacity=memory_size)
         else:
             self.memory = np.zeros((self.memory_size, n_features*2+2))
+        # optimizer
+        self.optimizer = optim.Adam(self.eval_net.parameters(), lr=self.lr)
 
     def choose_action(self, x):
         # 将x转换成32-bit floating point形式，并在dim=0增加维数为1的维度
@@ -188,13 +190,13 @@ class DQNwithPER(nn.Module):
         else:
             if not hasattr(self, "memory_counter"):
                 self.memory_counter = 0
-        # 如果记忆库满了，便覆盖旧的数据
-        # 获取transition要置入的行数
-        index = self.memory_counter % self.memory_size
-        # 置入transition
-        self.memory[index, :] = transition
-        # memory_counter自加1
-        self.memory_counter += 1
+            # 如果记忆库满了，便覆盖旧的数据
+            # 获取transition要置入的行数
+            index = self.memory_counter % self.memory_size
+            # 置入transition
+            self.memory[index, :] = transition
+            # memory_counter自加1
+            self.memory_counter += 1
 
     def learn(self):
         # 一开始触发，然后每100步触发
@@ -203,7 +205,7 @@ class DQNwithPER(nn.Module):
                 self.eval_net.state_dict())         # 将评估网络的参数赋给目标网络
 
         if self.prioritized:
-            tree_idx, batch_memory, ISWeights = self.memory.sample(
+            tree_idx, b_memory, ISWeights = self.memory.sample(
                 self.batch_size)
         else:
             sample_index = np.random.choice(self.memory_size, self.batch_size)
@@ -225,21 +227,25 @@ class DQNwithPER(nn.Module):
         # eval_net(b_s)通过评估网络输出32行每个b_s对应的一系列动作值，然后.gather(1, b_a)代表对每行对应索引b_a的Q值提取进行聚合
         q_next = self.target_net(b_s_).detach()
         # q_next不进行反向传递误差，所以detach；q_next表示通过目标网络输出32行每个b_s_对应的一系列动作值
-        q_target = q_eval.copy()
+        q_target = q_eval
         batch_index = np.arange(self.batch_size, dtype=np.int32)
-        eval_act_index = batch_memory[:, self.n_features].astype(int)
-        reward = batch_memory[:, self.n_features + 1]
+        eval_act_index = b_memory[:, self.n_features].astype(int)
+        reward = b_memory[:, self.n_features + 1]
 
-        q_target[batch_index, eval_act_index] = reward + \
-            self.gamma * np.max(q_next, axis=1)
+        q_target[batch_index, eval_act_index] = t.FloatTensor(reward) + \
+            self.gamma * t.max(q_next)
+
         if self.prioritized:
             q_eval_update = self.eval_net(
-                t.FloatTensor(batch_memory[:, self.n_features]))
+                t.FloatTensor(b_memory[:, :self.n_features]))
             q_next_update = self.target_net(
-                t.FloatTensor(batch_memory[:, self.n_features]))
+                t.FloatTensor(b_memory[:, :self.n_features]))
             abs_error = t.sum(t.abs(q_eval_update, q_next_update), dim=1)
             loss_func = t.nn.MSELoss()
             loss = loss_func(q_eval_update, q_next_update)
             self.memory.batch_update(tree_idx, abs_error)
             self.cost_his.append(loss)
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
         self.learn_step_counter += 1
