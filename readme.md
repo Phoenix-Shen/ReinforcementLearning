@@ -55,3 +55,9 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 ## ActorCritic
 
 使用神经网络来生成 vt，瞎子背着瘸子
+
+## Requirements
+
+- torch
+- gym
+- tensorboardX
