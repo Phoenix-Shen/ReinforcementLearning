@@ -61,3 +61,7 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 - torch
 - gym
 - tensorboardX
+
+## 靠，pytorch 官网上有
+
+https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html

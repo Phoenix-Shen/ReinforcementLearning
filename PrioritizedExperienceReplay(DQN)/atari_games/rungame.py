@@ -76,7 +76,7 @@ class SumTree:
         self.data = np.zeros(capacity, dtype=object)
         self.n_entries = 0
 
-    # update to the root node
+    # update to the root node recursively
     def _propagate(self, idx, change):
         parent = (idx - 1) // 2
 
