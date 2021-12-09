@@ -73,14 +73,3 @@ class Critic(nn.Module):
         self.optimizer.step()
         self.optimizer.zero_grad()
         return td_error
-
-
-class DDPG(nn.Module):
-    def __init__(self, n_features, n_actions, lr=0.001) -> None:
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(n_features, 128),
-            nn.ReLU(),
-            nn.Linear(128, n_actions),
-            nn.Softmax()
-        )
