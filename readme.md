@@ -85,7 +85,6 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 
 - torch
 - gym
-- tensorboardX
 
 ---
 
@@ -95,7 +94,7 @@ https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 
 ---
 
-## 杂谈
+## 杂谈&经验
 
 - t.tensor.detach()： 返回 t.tensor 的数据而且 require_grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。
 - with t.no_grad(): 在应用阶段，不需要使用梯度，那么可以使用这个去掉梯度

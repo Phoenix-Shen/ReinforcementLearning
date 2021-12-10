@@ -20,8 +20,10 @@ MAX_EP_STEPS = 1000
 MEMORY_CAPACITY = 10000
 RENDER = False
 STD = 3.0
+LR_A = 1e-5
+LR_C = 2e-5
 # TRAIN
-ddpg = DDPG(N_states, 1, MEMORY_CAPACITY, 100)
+ddpg = DDPG(N_states, 1, MEMORY_CAPACITY, 100, lr_a=LR_A, lr_c=LR_C)
 
 
 for i in range(MAX_EPISODES):
