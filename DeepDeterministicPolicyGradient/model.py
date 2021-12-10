@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 import torch.nn.functional as F
-
+import time
 # actor 负责根据当前状态选择一个Q值最大的动作
 
 
@@ -30,7 +30,7 @@ class Actor(nn.Module):
         low = self.boundary[0]
         high = self.boundary[1]
         # 归一化到我们想要的区间,从tanh出来的那一层它的范围是[-1,1]
-        return low+(high-low)/(1-(-1))*(x_-(-1))
+        return low+(high-low)/(1-(-1))*(x_-(low))
 
 
 # critic 接受当前状态s和当前动作a作为参数，返回当前动作的Q值
@@ -110,11 +110,14 @@ class DDPG(nn.Module):
         transition = np.hstack((s, [a, r], s_))
         # 如果记忆库满了，便覆盖旧的数据
         # 获取transition要置入的行数
-        index = self.memory_pointer % self.memory
+        index = self.memory_pointer % self.memory_size
         # 置入transition
         self.memory[index, :] = transition
         # memory_counter自加1
         self.memory_pointer += 1
+
+    def choose_action(self, s):
+        return self.actor(t.FloatTensor(s)).detach().numpy()
 
     def learn(self):
         # COPY PARAMETERS
@@ -157,3 +160,26 @@ class DDPG(nn.Module):
         self.optimizer_critic.step()
         # UPDATE COUNTER
         self.t_replace_counter += 1
+        return td_error.detach().item()
+
+    def save(self):
+        t.save(self.actor.state_dict(),
+               "ACTOR {}-{}-{} {}-{}-{}.pth".format(time.localtime()[0],
+                                                    time.localtime()[1],
+                                                    time.localtime()[2],
+                                                    time.localtime()[3],
+                                                    time.localtime()[4],
+                                                    time.localtime()[5], ))
+        t.save(self.critic.state_dict(),
+               "CRITIC{}-{}-{} {}-{}-{}.pth".format(time.localtime()[0],
+                                                    time.localtime()[1],
+                                                    time.localtime()[2],
+                                                    time.localtime()[3],
+                                                    time.localtime()[4],
+                                                    time.localtime()[5], ))
+
+    def load(self, path_a: str, path_c: str):
+        model_a = t.load(path_a)
+        model_c = t.load(path_c)
+        self.actor.load_state_dict(model_a)
+        self.critic.load_state_dict(model_c)
