@@ -53,16 +53,6 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 
 ---
 
-## DQN with Prioritized Experience Replay
-
-在 DQN 中，我们有 Experience Replay，但是这是经验是随机抽取的，我们需要让好的、成功的记忆多多被学习到，所以我们在抽取经验的时候，就需要把这些记忆优先给网络学习，于是就有了`Prioritized`Experience Replay
-
-## Dueling DQN
-
-将 Q 值的计算分成状态值 state_value 和每个动作的值 advantage，可以获得更好的性能
-
----
-
 ## Policy Gradient
 
 核心思想：让好的行为多被选择，坏的行为少被选择。<br>
@@ -77,12 +67,41 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 
 ---
 
+# 2021-12-12
+
+## Dueling DQN
+
+将 Q 值的计算分成状态值 state_value 和每个动作的值 advantage，可以获得更好的性能
+
+---
+
+## DQN with Prioritized Experience Replay
+
+在 DQN 中，我们有 Experience Replay，但是这是经验是随机抽取的，我们需要让好的、成功的记忆多多被学习到，所以我们在抽取经验的时候，就需要把这些记忆优先给网络学习，于是就有了`Prioritized`Experience Replay
+
+---
+
 ## DDPG
 
 ![](DeepDeterministicPolicyGradient\principle.png)
 
+- Exploration noise
+- Actor-Critic Achetecture
+- Fixed Q-Target
+- Policy Gradient
+- Experience Replay (OFF-POLICY)
+
+## A3C
+
+- A3C 里面有多个 agent 对网络进行异步更新，相关性较低
+- 不需要积累经验，占用内存少
+- on-policy 训练
+- 多线程异步,速度快
+
 ## Requirements
 
+- numpy
+- tensorboardX
 - torch
 - gym
 

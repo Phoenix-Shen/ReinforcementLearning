@@ -146,7 +146,9 @@ class DDPG(nn.Module):
         # 跟require_grad不同，require_grad=False的使用可以 #
         # 在训练过程中冻结网络参数 ，于此相同的还有with t.no_grad()#
         #################################################
-        loss_actor.backward(retain_graph=True)
+
+        # loss_actor.backward(retain_graph=True) ?
+        loss_actor.backward(retain_graph=False)
         self.optimizer_actor.step()
 
         # TRAIN CRITIC

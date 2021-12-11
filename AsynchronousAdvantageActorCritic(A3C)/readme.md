@@ -14,9 +14,12 @@ Deep Mind 提出的一种解决 Actor Critic 不收敛问题的算法，它会�
 
 ---
 
-## python 多线程无法占用：使用 multiprocessing 的包
+## python 多线程无法占用：使用 torch.multiprocessing 的包
 
 - Python 由于全局锁 GIL 的存在，无法享受多线程带来的性能提升。
 
 - multiprocessing 包采用子进程的技术避开了 GIL，使用 multiprocessing 可以进行多进程编程提高程序效率。
+- multiprocessing 使用`共享内存`进行进程中的通信
 - 模型并行：把模型拆分放到不同的设备进行训练
+- 数据并行：把数据切分，并复制到各个机器上，然后将所有结果按照某种算法 hebing
+- https://ptorch.com/news/176.html
