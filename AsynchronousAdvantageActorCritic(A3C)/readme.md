@@ -11,3 +11,12 @@ Deep Mind 提出的一种解决 Actor Critic 不收敛问题的算法，它会�
 - 不需要积累经验，占用内存
 - on-policy 训练
 - 多线程异步
+
+---
+
+## python 多线程无法占用：使用 multiprocessing 的包
+
+- Python 由于全局锁 GIL 的存在，无法享受多线程带来的性能提升。
+
+- multiprocessing 包采用子进程的技术避开了 GIL，使用 multiprocessing 可以进行多进程编程提高程序效率。
+- 模型并行：把模型拆分放到不同的设备进行训练
