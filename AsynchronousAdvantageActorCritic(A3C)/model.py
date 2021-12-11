@@ -106,7 +106,7 @@ def v_wrap(np_array, dtype=np.float32) -> t.Tensor:
     return t.from_numpy(np_array)
 
 
-def push_and_pull(opt, lnet: Net, gnet, done, s_, bs, ba, br, gamma):
+def push_and_pull(opt, lnet: nn.Module, gnet: nn.Module, done, s_, bs, ba, br, gamma):
     if done:
         v_s_ = 0.
     else:
@@ -148,3 +148,23 @@ def record(global_ep, global_ep_r, ep_r, res_queue, name):
         "Ep:", global_ep.value,
         "| Ep_r: %.0f" % global_ep_r.value,
     )
+
+########SHARED ADAM##############
+
+
+class SharedAdam(t.optim.Adam):
+    def __init__(self, params, lr=1e-3, betas=(0.9, 0.99), eps=1e-8,
+                 weight_decay=0):
+        super(SharedAdam, self).__init__(params, lr=lr,
+                                         betas=betas, eps=eps, weight_decay=weight_decay)
+        # State initialization
+        for group in self.param_groups:
+            for p in group['params']:
+                state = self.state[p]
+                state['step'] = 0
+                state['exp_avg'] = t.zeros_like(p.data)
+                state['exp_avg_sq'] = t.zeros_like(p.data)
+
+                # share in memory
+                state['exp_avg'].share_memory_()
+                state['exp_avg_sq'].share_memory_()

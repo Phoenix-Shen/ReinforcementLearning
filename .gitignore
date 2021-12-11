@@ -1,4 +1,6 @@
+# launch.json and pycache
 **/.vscode
 **/__pycache__
+# MODELS
 *.pth
 *.pkl

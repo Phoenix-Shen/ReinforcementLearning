@@ -40,3 +40,8 @@
 - Fixed Q-Target
 - Policy Gradient
 - Experience Replay (OFF-POLICY)
+
+## Problems
+
+在训练到后面的时候，loss 不降反升？什么原因？待查,TD_error 能到上十亿去，离谱
+![](./loss_increased.png)
