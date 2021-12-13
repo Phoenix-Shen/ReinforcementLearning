@@ -67,8 +67,6 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 
 ---
 
-# 2021-12-12
-
 ## Dueling DQN
 
 将 Q 值的计算分成状态值 state_value 和每个动作的值 advantage，可以获得更好的性能
@@ -107,12 +105,6 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 
 ---
 
-靠，pytorch 官网上有：
-
-https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
-
----
-
 ## 杂谈&经验
 
 - t.tensor.detach()： 返回 t.tensor 的数据而且 require_grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。
@@ -122,3 +114,4 @@ https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 - tensor.item()，直接返回一个数据，但是只能适用于 tensor 里头只有一个元素的情况，否则要是用 tolist()或者 numpy()
 - 不建议使用 inplace 操作
 - hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上)参数。
+- pytorch 官网上有：https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
