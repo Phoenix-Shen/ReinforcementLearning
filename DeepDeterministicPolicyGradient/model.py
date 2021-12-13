@@ -30,7 +30,7 @@ class Actor(nn.Module):
         low = self.boundary[0]
         high = self.boundary[1]
         # 归一化到我们想要的区间,从tanh出来的那一层它的范围是[-1,1]
-        return low+(high-low)/(1-(-1))*(x_-(low))
+        return low+(high-low)/(1-(-1))*(x_-(-1))
 
 
 # critic 接受当前状态s和当前动作a作为参数，返回当前动作的Q值

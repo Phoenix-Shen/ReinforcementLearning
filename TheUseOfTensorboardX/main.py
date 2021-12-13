@@ -19,3 +19,5 @@ for idx, a_ in enumerate(a):
 # %%
 # feature map and conv kernel
 writer.add_graph(torchvision.models.resnet18(False), t.rand([1, 3, 224, 224]))
+
+# %%

@@ -1,7 +1,11 @@
 import numpy as np
+import torch as t
 from model import DDPG
 import gym
 import time
+# INIT TENSORBOARDX
+from tensorboardX import SummaryWriter
+writer = SummaryWriter("./DeepDeterministicPolicyGradient/logs")
 
 
 def generate_env(env_name: str):
@@ -24,8 +28,10 @@ LR_A = 1e-4
 LR_C = 2e-4
 # TRAIN
 ddpg = DDPG(N_states, 1, MEMORY_CAPACITY, 100, lr_a=LR_A, lr_c=LR_C)
+writer.add_graph(ddpg.actor, input_to_model=t.rand([1, 3]))
 
 
+total_step = 0
 for i in range(MAX_EPISODES):
     t1 = time.time()
     s = env.reset()
@@ -47,13 +53,18 @@ for i in range(MAX_EPISODES):
             STD = STD*0.995
             td_error = ddpg.learn()
             td_errors.append(td_error)
+            # TRANSFER TO TENSORBOARD
+            writer.add_scalar("tderror", td_error, total_step)
+            total_step += 1
         s = s_
         ep_reward = ep_reward+r
 
-    """if ep_reward > -300:
-        RENDER = True"""
+    writer.add_scalar("ep_reward", ep_reward, i)
+    if ep_reward > -300:
+        RENDER = True
     t2 = time.time()
 
     print("Episode:{},Reward:{},TD_error:{},UseTime:{}".format(
         i, ep_reward, np.mean(td_errors), t2-t1))
+
 ddpg.save()

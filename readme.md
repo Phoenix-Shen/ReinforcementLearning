@@ -121,4 +121,4 @@ https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 - 使用 require_grad=False 可以冻结神经网络某一部分的参数，更新的时候就不能减 grad 了
 - tensor.item()，直接返回一个数据，但是只能适用于 tensor 里头只有一个元素的情况，否则要是用 tolist()或者 numpy()
 - 不建议使用 inplace 操作
-- hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分参数。
+- hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上)参数。
