@@ -21,3 +21,4 @@ for idx, a_ in enumerate(a):
 writer.add_graph(torchvision.models.resnet18(False), t.rand([1, 3, 224, 224]))
 
 # %%
+writer.close()
