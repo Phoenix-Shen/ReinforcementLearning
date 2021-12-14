@@ -20,3 +20,5 @@ PPO 写在了 loss 损失里面 βKL(θ，θk)
 on：与环境交互的这个 agent 就是我们要学习的 agent，off：不一定是这个 agent。
 
 ## 在代码中，将会实现 PPO-Clip 算法，这是 OpenAI 提出的
+
+效果很差，因为“偶尔的胜利”不足以使网络的参数完全修正，offpolicy 的 dqn with per 能够多次学习成功的经验！

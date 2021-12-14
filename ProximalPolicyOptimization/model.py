@@ -1,4 +1,4 @@
-from caffe2.python.workspace import GlobalInit
+
 import tensorboardX
 import torch as t
 from tensorboardX import SummaryWriter
@@ -6,11 +6,13 @@ import numpy as np
 from torch.distributions.multivariate_normal import MultivariateNormal
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
+import os
 import gym
-
+import time
 
 # 前馈神经网络，它将是我们actor和critic的结构，输入输出的参数不一样
+
+
 class FeedForwardNN(nn.Module):
     def __init__(self, n_features, n_actions) -> None:
         super().__init__()
@@ -99,7 +101,8 @@ class PPO(object):
                     timesteps_so_far, i, actor_loss.item(), critic_loss.item()))
         # Step 8 Finally end for
             timesteps_so_far += np.sum(batch_lens)
-            self.sw.add_scalar("avg_reward", np.mean(batch_r))
+            self.sw.add_scalar("avg_reward", np.mean(
+                batch_r), timesteps_so_far)
     # the function to collect data
 
     def rollout(self):
@@ -177,3 +180,17 @@ class PPO(object):
         dist = MultivariateNormal(mean, self.conv_mat)
         log_probs = dist.log_prob(acts)
         return v, log_probs
+
+    def save_model(self, dir: str):
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        save_time = "{}-{}-{} {}-{}-{}".format(time.localtime()[0],
+                                               time.localtime()[1],
+                                               time.localtime()[2],
+                                               time.localtime()[3],
+                                               time.localtime()[4],
+                                               time.localtime()[5], )
+        t.save(self.actor.state_dict(), os.path.join(
+            dir, "ACTOR {}.pth".format(save_time)))
+        t.save(self.critic.state_dict(), os.path.join(
+            dir, "CRITIC {}.pth".format(save_time)))

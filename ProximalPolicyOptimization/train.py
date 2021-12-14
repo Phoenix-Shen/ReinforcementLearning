@@ -4,4 +4,5 @@ from tensorboardX import SummaryWriter
 writer = SummaryWriter("./ProximalPolicyOptimization/logs")
 env = gym.make("Pendulum-v1")
 ppo = model.PPO(env, writer)
-ppo.learn(100000)
+ppo.learn(1000000)
+ppo.save_model("./ProximalPolicyOptimization/saved_models")
