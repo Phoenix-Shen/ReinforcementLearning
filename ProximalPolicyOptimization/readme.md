@@ -1,4 +1,4 @@
-# PPO
+# PPO onpolicy 算法
 
 - On-policy 是要用 πθ 收集数据，当 θ 更新了，我们就要重新进行数据收集。
 - 这个方法十分慢，我们能不能使用 πθ'收集数据，把这个数据给 πθ 使用进行训练，由于 θ'是不变的，那我们就可以进行数据重用。
@@ -18,3 +18,5 @@ PPO 写在了 loss 损失里面 βKL(θ，θk)
 ## ON-policy 和 OFF-policy
 
 on：与环境交互的这个 agent 就是我们要学习的 agent，off：不一定是这个 agent。
+
+## 在代码中，将会实现 PPO-Clip 算法，这是 OpenAI 提出的
