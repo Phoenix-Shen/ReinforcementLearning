@@ -2,24 +2,30 @@
 
 ## 进度
 
-| method      | done |
-| ----------- | ---- |
+|   method    | done |
+| :---------: | ---- |
 | Qlearnling  | √    |
-| Sarsa       | √    |
+|    Sarsa    | √    |
 | SarsaLambda | √    |
-| DQN         | √    |
-| PG          | √    |
+|     DQN     | √    |
+|     PG      | √    |
 | ActorCritic | √    |
+|    ACER     | ×    |
 | DuelingDQN  | √    |
 | DQNwithPER  | √    |
-| DDPG        | √    |
-| A3C         | √    |
-| PPO         | √    |
-| DPPO        | ×    |
-| SAC         | ×    |
+|    DDPG     | √    |
+|     TD3     | ×    |
+|     A3C     | √    |
+|     A2C     | ×    |
+|     PPO     | √    |
+|    DPPO     | ×    |
+|     SAC     | ×    |
 | DQNwithHER  | ×    |
 | DDPGwithHER | ×    |
-| DIAYN       | ×    |
+|    DIAYN    | ×    |
+|    TRPO     | ×    |
+
+---
 
 ## Qlearning
 
