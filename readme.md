@@ -1,5 +1,26 @@
 # 强化学习
 
+## 进度
+
+| method      | done |
+| ----------- | ---- |
+| Qlearnling  | √    |
+| Sarsa       | √    |
+| SarsaLambda | √    |
+| DQN         | √    |
+| PG          | √    |
+| ActorCritic | √    |
+| DuelingDQN  | √    |
+| DQNwithPER  | √    |
+| DDPG        | √    |
+| A3C         | √    |
+| PPO         | √    |
+| DPPO        | ×    |
+| SAC         | ×    |
+| DQNwithHER  | ×    |
+| DDPGwithHER | ×    |
+| DIAYN       | ×    |
+
 ## Qlearning
 
 更新一个 Q 表，表中的每个元素代表每个状态下每个动作的潜在奖励<br>
@@ -89,12 +110,29 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 - Policy Gradient
 - Experience Replay (OFF-POLICY)
 
+---
+
 ## A3C
 
 - A3C 里面有多个 agent 对网络进行异步更新，相关性较低
 - 不需要积累经验，占用内存少
 - on-policy 训练
 - 多线程异步,速度快
+
+---
+
+## PPO
+
+- 感觉像 Actor-Critic 和 DQN 的折中，先取一部分经验，然后进行网络参数的更新
+- Actor-Critic 是每走一步进行参数更新
+- DQN 是直接积累经验然后从经验池子中学习
+- PPO 是积累部分经验，然后进行多轮的梯度下降
+
+## Soft Actor Critic & DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay
+
+待完成
+
+---
 
 ## Requirements
 
@@ -113,5 +151,5 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 - 使用 require_grad=False 可以冻结神经网络某一部分的参数，更新的时候就不能减 grad 了
 - tensor.item()，直接返回一个数据，但是只能适用于 tensor 里头只有一个元素的情况，否则要是用 tolist()或者 numpy()
 - 不建议使用 inplace 操作
-- hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上)参数。
+- hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。
 - pytorch 官网上有：https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
