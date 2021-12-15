@@ -10,7 +10,7 @@
 |     DQN     | √    |
 |     PG      | √    |
 | ActorCritic | √    |
-|    ACER     | ×    |
+|    ACER     | √    |
 | DuelingDQN  | √    |
 | DQNwithPER  | √    |
 |    DDPG     | √    |

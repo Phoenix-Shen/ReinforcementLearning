@@ -12,7 +12,7 @@ if __name__ == "__main__":
     agent = model.Agent(n_features=8,
                         n_actions=n_actions,
                         reward_decay=0.99,
-                        lr=1e-4,
+                        lr=1e-2,
                         batch_size=32,
                         mem_size=10000)
 

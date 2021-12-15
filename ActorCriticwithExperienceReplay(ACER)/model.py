@@ -134,7 +134,7 @@ class Agent(object):
         delta = reward+self.gamma*c_value_
         # mns minus the current value
         actor_loss = -t.mean(prob*(delta-c_value))
-        critic_loss = F.mse_loss(delta, c_value)
+        critic_loss = F.mse_loss(c_value, delta)
         # back propagate and step
         self.ac.optim_actor.zero_grad()
         self.ac.optim_critic.zero_grad()
