@@ -158,3 +158,15 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 - 不建议使用 inplace 操作
 - hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。
 - pytorch 官网上有:https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+
+## 引用
+
+[莫烦 python](https://mofanpy.com/)
+
+[《动手学深度学习》](https://zh-v2.d2l.ai/)
+
+[17 种深度强化学习算法用 Pytorch 实现](https://blog.csdn.net/tMb8Z9Vdm66wH68VX1/article/details/100975138?spm=1001.2101.3001.6650.14&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Edefault-14.no_search_link&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Edefault-14.no_search_link)
+
+[hhy_csdn 博客](https://blog.csdn.net/hhy_csdn)
+
+[OpenAI Gym](https://gym.openai.com/)
