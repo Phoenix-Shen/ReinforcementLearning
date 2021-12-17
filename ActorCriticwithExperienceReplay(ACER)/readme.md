@@ -17,4 +17,8 @@
 - ACER 为了利用历史数据使用了多项技术，整体算法较为复杂，[论文在这](https://arxiv.org/pdf/1611.01224.pdf)，主要使用了
   - (1)Retrace Q estimation
   - (2)偏差校正截断重要性权重
-  - (3) 更加高效的 Trust region policy optimization
+  - (3)更加高效的 Trust region policy optimization
+
+# 未完成……
+
+ACERwithIS
