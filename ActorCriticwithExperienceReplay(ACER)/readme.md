@@ -22,3 +22,8 @@
 # 未完成……
 
 ACERwithIS
+
+## 找了个 ACER 的代码
+
+还没有搞懂这个是什么玩意，所以抄了个代码
+[链接](https://github.com/dchetelat/acer/)

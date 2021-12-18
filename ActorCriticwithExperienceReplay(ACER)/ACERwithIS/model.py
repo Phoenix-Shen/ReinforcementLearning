@@ -16,9 +16,10 @@ class ActorCritic(object):
                  env: gym.Env,
                  lr=1e-4,
                  max_epoch=1500,
-                 buffer_size=10000,
+                 replay_buffer_size=100,
                  sample_batch_size=32,
-                 reward_decay=0.99) -> None:
+                 reward_decay=0.99,
+                 render=False) -> None:
         super().__init__()
         # store arguments in member variables
         self.n_features = n_features
@@ -28,7 +29,9 @@ class ActorCritic(object):
         self.max_epoch = max_epoch
         self.env = env
         self.sample_batch_size = sample_batch_size
+        self.replay_buffer_size = replay_buffer_size
         self.reward_decay = reward_decay
+        self.render = render
         # actor and critic definition
         self.actor = nn.Sequential(
             nn.Linear(n_features, 256),
@@ -41,102 +44,120 @@ class ActorCritic(object):
         self.critic = nn.Sequential(
             nn.Linear(n_features, 256),
             nn.ReLU(),
-            nn.Linear(256, 1)  # output the value
+            nn.Linear(256, n_actions)  # output the value
         )
-        # avg network definition
-        self.actor_avg = nn.Sequential(
-            nn.Linear(n_features, 256),
-            nn.ReLU(),
-            nn.Linear(256, n_actions),
-            # choose softmax in order to output the probabilities of the action
-            nn.Softmax(dim=1)
-        )
-        self.critic_avg = nn.Sequential(
-            nn.Linear(n_features, 256),
-            nn.ReLU(),
-            nn.Linear(256, 1)  # output the value
-        )
+
         # transefer the parameters to the target device
         self.critic.to(self.device)
         self.actor.to(self.device)
-        self.actor_avg.to(self.device)
-        self.critic_avg.to(self.device)
 
         # memory
-        self.memory = memory.memory_buffer(
-            buffer_size=buffer_size, input_shape=self.n_features)
+        self.memory = memory.ReplayBuffer(self.replay_buffer_size)
+
+        # optimizer
+        self.optimizer_actor = optim.Adam(self.actor.parameters(), lr=self.lr)
+        self.optimizer_critic = optim.Adam(
+            self.critic.parameters(), lr=self.lr)
 
     def forward(self, observation: t.Tensor) -> Tuple:
+        """
+        Params
+        ----------
+        observation:t.tensor
+            the states for action probabilities calculation
+        """
         observation.to(self.device)
         # choose action under policy pi_theta
-        policy = self.actor(observation)
-        # get the Q value under policy pi_theta
-        q = self.critic(observation)
-        # v is the expectation of Q value under policy pi_theta,
-        # and it presents the "average situation"
-        v = (q*policy).sum(dim=1, keepdim=True)
-        return (policy, q, v)
+        action_probs = self.actor(observation)
+        # get the value under policy pi_theta
+        action_value = self.critic(observation)
+        return action_probs, action_value
 
-    def forward_avg(self, observation: t.Tensor) -> Tuple:
-        observation.to(self.device)
-        # choose action under policy pi_theta
-        policy = self.actor_avg(observation)
-        # get the Q value under policy pi_theta
-        q = self.critic_avg(observation)
-        # v is the expectation of Q value under policy pi_theta,
-        # and it presents the "average situation"
-        v = (q*policy).sum(dim=1, keepdim=True)
-        return (policy, q, v)
+    def explore(self):
+        state = self.env.reset()
+        # dtype = t.float32 device = self.device
+        state = t.FloatTensor(state)
+        trajectory = []
+        while True:
+            action_probabilities, _ = self.forward(state)
+            action = t.multinomial(action_probabilities, 1)
+            exploration_statistics = action_probabilities.unsqueeze(dim=0)
+            next_state, reward, done, _ = self.env.step(action.item())
+            if self.render:
+                self.env.render()
+            transition = memory.Transition(state.unsqueeze(0),
+                                           action.unsqueeze(0),
+                                           t.FloatTensor(reward).unsqueeze(0),
+                                           t.FloatTensor(
+                                               next_state).unsqueeze(0),
+                                           t.FloatTensor(done).unsqueeze(0),
+                                           exploration_statistics)
+            self.memory.add(transition)
+            trajectory.append(transition)
+            if done:
+                self.env.reset()
+                break
+            else:
+                state = next_state
+        return trajectory
 
     def learn(self):
-        for i in range(self.max_epoch):
-            # if done then change the done state and reset the environments
-            done = False
-            observation = self.env.reset()
-            # loop in a game, it will keep playing utill the game has finished
-            while not done:
-                policy, q, v = self.forward(
-                    t.Tensor(observation).unsqueeze(dim=0))
-                avg_policy, _, _ = self.forward_avg(
-                    t.Tensor(observation).unsqueeze(dim=0))
-                # sample action from probabilities
-                action = t.multinomial(policy.squeeze(dim=0), 1)
-                # detach from the graph and transfer it to an single number
-                action = action.item()
-                # get the log probability
-                log_prob = policy.squeeze(dim=0)[action].log()
-                # interact with the envoironment
-                observation_, reward, done, _ = self.env.step(action)
-                # store transitions in memory (state,log_probs,rewards,state_,done)
-                self.memory.store_transitions(
-                    observation, log_prob, reward, observation_, done)
-                # if accmulated experience is not enough for sampling,
-                # then pass the training operation, so we use if branch
-                ###################
-                # Train Operation #
-                ###################
-                if self.memory.mem_index >= self.sample_batch_size:
-                    state, prob, reward, state_, done = self.memory.sample(
-                        batch_size=self.sample_batch_size)
-                    state = t.tensor(state).to(self.device)
-                    prob = t.tensor(prob).to(self.device)
-                    # unsqueeze the array to shape (batchsize,1)
-                    reward = t.tensor(reward).to(self.device).unsqueeze(dim=1)
-                    state_ = t.tensor(state_).to(self.device)
-                    done = t.tensor(done).to(self.device)
-                    # calculate policy and the value under pi_theta
-                    policy, q, v = self.forward(state)
-                    _, _, q_ret, _ = self.forward(state_)
-                    # get the log probability under policy pi_theta
-                    action = t.multinomial(policy.squeeze(dim=0), 1)
-                    action = action.item()
-                    log_prob = policy.squeeze(dim=0)[action].log()
-                    # if done the V(s_i,theta) is 0
-                    q_ret[done] = 0
-                    # off-policy algorthm needs importance sampling
-                    # Importance sampling weights ρ ← π(∙|s_i) / µ(∙|s_i)
-                    # because we use logprob instead of prob , we have the code here
-                    rho = t.exp(log_prob-prob)
-                    advantage = reward+q_ret*self.reward_decay-v
-                    policy_loss = -(rho.clamp(max=10)*log_prob *
-                                    advantage.detach()).mean()
+        for _ in range(self.max_epoch):
+            episode_rewards = 0.
+            trajectory = self.explore()
+            episode_rewards += sum([transition.rewards[0, 0]
+                                    for transition in trajectory])
+            for _ in range(np.random.poisson(4)):
+                trajectory = self.memory.sample(
+                    self.sample_batch_size)
+                if trajectory:
+                    self._learn_from_experience(trajectory)
+
+    def _learn_from_experience(self, trajextory: list):
+        """
+        Conduct a single discrete learning iteration. Analogue of Algorithm 2 in the paper.
+        """
+        # select the last element as the terminal
+        _, _, _, next_states, _, _ = trajextory[-1]
+
+        action_probs, action_values = self.forward(next_states)
+        retrace_action_value = t.sum(
+            action_probs*action_values, dim=1).unsqueeze(0)
+
+        for states, actions, rewards, _, done, exploration_probabilities in reversed(trajextory):
+            action_probs, action_values = self.forward(states)
+            value = t.sum(action_probs*action_values, dim=1).unsqueeze(0)
+            if done == 1.:
+                value.zero_()
+            # importance sampling
+            importance_weights = action_probs/exploration_probabilities
+            # compute advantage it presents if the action is better than average situation
+            naive_advantage = t.gather(action_values, -1, actions)-value
+            retrace_action_value = rewards+self.reward_decay * \
+                retrace_action_value*(1.-done)
+            retrace_advantage = retrace_action_value-value
+
+            # actor loss
+            actor_loss = -t.gather(importance_weights, -1, actions).clamp(
+                max=10)*retrace_advantage*t.gather(action_probs, -1, actions)
+
+            bias_correction = (1-10/importance_weights).clamp(min=0.) * \
+                naive_advantage*action_probs*action_probs.log()
+            actor_loss += bias_correction
+            actor_loss = t.mean(actor_loss)
+            self.optimizer_actor.zero_grad()
+            actor_loss.backward(retain_graph=True)
+
+            critic_loss = (t.gather(action_values, -1, actions) -
+                           retrace_action_value).pow(2)
+            critic_loss = critic_loss.mean()
+            self.optimizer_critic.zero_grad()
+            critic_loss.backward()
+
+            entropy_loss = (action_probs*t.log(action_probs)).sum(-1).mean()
+            entropy_loss.backward()
+            retrace_action_value = importance_weights.gather(-1, actions).clamp(max=1.) * \
+                (retrace_action_value -
+                 action_values.gather(-1, actions).data) + value
+            self.optimizer_actor.step()
+            self.optimizer_critic.step()

@@ -1,6 +1,7 @@
 import random
 import torch
 from collections import deque, namedtuple
+from core import *
 
 Transition = namedtuple('Transition', ('states', 'actions', 'rewards', 'next_states',
                                        'done', 'exploration_statistics'))
@@ -11,8 +12,8 @@ class ReplayBuffer:
     Replay buffer for the agents.
     """
 
-    def __init__(self, max_len):
-        self.episodes = deque([[]], max_len)
+    def __init__(self):
+        self.episodes = deque([[]], maxlen=REPLAY_BUFFER_SIZE)
 
     def add(self, transition):
         """
