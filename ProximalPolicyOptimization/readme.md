@@ -1,5 +1,6 @@
 # PPO onpolicy 算法
 
+- 主要为了解决 actor critic 训练步长的问题，在这里实现了 ppo-clip
 - On-policy 是要用 πθ 收集数据，当 θ 更新了，我们就要重新进行数据收集。
 - 这个方法十分慢，我们能不能使用 πθ'收集数据，把这个数据给 πθ 使用进行训练，由于 θ'是不变的，那我们就可以进行数据重用。
 - gradient for update： advantage\* gradientprobablity ,advantage 表示的是从这一步能够获得多大的益处

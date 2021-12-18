@@ -21,7 +21,7 @@
 
 # 未完成……
 
-ACERwithIS
+ACERwithIS,搞不来
 
 ## 找了个 ACER 的代码
 

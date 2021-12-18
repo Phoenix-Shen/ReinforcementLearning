@@ -66,7 +66,7 @@ class ActorCritic(object):
         observation:t.tensor
             the states for action probabilities calculation
         """
-        observation.to(self.device)
+        observation = observation.to(self.device)
         # choose action under policy pi_theta
         action_probs = self.actor(observation)
         # get the value under policy pi_theta
@@ -79,18 +79,20 @@ class ActorCritic(object):
         state = t.FloatTensor(state)
         trajectory = []
         while True:
-            action_probabilities, _ = self.forward(state)
+            action_probabilities, _ = self.forward(state.unsqueeze(dim=0))
             action = t.multinomial(action_probabilities, 1)
-            exploration_statistics = action_probabilities.unsqueeze(dim=0)
+            exploration_statistics = action_probabilities.squeeze(dim=1)
             next_state, reward, done, _ = self.env.step(action.item())
             if self.render:
                 self.env.render()
             transition = memory.Transition(state.unsqueeze(0),
-                                           action.unsqueeze(0),
-                                           t.FloatTensor(reward).unsqueeze(0),
-                                           t.FloatTensor(
-                                               next_state).unsqueeze(0),
-                                           t.FloatTensor(done).unsqueeze(0),
+                                           action,
+                                           t.from_numpy(
+                                               np.array(([[reward]]), dtype=np.float32)),
+                                           t.tensor(
+                                               (next_state)).unsqueeze(0),
+                                           t.from_numpy(
+                                               np.array(([[done]]), dtype=np.float32)),
                                            exploration_statistics)
             self.memory.add(transition)
             trajectory.append(transition)
@@ -98,7 +100,7 @@ class ActorCritic(object):
                 self.env.reset()
                 break
             else:
-                state = next_state
+                state = t.FloatTensor(next_state)
         return trajectory
 
     def learn(self):
@@ -133,8 +135,8 @@ class ActorCritic(object):
             importance_weights = action_probs/exploration_probabilities
             # compute advantage it presents if the action is better than average situation
             naive_advantage = t.gather(action_values, -1, actions)-value
-            retrace_action_value = rewards+self.reward_decay * \
-                retrace_action_value*(1.-done)
+            retrace_action_value = rewards.to(self.device)+self.reward_decay * \
+                retrace_action_value*(1.-done.to(self.device))
             retrace_advantage = retrace_action_value-value
 
             # actor loss
@@ -143,19 +145,17 @@ class ActorCritic(object):
 
             bias_correction = (1-10/importance_weights).clamp(min=0.) * \
                 naive_advantage*action_probs*action_probs.log()
-            actor_loss += bias_correction
+            actor_loss += t.sum(bias_correction, dim=1)
             actor_loss = t.mean(actor_loss)
             self.optimizer_actor.zero_grad()
-            actor_loss.backward(retain_graph=True)
+            self.optimizer_critic.zero_grad()
 
             critic_loss = (t.gather(action_values, -1, actions) -
                            retrace_action_value).pow(2)
             critic_loss = critic_loss.mean()
-            self.optimizer_critic.zero_grad()
-            critic_loss.backward()
 
-            entropy_loss = (action_probs*t.log(action_probs)).sum(-1).mean()
-            entropy_loss.backward()
+            critic_loss.backward(retain_graph=True)
+            actor_loss.backward()
             retrace_action_value = importance_weights.gather(-1, actions).clamp(max=1.) * \
                 (retrace_action_value -
                  action_values.gather(-1, actions).data) + value

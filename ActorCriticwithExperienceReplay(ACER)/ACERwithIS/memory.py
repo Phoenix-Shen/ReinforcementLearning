@@ -1,4 +1,5 @@
 import random
+from numpy import int64
 import torch
 from collections import deque, namedtuple
 
@@ -27,7 +28,7 @@ class ReplayBuffer:
             self.episodes.append([])
         self.episodes[-1].append(transition)
 
-    def sample(self, batch_size, window_length=float('inf')):
+    def sample(self, batch_size, window_length=2147483647):
         """
         Sample a batch of trajectories from the buffer. If they are of unequal length
         (which is likely), the trajectories will be padded with zero-reward transitions.
