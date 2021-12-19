@@ -82,7 +82,7 @@ class PPO(object):
                 surr1 = ratios*a_k
                 surr2 = t.clamp(ratios, 1-self.clip, 1+self.clip)*a_k
                 # calculate the actor loss
-                actor_loss = (-t.min(surr1, surr2)).mean()  # 要让他取最大，所以要是负的
+                actor_loss = (-t.min(surr1, surr2)).mean()
                 # back propagation
                 self.actor_optim.zero_grad()
                 actor_loss.backward(retain_graph=True)

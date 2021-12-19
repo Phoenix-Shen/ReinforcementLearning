@@ -131,9 +131,9 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 - 感觉像 Actor-Critic 和 DQN 的折中，先取一部分经验，然后进行网络参数的更新
 - Actor-Critic 是每走一步进行参数更新
 - DQN 是直接积累经验然后从经验池子中学习
-- PPO 是积累部分经验，然后进行多轮的梯度下降
+- PPO 是积累部分经验(一个 trajectory)，然后进行多轮的梯度下降
 
-## Soft Actor Critic & DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay
+## Soft Actor Critic & DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay && TD3 && A2C
 
 待完成
 
@@ -158,6 +158,16 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 - 不建议使用 inplace 操作
 - hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。
 - pytorch 官网上有:https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+- nn.Module.eval()递归调用子模块，将 Module.train 改成 false
+- 关于 nn.Module.eval()
+
+  - Evaluation mode is not actually a mechanism to locally disable gradient computation. It is included here anyway because it is sometimes confused to be such a mechanism.
+
+  - Functionally, module.eval() (or equivalently module.train()) are completely orthogonal to no-grad mode and inference mode. How model.eval() affects your model depends entirely on the specific modules used in your model and whether they define any training-mode specific behavior.
+
+  - You are responsible for calling model.eval() and model.train() if your model relies on modules such as torch.nn.Dropout and torch.nn.BatchNorm2d that may behave differently depending on training mode, for example, to avoid updating your BatchNorm running statistics on validation data.
+
+  - It is recommended that you always use model.train() when training and model.eval() when evaluating your model (validation/testing) even if you aren’t sure your model has training-mode specific behavior, because a module you are using might be updated to behave differently in training and eval modes.
 
 ## 引用
 

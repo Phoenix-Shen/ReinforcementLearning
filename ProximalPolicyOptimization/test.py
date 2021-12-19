@@ -21,3 +21,8 @@ if __name__ == "__main__":
         s_, r, _, _ = env.step(a)
         s = s_
         print("action:{},reward:{}".format(a, r))
+
+# %%
+import torch as t
+import torch.nn as nn
+nn.Module.eval()

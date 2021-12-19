@@ -18,11 +18,11 @@ def generate_env(env_name: str):
 
 
 # HYPER PARAMETERS
-env, N_states, _ = generate_env("Pendulum-v1")
+env, N_states, _ = generate_env("Pendulum-v0")
 MAX_EPISODES = 200
 MAX_EP_STEPS = 1000
 MEMORY_CAPACITY = 50000
-RENDER = False
+RENDER = True
 STD = 3.0
 LR_A = 1e-4
 LR_C = 2e-4

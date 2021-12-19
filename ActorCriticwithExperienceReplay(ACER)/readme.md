@@ -8,7 +8,7 @@
 
 - Qlearning 学习的是 Q 值，它与上下状态是没有关系的，但是 AC 是学习一个策略值，这个值需要下一个状态的采样，也就是说它与下 n 个状态是相关的，而 Qlearning 只是需要一个最大化的操作
 
-- 我们需要使用 importance sampling 来使 policy gradient 或者 acer 变成 off policy，将存储每个版本的策略的参数，并且赋予数据集一个权重 p_new/p_old 将过去的数据“强行调整”为服从当前策略分布的数据
+- 我们需要使用 importance sampling 来使 policy gradient 或者 ac 变成 off policy，将存储每个版本的策略的参数，并且赋予数据集一个权重 p_new/p_old 将过去的数据“强行调整”为服从当前策略分布的数据
 
 - off-policy：使值最大（即获得最多的 reward） on-policy：根据 π_theta 来选择当前的动作
 
@@ -22,6 +22,7 @@
 # 未完成……
 
 ACERwithIS,搞不来
+`the code in the floder "ACERwithIS" can't work`
 
 ## 找了个 ACER 的代码
 
