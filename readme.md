@@ -191,6 +191,13 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 - pytorch 官网上有:https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 - nn.Module.eval()递归调用子模块，将 Module.train 改成 false
 - 类似于 tensor.pow, tensor.sum, tensor.mean, tensor.gather 这些操作都可以使用 torch.pow(tensor,\*args)等来代替，使用 t.pow 这种类型的函数可以直接知道它的参数（dim=？之类的），用 tensor.pow 的话可能会因为识别不出来这是个 tensor，导致这个方法出不来。（比如说 a=t.ones((1,1,1)),b=a+a，调用 b.sum 的时候按 TAB 就出不来)
+- 同上一条，在传参的时候尽量把参数的类型写清楚，不然在下面使用的时候按 tab 也出不来，十分难顶。例如
+
+  ```
+  def forward(self, x:t.Tensor)->t.Tensor:
+  return self.net(x).squeeze(1)
+  ```
+
 - 关于 nn.Module.eval()
 
   - net.eval()并不是一种局部禁用梯度计算的机制
@@ -243,3 +250,7 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 [Markov Chain Monte Carlo Without all the Bullshit](https://jeremykun.com/2015/04/06/markov-chain-monte-carlo-without-all-the-bullshit/)
 
 [马尔科夫决策与平稳分布](https://blog.csdn.net/qq_34652535/article/details/85343518)
+
+```
+
+```
