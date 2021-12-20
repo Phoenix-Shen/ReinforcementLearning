@@ -21,7 +21,7 @@
 
 # 未完成……
 
-ACERwithIS,搞不来
+ACERwithIS,搞不来<br>
 `the code in the floder "ACERwithIS" can't work`
 
 ## 找了个 ACER 的代码
