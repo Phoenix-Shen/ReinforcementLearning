@@ -233,6 +233,7 @@ class Agent():
 
         self.value.optimizer.zero_grad()
         value_target = critic_value - log_probs
+        # 软状态值函数通过最小化均方误差来训练
         value_loss = 0.5 * F.mse_loss(value, value_target)
         value_loss.backward(retain_graph=True)
         self.value.optimizer.step()
@@ -244,13 +245,13 @@ class Agent():
         q2_new_policy = self.critic_2.forward(state, actions)
         critic_value = T.min(q1_new_policy, q2_new_policy)
         critic_value = critic_value.view(-1)
-
+        # SAC 通过最小化KL散度去更新策略
         actor_loss = log_probs - critic_value
         actor_loss = T.mean(actor_loss)
         self.actor.optimizer.zero_grad()
         actor_loss.backward(retain_graph=True)
         self.actor.optimizer.step()
-
+        # 软Q值函数通过最小化软贝尔曼残差来训练
         self.critic_1.optimizer.zero_grad()
         self.critic_2.optimizer.zero_grad()
         q_hat = self.scale*reward + self.gamma*value_
