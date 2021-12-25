@@ -15,7 +15,7 @@
 |     A3C     | √    |
 |     A2C     | ×    |
 |     SAC     | ×    |
-|    ACER     | √    |
+|    ACER     | ×    |
 |    DDPG     | √    |
 |     TD3     | ×    |
 |     PPO     | √    |
