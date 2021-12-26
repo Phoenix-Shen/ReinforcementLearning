@@ -27,37 +27,86 @@
 
 ---
 
-## Key Concepts
+<br><br><br>
 
-代理(agent)在一个环境(environment)中执行动作/行为(action)。环境如何对代理的动作做出响应由一个已知或未知的模型(model)来定义。执行代理可以停留在环境中的某个状态(state) $s\in \mathcal{S}$，可以通过执行某个行为/动作(action) $a\in \mathcal{A}$来从一个状态$s$进入到另一个状态$s'$。代理会到达什么状态由状态转移概率$(P)$决定。代理执行了一个动作之后，环境会给出一定的奖励(reward) $r\in\mathcal{R}$作为反馈。
+## 1. 关键概念 Key Concepts
 
-- 几乎所有的强化学习问题可以使用马尔科夫决策过程（MDPs）来描述，MDP 中的所有状态都具有“马尔科夫性”：未来仅仅依赖于当前的状态，并不与历史状态相关，在给定当前状态下，未来与过去条件独立，也就是当前状态包含了决定未来所需的所有信息。
+1. **代理(agent)在一个环境(environment)中执行动作/行为(action)。环境如何对代理的动作做出响应由一个已知或未知的模型(model)来定义。执行代理可以停留在环境中的某个状态(state) $s\in \mathcal{S}$，可以通过执行某个行为/动作(action) $a\in \mathcal{A}$来从一个状态$s$进入到另一个状态$s'$。代理会到达什么状态由状态转移概率$(P)$决定。代理执行了一个动作之后，环境会给出一定的奖励(reward) $r\in\mathcal{R}$作为反馈。**
 
-- 策略：即智能体 agent 的行为函数 PI，是当前状态到一个动作的映射，它可以是随机性的也可以是确定性的：
+2. 几乎所有的强化学习问题可以使用马尔科夫决策过程（MDPs）来描述，MDP 中的所有状态都具有“马尔科夫性”：未来仅仅依赖于当前的状态，并不与历史状态相关，在给定当前状态下，未来与过去条件独立，也就是当前状态包含了决定未来所需的所有信息。
 
-  - PI(s)=a
-  - PI(a|s)=P_pi[A=a|S=s]
+3. 策略：即智能体 agent 的行为函数 PI，是当前状态到一个动作的映射，它可以是随机性的也可以是确定性的：
 
-- 价值函数：价值函数是衡量一个状态或者是一个`(状态，行为)元组`的好坏；未来的奖励（称为`回报`）定义为带衰减的后续奖励之和(discounted rewards)
+   1. PI(s)=a
+   2. PI(a|s)=P_pi[A=a|S=s]
 
-  - $$ G*t = R*{t+1} + \gamma R*{t+2} + \dots = \sum*{k=0}^{\infty} \gamma^k R\_{t+k+1} $$
-  - gamma 作为对未来奖励的`惩罚`(`penaty`)，因为：
+4. 价值函数 Q(s,a)：价值函数是衡量一个状态或者是一个`(状态，行为)元组`的好坏，它是 U_t 的期望；未来的奖励（称为`回报`）定义为带衰减的后续奖励之和(discounted rewards)
 
-    - 未来奖励的不确定性
-    - 未来奖励不会直接提供收益
-    - 数学上便利，无需在乎太远的奖励，被 gamma 衰减掉了
-    - 使用衰减系数，无需担心存在无限循环的转移图
+   1. $$ G*t = R*{t+1} + \gamma R*{t+2} + \dots = \sum*{k=0}^{\infty} \gamma^k R\_{t+k+1} $$
+   2. gamma 作为对未来奖励的`惩罚`(`penaty`)，因为：
+      1. 未来奖励的不确定性
+      2. 未来奖励不会直接提供收益
+      3. 数学上便利，无需在乎太远的奖励，被 gamma 衰减掉了
+      4. 使用衰减系数，无需担心存在无限循环的转移图
+   3. Q\*(st,at)=max_pi Q_pi(st,at)，可以对 at 做评价，这个动作有多好
 
-  - 存在两种形式：状态 s 的状态价值——`回报的期望值`；某个（state，action）元组的行为价值函数——`该行为能够获得多大收益`？
-    - 我们可以利用行为的分布以及行为的价值函数来推导`状态价值函数`
+5. 价值函数存在两种形式：状态 s 的状态价值——`回报的期望值`；某个（state，action）元组的行为价值函数——`该行为能够获得多大收益`？
+
+   1. 我们可以利用行为的分布以及行为的价值函数来推导`状态价值函数`
       $$ V*{\pi}(s) = \sum*{a \in \mathcal{A}} Q\_{\pi}(s, a) \pi(a \vert s) $$
-    - 定义行为价值函数和状态价值函数之间的差称为`优势(advantage)`函数，意味着这个动作比`平均状态`好多少？
+   2. 定义行为价值函数和状态价值函数之间的差称为`优势(advantage)`函数，意味着这个动作比`平均状态`好多少？
       $$ A*{\pi}(s, a) = Q*{\pi}(s, a) - V\_{\pi}(s) $$
+   3. 对$V*{\pi}(S)$求期望，我们可以得到这个 policy PI 的好坏
 
-- 贝斯曼方程
-  - 贝尔曼方程指的是一系列的等式，它将价值函数分解为直接奖励加上衰减后的未来奖励。
+6. 贝斯曼方程与 Return(aka cumulative future reward)
 
-## Qlearning - off_policy TD control
+   1. 贝尔曼方程指的是一系列的等式，它将价值函数分解为直接奖励加上衰减后的未来奖励。(discounted rewards)
+   2. return(aka cumulative future reward):U_t=(R_t)+(R_t+1)+(R_t+2)+...
+   3. discounted return (aka cumulative discounted future reward) :U_t=gamma^0*(R_t)+gamma^1*(R_t+1)+gamma^2\*(R_t+2)+...,其中 gamma 是一个超参数。在这里，U_t 也是个位置变量，因为动作还没有发生，我们没有办法获得 t 时候的奖励以及 t 时刻之后的奖励，所以 R 都是随机的，那么我们的 U_t 也是随机的，因为下面的第七点`强化学习的随机性`
+
+7. 强化学习的随机性
+
+   1. `动作具有随机性`，Pi（theta）只输出各个动作的概率，动作是根据概率随机抽样而选取的
+   2. `状态转换具有随机性`，并不是说在状态 s_i 的情况下选取动作 a 就一定会转移到一个固定的状态 s_i+1，这个状态也是随机的，他可能是 s1,s2,s3.....中的任意一个
+
+8. 轨迹 trajectory
+
+   我们把一轮游戏从开始到结束的动作、状态、奖励拼起来也就是(s1,a1,r1,s2,a2,r2,s3,a3,r3.....sn,an,rn)这就是个轨迹，称之为 trajectory，后面很多算法要用到轨迹
+
+9. AI 如何控制 agent 打游戏？
+
+   1. `学习 Q*`(st,at)=max_pi Q_pi(st,at)，根据状态 st 选择 at，at 满足条件：at 能够使得 Q\*最大
+   2. `学习策略 Pi(a|s)`，根据状态 st，根据 Pi(·|st)的概率随机采样
+
+10. 概率论相关的数学知识
+
+    1. 随机变量
+
+       一个变量，它的值由一个随机事件决定，用大 X 表示随机变量，使用小 x 表示这个随机变量的观测值，`概率统计中统一使用大小写来标记随机变量以及他的观测值`
+
+    2. 概率密度函数
+
+       Probability Density Function，表示随机变量在某个附近的取值点的`可能性`。像高斯分布（正态分布）的函数就是一个概率密度函数。
+
+    3. 期望
+
+       给定 X 为随机变量，求 f(X)的期望：
+
+       - 在离散情况下，就是 p(x)\*f(x)的加和
+       - 在连续情况下，就是 P(x)\*f(x)的积分
+
+    4. 随机抽样
+
+       `获得 X 的观测值 x 的操作叫做随机抽样`
+
+---
+
+<br>
+<br>
+
+# 2. 价值学习 Value Based Leaning
+
+## 1. Qlearning - off_policy TD control
 
 更新一个 Q 表，表中的每个元素代表每个状态下每个动作的潜在奖励<br>
 根据 Q 表选择动作，然后更新 Q 表
@@ -70,18 +119,18 @@ right 0 0 0 1 0
 
 更新策略：`现实值=现实值+lr*（估计值-现实值）`
 
----
+<br>
 
-## Sarsa - on_policy TD control
+## 2. Sarsa - on_policy TD control
 
 Qlearning 更新方法：`根据当前Q表选择动作->执行动作->更新Q表`<br>
 Sarsa 更新方法：`执行动作->根据当前估计值选择下一步动作->更新Q表`
 
 **Sarsa 是行动派，Qlearning 是保守派**
 
----
+<br>
 
-## SarsaLambda
+## 3. SarsaLambda
 
 Sarsa 的升级版<br>
 Qlearning 和 Sarsa 都认为上一步对于成功是有关系的，但是上上一步就没有关系了，SarsaLambda 的思想是：`到达成功的每一步都是有关系的，他们的关系程度为：越靠近成功的步骤是越重要的`<br>
@@ -92,11 +141,11 @@ step
 重要性1<2<3<4<5
 ```
 
----
+<br>
 
-## DQN
+## 4. DQN
 
-![](./DeepQLearningNetwork/dqn.jpg)<br>
+![](<./DeepQLearningNetwork(DQN)/dqn.jpg>)<br>
 用神经网络代替 Q 表的功能
 
 Q 表无法进行所有情况的枚举，在某些情况下是不可行的，比如下围棋。<br>
@@ -108,35 +157,36 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 
 为了解决 overestimate 的问题，引入 double DQN，算法上有一点点的改进，复制一份网络参数，两个网络的参数异步更新
 
----
+<br>
 
-## Policy Gradient
-
-核心思想：让好的行为多被选择，坏的行为少被选择。<br>
-采用一个参数 vt，让好的行为权重更大<br>
-![](./PolicyGradient/5-1-1.png)<br>
-
----
-
-## ActorCritic
-
-使用神经网络来生成 vt，瞎子背着瘸子
-
----
-
-## Dueling DQN
+## 5. Dueling DQN
 
 将 Q 值的计算分成状态值 state_value 和每个动作的值 advantage，可以获得更好的性能
+<br><br><br>
 
----
-
-## DQN with Prioritized Experience Replay
+## 6. DQN with Prioritized Experience Replay
 
 在 DQN 中，我们有 Experience Replay，但是这是经验是随机抽取的，我们需要让好的、成功的记忆多多被学习到，所以我们在抽取经验的时候，就需要把这些记忆优先给网络学习，于是就有了`Prioritized`Experience Replay
 
----
+<br><br><br>
 
-## DDPG
+# 3. 策略学习 Policy Based Learning
+
+## 1. Policy Gradient
+
+核心思想：让好的行为多被选择，坏的行为少被选择。<br>
+采用一个参数 vt，让好的行为权重更大<br>
+![](<./PolicyGradient(PG)/5-1-1.png>)<br>
+
+<br>
+
+## 2. Actor Critic
+
+使用神经网络来生成 vt，瞎子背着瘸子
+
+<br>
+
+## 3. DDPG
 
 ![](./DeepDeterministicPolicyGradient/principle.png)
 
@@ -146,31 +196,41 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 - Policy Gradient
 - Experience Replay (OFF-POLICY)
 
----
+<br>
 
-## A3C
+## 4. A3C
 
 - A3C 里面有多个 agent 对网络进行异步更新，相关性较低
 - 不需要积累经验，占用内存少
 - on-policy 训练
 - 多线程异步,速度快
 
----
+<br>
 
-## PPO
+## 5. PPO
 
 - 感觉像 Actor-Critic 和 DQN 的折中，先取一部分经验，然后进行网络参数的更新
 - Actor-Critic 是每走一步进行参数更新
 - DQN 是直接积累经验然后从经验池子中学习
 - PPO 是积累部分经验(一个 trajectory)，然后进行多轮的梯度下降
 
-## Soft Actor Critic & DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay && TD3 && A2C
+<br>
+
+## 6. TRPO
+
+- 使用 L(theta|theta_old)来近似目标函数 J(theta)
+- 使用 KL 散度或者是二次距离来约束 theta 与 theta_old 之间的差距
+- 因此，相比于普通的 PG 算法，它更稳定，因为他对于学习率不敏感
+
+## 7. Soft Actor Critic & DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay && TD3 && A2C
 
 待完成
 
 ---
 
-## Requirements
+<br><br><br>
+
+# 4. Requirements
 
 - numpy
 - tensorboardX
@@ -179,7 +239,9 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 
 ---
 
-## 杂谈&经验
+<br><br><br>
+
+# 5. 杂谈&经验
 
 - t.tensor.detach()： 返回 t.tensor 的数据而且 require_grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。
 - with t.no_grad(): 在应用阶段，不需要使用梯度，那么可以使用这个去掉梯度
@@ -228,30 +290,42 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
     - 使用经验回放来提高效率
     - 可以学习确定性的策略（deterministic）
     - 避免对值函数的过度估计（over estimation）
+- GYM 环境
+  - 经典控制问题，discrete
+  - Atari Games
+  - Mujuco
 
-## 引用
+---
 
-[莫烦 python](https://mofanpy.com/)
+<br><br><br>
 
-[《动手学深度学习》](https://zh-v2.d2l.ai/)
+# 6. 引用
 
-[pytorch 教程](https://www.youtube.com/watch?v=exaWOE8jvy8&list=PLqnslRFeH2UrcDBWF5mfPGpqQDSta6VK4)
+- [莫烦 python](https://mofanpy.com/)
 
-[OpenAI Gym](https://gym.openai.com/)
+- [《动手学深度学习》](https://zh-v2.d2l.ai/)
 
-[17 种深度强化学习算法用 Pytorch 实现](https://blog.csdn.net/tMb8Z9Vdm66wH68VX1/article/details/100975138?spm=1001.2101.3001.6650.14&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Edefault-14.no_search_link&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Edefault-14.no_search_link)
+- [pytorch 教程](https://www.youtube.com/watch?v=exaWOE8jvy8&list=PLqnslRFeH2UrcDBWF5mfPGpqQDSta6VK4)
 
-[hhy_csdn 博客-关于强化学习](https://blog.csdn.net/hhy_csdn)
+- [OpenAI Gym](https://gym.openai.com/)
 
-[PG 算法](https://tomaxent.com/2019/04/14/%E7%AD%96%E7%95%A5%E6%A2%AF%E5%BA%A6%E6%96%B9%E6%B3%95/)
+- [17 种深度强化学习算法用 Pytorch 实现](https://blog.csdn.net/tMb8Z9Vdm66wH68VX1/article/details/100975138?spm=1001.2101.3001.6650.14&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Edefault-14.no_search_link&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Edefault-14.no_search_link)
 
-[什么是强化学习](https://paperexplained.cn/articles/article/detail/33/)
+- [hhy_csdn 博客-关于强化学习](https://blog.csdn.net/hhy_csdn)
 
-[Markov Chain Monte Carlo Without all the Bullshit](https://jeremykun.com/2015/04/06/markov-chain-monte-carlo-without-all-the-bullshit/)
+- [PG 算法](https://tomaxent.com/2019/04/14/%E7%AD%96%E7%95%A5%E6%A2%AF%E5%BA%A6%E6%96%B9%E6%B3%95/)
 
-[马尔科夫决策与平稳分布](https://blog.csdn.net/qq_34652535/article/details/85343518)
+- [什么是强化学习](https://paperexplained.cn/articles/article/detail/33/)
 
-## TODO
+- [Markov Chain Monte Carlo Without all the Bullshit](https://jeremykun.com/2015/04/06/markov-chain-monte-carlo-without-all-the-bullshit/)
+
+- [马尔科夫决策与平稳分布](https://blog.csdn.net/qq_34652535/article/details/85343518)
+
+- [深度强化学习基础](https://www.youtube.com/watch?v=vmkRMvhCW5c&list=PLvOO0btloRnsiqM72G4Uid0UWljikENlU)
+
+<br><br><br>
+
+# 7. TODO
 
 1. SAC，还没有完全理解 soft 是什么东西
 2. TRPO，TRPO 涉及到多线程，还有一些看不懂的东西
