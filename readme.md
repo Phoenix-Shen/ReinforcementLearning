@@ -138,7 +138,7 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 
 ## DDPG
 
-![](DeepDeterministicPolicyGradient\principle.png)
+![](./DeepDeterministicPolicyGradient/principle.png)
 
 - Exploration noise
 - Actor-Critic Achetecture

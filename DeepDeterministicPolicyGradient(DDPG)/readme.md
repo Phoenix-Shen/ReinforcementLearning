@@ -22,7 +22,7 @@
 ## Principal
 
 ![](./ActorCritic.jpg)<br>
-![](principle.png)<br>
+![](./principle.png)<br>
 `采用带权重的梯度更新`
 
 ## Conclusion

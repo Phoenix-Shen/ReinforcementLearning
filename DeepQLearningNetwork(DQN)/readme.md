@@ -52,7 +52,7 @@ MSE（估计值，实际值），再进行反向传播
 
 在 Naive DQN 文件夹中，实现了一个没有 ER 和 Fixed Q-targets 的 DQN，但是它的性能是不行的(在连续的空间上）。
 
-![](NaiveDQN/training.png)
+![](./NaiveDQN/training.png)
 
 - 可以图上面看到 LOSS 在震荡
 - 造成这个问题的原因：

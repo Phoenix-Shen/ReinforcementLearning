@@ -27,6 +27,6 @@
 2. Soft Q value function Q_omega
 3. Soft State-value function V_psi
 
-![](SAC_algo.png)
+![](./SAC_algo.png)
 
 soft 到底是什么 不太了解

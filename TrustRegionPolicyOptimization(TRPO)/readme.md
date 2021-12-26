@@ -54,12 +54,12 @@ agent.py 第 124 行代码会出错，是真的搞不来
 
   1. 定义策略网络 pi（a|s；theta），来控制智能体
   2. 状态-价值函数
-     <br>![](assets\value.png)
+     <br>![](./assets/value.png)
   3. 目标函数 J（theta）=E_s\[V_pi(S)\]
-  4. 状态-价值函数做变换 <br>![](assets\value_transform.png)
+  4. 状态-价值函数做变换 <br>![](./assets/value_transform.png)
   5. 目标函数 J 做变换
 
-     ![](assets\Jtheta.png)
+     ![](./assets/Jtheta.png)
 
 ## TRPO 算法
 
@@ -71,11 +71,11 @@ agent.py 第 124 行代码会出错，是真的搞不来
 - 流程：
 
   1. 给定 theta_old，构造 L 使 L 在置信域中近似于 J
-     - 已经有了`目标函数J做变换`，算法从中衍生。![](assets\Jtheta.png)
+     - 已经有了`目标函数J做变换`，算法从中衍生。![](./assets/Jtheta.png)
      - 其中 S 是从环境抽样得到的，A 是从策略网络 pi（A|theta_old)来取得的
-     - 作蒙特卡洛近似：在环境中抽取 s，通过 pi（A|theta_old)获得动作 a……，由此连成一条轨迹（s1,a1,r1,s2,a2,r2……）我们称之为 trajectory（轨迹）,基于 N 个观测值的蒙特卡洛近似求期望![](assets\approximation.png) 这就是我们对于 J 的近似
+     - 作蒙特卡洛近似：在环境中抽取 s，通过 pi（A|theta_old)获得动作 a……，由此连成一条轨迹（s1,a1,r1,s2,a2,r2……）我们称之为 trajectory（轨迹）,基于 N 个观测值的蒙特卡洛近似求期望![](./assets/approximation.png) 这就是我们对于 J 的近似
      - 但是我们不知道最后的 Q_pi（si，ai）怎么算，所以又要对 Q_pi 做近似
-     - 我们记录到了奖励，记录奖励 r_1,r_2,r_3,r_4，我们还能够得到折扣奖励（discounted rewards）u_i，Q_pi 是 u_i 的期望，可以蒙特卡洛近似![](assets\discountedRewards.png)
+     - 我们记录到了奖励，记录奖励 r_1,r_2,r_3,r_4，我们还能够得到折扣奖励（discounted rewards）u_i，Q_pi 是 u_i 的期望，可以蒙特卡洛近似![](./assets/discountedRewards.png)
      - 这下所有的变量我们都有了
   2. 在 N（theta_old）里面通过使 L 最大的方法来找到 theta_new，即 ARGMAX_theta（L)
      - 即使我们的 theta_new 不好，由于置信域的存在，我们的 theta_new 不会太糟糕
@@ -87,7 +87,7 @@ agent.py 第 124 行代码会出错，是真的搞不来
 
   1. 收集数据，使用 pi(·|s；theta_old)来玩游戏，玩到终点，收集一个 trajectory（轨迹）：s1,a1,r1,s2,a2,r2……
   2. 走了 n 步，计算 n 个折扣奖励 u_i
-  3. 近似：构造目标函数 L![](assets\discountedRewards.png)
+  3. 近似：构造目标函数 L![](./assets/discountedRewards.png)
   4. 最大化：找到使 L 最大的参数 theta_new，而且 theta_new 满足约束：theta_new 在 N(theta_old)也就是置信域里面
      - 求解优化问题需要多轮循环，使用梯度投影等方法求解，属于数值优化范畴，不属于 RL
      - 两个超参数：learning rate 和 delta

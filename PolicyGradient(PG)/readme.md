@@ -65,7 +65,7 @@ pytorch 写出来了一个，但是梯度下降不下去，不知道为什么，
 
 ## 关于 Log probability
 
-![](log.png)
+![](./log.png)
 
 ## 更新网络参数
 
