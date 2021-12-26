@@ -1,4 +1,5 @@
 # %%
+from typing import NewType
 import torch as t
 import torch.nn as nn
 

@@ -1,6 +1,7 @@
 import torch as t
 import torch.nn as nn
 import numpy as np
+from torch.nn.functional import fractional_max_pool2d_with_indices
 import torch.optim as optim
 
 
@@ -61,9 +62,7 @@ class DQN(nn.Module):
 
         q_pred = self.forward(states)[actions]
 
-        q_next = self.forward(states_).max()
-
-        q_target = rewards+self.gamma*q_next
+        q_target = rewards+self.gamma * self.forward(states_).max()
 
         loss = self.lossfunc(q_pred, q_target)
         loss.backward()

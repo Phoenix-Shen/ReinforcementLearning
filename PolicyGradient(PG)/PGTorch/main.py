@@ -85,6 +85,7 @@ def train_net(net: PG, optimizer: optim) -> None:
     optimizer.step()
     del net.rewards[:]          # 清空episode 数据
     del net.saved_log_probs[:]
+# 对于连续空间，我们可以用另外一种形式求梯度。
 
 
 def mainLoop():

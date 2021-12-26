@@ -259,3 +259,4 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 4. ACER ，ACER 使用了高效 TRPO，得搞懂 TRPO 啥玩意
 5. NAIVE ACER with trajectory storage
 6. 基础知识，有的算法是直接把别的网络的参数 copy 过来，有的是不是用 backward 和 step 来更新网络，需要补齐一下 pytorch 的基础知识
+7. 图神经网络 GNN

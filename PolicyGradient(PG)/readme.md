@@ -62,3 +62,18 @@ pytorch 写出来了一个，但是梯度下降不下去，不知道为什么，
 ---
 
 `花了一天时间，看出来了，有一个步骤使用了 detach，导致梯度消失了`
+
+## 关于 Log probability
+
+![](log.png)
+
+## 更新网络参数
+
+1. 获得 state St
+2. 根据策略 pi 选取动作 At
+3. 计算 Q_pi(St,At)，计算这个动作的价值,我们没有办法计算 Q_pi，我们使用一下两种方法近似：
+   - Rainforce：玩一轮游戏，使用 discountedrewards，需要观测到所有的奖励
+   - 为什么不用神经网络进行 Q_pi 的计算呢？
+4. 求导，算出 log_pi 关于 theta 的导数
+5. 4 的导数乘以 Q_pi(St,At)，得到策略梯度，是个近似
+6. 更新梯度 theta_t+1 = theta_t + beta \* gradient

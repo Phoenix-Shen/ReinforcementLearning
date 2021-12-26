@@ -51,11 +51,15 @@ agent.py 第 124 行代码会出错，是真的搞不来
 ## 基于策略的强化学习
 
 - 策略梯度
+
   1. 定义策略网络 pi（a|s；theta），来控制智能体
-  2. 状态-价值函数![](assets\value.png)
+  2. 状态-价值函数
+     <br>![](assets\value.png)
   3. 目标函数 J（theta）=E_s\[V_pi(S)\]
-  4. 状态-价值函数做变换![](assets\value_transform.png)
-  5. 目标函数 J 做变换![](assets\Jtheta.png)
+  4. 状态-价值函数做变换 <br>![](assets\value_transform.png)
+  5. 目标函数 J 做变换
+
+     ![](assets\Jtheta.png)
 
 ## TRPO 算法
 
