@@ -33,8 +33,13 @@ class PG(nn.Module):  # 继承torch.nn.Module
         action_scores = self.affline2(x)
         return F.softmax(action_scores, dim=1)
 
+# 不需要这个函数了
+
 
 def discount_and_norm_rewards(ep_rs):
+    '''
+    abandoned
+    '''
     discounted_ep_rs = np.zeros_like(ep_rs)
     running_add = 0
     for t in reversed(range(0, len(ep_rs))):

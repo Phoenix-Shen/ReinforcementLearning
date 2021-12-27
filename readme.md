@@ -104,7 +104,23 @@
 <br>
 <br>
 
-# 2. 价值学习 Value Based Leaning
+# 2. 价值学习 Value Based Leaning --学习 Q\*(s,a)
+
+- U_t 被定义为折扣回报或者是折扣奖励，那么我们关于策略 π 的动作-价值函数 Qpi(st,at)等于 U_t 的期望（因为 U_t 求不出来，所以要求期望），叫做期望回报。
+
+- 那么当前的 Qpi 只与当前的状态和动作 st 和 at 有关，它反映了当前这个状态下执行动作 at 的好坏
+
+- Q*(s,a)为当策略最好的时候我们的动作状态值，也就是说，不管我们使用什么策略 pi，我们最后选取的动作，他的 Q 值都不会比 Q*好
+
+- 关于 TD 学习 temporal difference Learning：
+  - Q(w)负责估计代价，它的估计 q=Q(w)
+  - 在现实中，我们进行试验，比如说玩一整轮游戏，然后得到实际的代价 y
+  - 计算损失 L=0.5\*MSE(q-y),其中 MSE 为 mean square error
+  - 计算 L 关于 w 的梯度，根据链式求导法则，我们可以得到 L 关于 w 的梯度=（q-y）\*（Q(w)关于 w 的偏导)
+  - 进行梯度下降，w_t+1 = w_t - alpha \* 上一步的梯度，其中 alpha 是超参数，是步长。
+  - 但是在玩游戏的过程中，我们因为某种原因，只玩到一半，得到价值，我们需要 Q(w)估计另外一半的代价，两者相加得到代价 y，这个 y 肯定比 Q(w)估计整个过程要靠谱，因为我们有一半的数值是真的。我们用这个 y 来代替上面的 y，也可以更新参数。
+  - 由上一步，`我们将Q(w)-y称为TD ERROR`
+  - 我们的优化目标就是让 TD error = 0
 
 ## 1. Qlearning - off_policy TD control
 
@@ -145,19 +161,29 @@ step
 
 ## 4. DQN
 
-![](<./DeepQLearningNetwork(DQN)/dqn.jpg>)<br>
-用神经网络代替 Q 表的功能
+- 神经网络 Q(s,a;w)近似 Q\*函数，Q\*能够告诉我们每个动作能够得到的平均回报。我们需要 agent 遵循这个 Q\*函数。
 
-Q 表无法进行所有情况的枚举，在某些情况下是不可行的，比如下围棋。<br>
-Features: `Expericence Replay and Fixed Q-targets`
+- 用神经网络代替 Q 表的功能![](<./DeepQLearningNetwork(DQN)/dqn.jpg>)<br>
 
-Experience Replay : `将每一次实验得到的惊艳片段记录下来，然后作为经验，投入到经验池中，每次训练的时候随机取出一个 BATCH，可以复用数据。`
+- Q 表无法进行所有情况的枚举，在某些情况下是不可行的，比如下围棋。<br>
+  Features: `Expericence Replay and Fixed Q-targets`
 
-Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以不能够进行分别更新操作，那么我们需要将网络参数复制一份，解决该问题。`
+- Experience Replay : `将每一次实验得到的惊艳片段记录下来，然后作为经验，投入到经验池中，每次训练的时候随机取出一个 BATCH，可以复用数据。`
 
-为了解决 overestimate 的问题，引入 double DQN，算法上有一点点的改进，复制一份网络参数，两个网络的参数异步更新
+- Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以不能够进行分别更新操作，那么我们需要将网络参数复制一份，解决该问题。`
 
-<br>
+- 为了解决 overestimate 的问题，引入 double DQN，算法上有一点点的改进，复制一份网络参数，两个网络的参数异步更新
+
+- TD 算法在 DQN 中的使用：
+  - 类似于我们在[2. 价值学习 Value Based Leaning --学习 Q\*(s,a)]中提出 TD 学习的概念，我们在 DQN 中也有：`Q(st,at;w)≈rt + gamma * Q(st+1,at+1;w)`
+  - 在上式中，gamma 为一个奖励的折扣因子
+  - 折扣回报：Ut= Rt + gamma ((Rt+1)+gamma\*(Rt+2)+...) [在前面消掉一个 gamma]
+  - 那么我们的折扣回报可以写成 Ut = Rt + gamma \* Ut+1
+  - 反映了两个相邻状态之间的折扣回报的关系
+  - 那么我们使用 DQN 来输出这个 Ut 的期望（说过很多次，在 t 时刻之后，动作 A 和状态 S 都是随机变量，所以求期望）
+  - `Q(st,at;w)≈rt + gamma * Q(st+1,at+1;w)` 我们已经获得观测值 rt 了，所以约等于号后面的那个值肯定要准确一些，我们称之为 TD target ， 前面是 prediction（预测值）
+  - 于是我们的 loss = 0.5\* MSE（[predict - target ]），再进行梯度下降就可以了
+    <br>
 
 ## 5. Dueling DQN
 
@@ -170,7 +196,7 @@ Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以�
 
 <br><br><br>
 
-# 3. 策略学习 Policy Based Learning
+# 3. 策略学习 Policy Based Learning --学习策略 π(a|s)
 
 ## 1. Policy Gradient
 
