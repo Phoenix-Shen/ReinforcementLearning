@@ -413,6 +413,8 @@ step
 
 - [深度强化学习基础](https://www.youtube.com/watch?v=vmkRMvhCW5c&list=PLvOO0btloRnsiqM72G4Uid0UWljikENlU)
 
+- [深入浅出强化学习](https://daiwk.github.io/posts/rl.html)
+
 <br><br><br>
 
 # 7. TODO
