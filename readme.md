@@ -99,6 +99,34 @@
 
        `获得 X 的观测值 x 的操作叫做随机抽样`
 
+    5. 蒙特卡洛 Monte Carlo 抽样的用法
+
+       - 计算 π
+
+         假定(x,y)是在一个边长为 1 的正方形之内随机选一个点，那么这个点符合均匀分布的规律，那么这个点落在正方形内接圆的概率是多少呢？用面积可以算出来是 π/4,那我们抽样 n 个点，应该有 πn/4 个点落在圆里面，如果 n 非常大的话我们发现 m 个点在圆里面，那么 m≈πn/4。
+
+         `要保证抽样是均匀的`
+
+       - Buffon's Needle Problem
+
+         投针问题也能够很好地近似估算 π
+
+       - 估计阴影部分的面积
+
+         使用蒙特卡洛进行近似计算
+
+       - 近似求积分
+
+         有些函数过于复杂，没有解析的积分，需要蒙特卡洛方法求定积分，也是无限次抽样
+
+       - **近似期望**
+
+         X 是一个 d 维的随机变量，p（x）是概率密度函数，平均分布的概率是 p(x)=1/t for x∈[0,t]
+
+         高斯分布/正态分布：p(x)=1/(sigema (2π)^2)\*exp[-(x-mu)^2/2sigema^2]
+
+         直接求 F(x)关于 P(x)的定积分有时候很难，我们抽按照 p(x)的分布抽 n 个样本，计算 Qn=Σf(xi) /n，即 Qn 是 E x~p [f(x)]
+
 ---
 
 <br>
@@ -115,7 +143,7 @@
 - 关于 TD 学习 temporal difference Learning：
   - Q(w)负责估计代价，它的估计 q=Q(w)
   - 在现实中，我们进行试验，比如说玩一整轮游戏，然后得到实际的代价 y
-  - 计算损失 L=0.5\*MSE(q-y),其中 MSE 为 mean square error
+  - 计算损失 L=0.5\*||(q-y)||,其中||(q-y)||为 q 和 y 的二次距离
   - 计算 L 关于 w 的梯度，根据链式求导法则，我们可以得到 L 关于 w 的梯度=（q-y）\*（Q(w)关于 w 的偏导)
   - 进行梯度下降，w_t+1 = w_t - alpha \* 上一步的梯度，其中 alpha 是超参数，是步长。
   - 但是在玩游戏的过程中，我们因为某种原因，只玩到一半，得到价值，我们需要 Q(w)估计另外一半的代价，两者相加得到代价 y，这个 y 肯定比 Q(w)估计整个过程要靠谱，因为我们有一半的数值是真的。我们用这个 y 来代替上面的 y，也可以更新参数。
@@ -182,7 +210,7 @@ step
   - 反映了两个相邻状态之间的折扣回报的关系
   - 那么我们使用 DQN 来输出这个 Ut 的期望（说过很多次，在 t 时刻之后，动作 A 和状态 S 都是随机变量，所以求期望）
   - `Q(st,at;w)≈rt + gamma * Q(st+1,at+1;w)` 我们已经获得观测值 rt 了，所以约等于号后面的那个值肯定要准确一些，我们称之为 TD target ， 前面是 prediction（预测值）
-  - 于是我们的 loss = 0.5\* MSE（[predict - target ]），再进行梯度下降就可以了
+  - 于是我们的 loss = 0.5\* ||[predict - target ]||，再进行梯度下降就可以了
     <br>
 
 ## 5. Dueling DQN
@@ -198,6 +226,11 @@ step
 
 # 3. 策略学习 Policy Based Learning --学习策略 π(a|s)
 
+- 在这个章节中，除了 Policy Gradient 算法没有用到 Critic，其余好像都用到了 critic 或者类似于 actor-critic 的架构，比如说 DDPG 是个 AC 架构，而 AC A2C A3C TRPO 等都用到了 Actor 和 Critic
+- PG 算法学习的就是策略，像[PG 中 readme](<https://github.com/Phoenix-Shen/ReinforcementLearning/tree/main/PolicyGradient(PG)#%E6%9B%B4%E6%96%B0%E7%BD%91%E7%BB%9C%E5%8F%82%E6%95%B0>)里面说的一样我们为什么不用神经网络来近似 Q_pi，就可以不用 Discounted Rewards 来代替 Q_pi。
+- 所以我们可以转为策略学习+值学习，他是 Value based methods 和 Policy based methods 的结合
+- 状态价值 V_pi(s)=Σa pi(a|s)\* Q_pi(s,a)，使用 Actor 来近似 pi，使用 Critic 来近似 Q_pi
+
 ## 1. Policy Gradient
 
 核心思想：让好的行为多被选择，坏的行为少被选择。<br>
@@ -208,7 +241,38 @@ step
 
 ## 2. Actor Critic
 
-使用神经网络来生成 vt，瞎子背着瘸子
+直观的来说：使用神经网络来近似价值函数 V，瞎子背着瘸子
+
+- 就目前在网上看到的情况有以下几种 AC 架构
+
+  1.  使用 Actor 来学习策略，Critic 学习 V(s)，接受状态 s 作为输入
+  2.  使用 Actor 来学习策略，Critic 学习 Q_pi(a,s)，接受状态 s，a 的 concatenation 作为输入
+  3.  使用 Actor 来学习策略，Critic 学习 Q_pi(a,s)，接受状态 s，a 的 concatenation 作为输入，但是 s 是作为特征（features）从 actor 提取出来的，也就是说共享卷积层参数。
+
+- 训练：
+
+  - 定义：使用神经网络来近似状态-价值函数： V(s;theta，w) = Σa pi（a|s;theta）\*q（s,a;w)。
+  - 目标：使 pi 能够获取最大的回报，q 能够更精准的估计动作-状态价值函数
+  - 更新 theta 是为了让 V(s;theta，w)最大，监督完全来自于价值网络-Critic
+  - 更新 w 是为了让 q(s,a;w)更加精准，监督完全是来自于环境给的奖励
+
+- 步骤：
+
+  1.  获取状态 st
+  2.  通过 pi(·|st;theta_t)的分布进行一个随机采样，得到下一步的动作 at
+  3.  执行动作，获取状态 st+1 和奖励 rt
+  4.  使用 td error 来更新 w
+      - 计算 q(st,at;w)和 q(st+1,at+1;w)
+      - 计算 td target ： yt = rt + gamma \* q(st+1,at+1;w) ，显然 yt 比 q(st,at;w)更加可靠
+      - 计算二次距离 ||predict - target||/2，
+      - 进行梯度下降，让损失变得更小
+  5.  使用 policy gradient（策略梯度）来更新 theta
+      - 定义梯度 g（a，theta）=q(st,a;w)\*log pi( a|s;theta)关于 theta 的导数，那么我们 V(s;theta，w)关于 theta 的导数就是 E_A[g(A,theta)],就是一个期望
+      - 由于无法求 E_A[g(A,theta)]，我们只能够抽样进行蒙特卡洛近似，所以直接使用 g 来代替 E_A[g(A,theta)]作为期望的近似。
+      - 进行抽样，并计算 g（a，theta_t）并进行梯度上升，使期望越来越高
+      - 有的时候梯度是 q(st,a;w)\*log pi( a|s;theta)关于 theta 的导数，也有的时候是[q(st,a;w)-td target]\*log pi( a|s;theta)关于 theta 的导数(baseline)，后者方差小，收敛更快。
+
+- Critic 在训练完毕之后就没有用辣！
 
 <br>
 
