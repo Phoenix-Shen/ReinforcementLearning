@@ -21,7 +21,7 @@ class Agent:
         Should the agent print progress to the console?
     """
 
-    def __init__(self, brain, render=False, verbose=False):
+    def __init__(self, brain, render=False, verbose=True):
         self.env = gym.make(ENVIRONMENT_NAME)
         self.env.reset()
         self.render = render
@@ -129,7 +129,7 @@ class DiscreteAgent(Agent):
         actor_critic : ActorCritic
             The actor-critic model to use to explore.
         """
-        state = torch.FloatTensor(self.env.env.state)
+        state = torch.FloatTensor(self.env.reset())
         trajectory = []
         for step in range(MAX_STEPS_BEFORE_UPDATE):
             action_probabilities, *_ = actor_critic(Variable(state))

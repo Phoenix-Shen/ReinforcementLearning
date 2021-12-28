@@ -15,7 +15,7 @@
 |     A3C     | √    |
 |     A2C     | ×    |
 |     SAC     | ×    |
-|    ACER     | ×    |
+|    ACER     | √    |
 |    DDPG     | √    |
 |     TD3     | ×    |
 |     PPO     | √    |
@@ -312,7 +312,13 @@ step
 - 使用 KL 散度或者是二次距离来约束 theta 与 theta_old 之间的差距
 - 因此，相比于普通的 PG 算法，它更稳定，因为他对于学习率不敏感
 
-## 7. Soft Actor Critic & DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay && TD3 && A2C
+## 7. SAC
+
+1. 采用分离策略网络以及值函数网络的 AC 架构
+2. ER 能够使用历史数据，高效采样
+3. 熵最大化以鼓励探索
+
+## 8. DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay && TD3 && A2C
 
 待完成
 

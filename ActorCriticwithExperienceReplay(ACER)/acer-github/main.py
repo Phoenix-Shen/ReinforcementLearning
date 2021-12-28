@@ -4,7 +4,7 @@ from torch import multiprocessing as mp
 from core import *
 
 
-def run_agent(shared_brain, render=False, verbose=False):
+def run_agent(shared_brain, render=False, verbose=True):
     """
     Run the agent.
 
