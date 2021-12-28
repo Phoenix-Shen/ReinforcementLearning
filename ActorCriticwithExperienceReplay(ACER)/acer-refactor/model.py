@@ -4,6 +4,7 @@ import replayMemory
 import torch.optim as optim
 import gym
 import numpy as np
+import tensorboardX
 
 
 class ActorCritic(nn.Module):
@@ -87,6 +88,8 @@ class Agent():
         self.trust_region_decay = trust_region_decay
         self.trust_region_constraint = trust_region_constraint
         self.replay_ratio = replay_ratio
+        self.writer = tensorboardX.SummaryWriter(
+            "ActorCriticwithExperienceReplay(ACER)/logs")
         # neural network contains an actor critic network and an "average" actor critic network
         self.actor_critic = ActorCritic(self.n_features, self.n_actions)
         self.average_actor_critic = ActorCritic(
@@ -110,9 +113,13 @@ class Agent():
             episode_rewards = 0.
             # step 2 Call ACER on-policy ,Algorithm 2
             trajectory = self.explore()
-            self.learning_iteration(trajectory)
+            la, lc = self.learning_iteration(trajectory)
             episode_rewards += sum([transition.rewards[0, 0]
                                    for transition in trajectory])
+            self.writer.add_scalar("loss_actor", la, episode)
+            self.writer.add_scalar("loss_critic", lc, episode)
+            self.writer.add_scalar("ep_rewards", episode_rewards, episode)
+            print("episode:{},loss_a:{},loss_c:{}".format(episode, la, lc))
             # step 3  n = Possion(r)
             # step 4  for i∈{1,..n} do
             for _ in range(np.random.poisson(self.replay_ratio)):
@@ -121,8 +128,9 @@ class Agent():
                     # step 5 call ACER off-policy, Algorithm 2
                     self.learning_iteration(trajectory)
             # step 6 end for
-
+        self.writer.close()
         # step 7 uitil Max iteration or time reached
+
     def explore(self):
         """
         Explore an environment by taking a sequence of actions and saving the results in the memory.
@@ -163,7 +171,8 @@ class Agent():
             # shape = (8,) for lunar lander
             next_state = t.FloatTensor(next_state)
             # shape = (1,1)
-            reward = t.tensor(reward,dtype=t.float32).unsqueeze(0).unsqueeze(0)
+            reward = t.tensor(reward, dtype=t.float32).unsqueeze(
+                0).unsqueeze(0)
             # shape = (1,1)
             done = t.FloatTensor([[done]])
             if self.render:
@@ -251,6 +260,8 @@ class Agent():
             # we need softly update the average parameter
             self.average_actor_critic.copy_parameters_from(
                 self.actor_critic, decay=self.trust_region_decay)
+
+            return actor_loss.mean(), critic_loss.mean()
 
     def dicrete_trust_region_update(self, actor_gradients: t.Tensor, action_probabilities: t.Tensor, average_action_probabilities: t.Tensor):
         """
