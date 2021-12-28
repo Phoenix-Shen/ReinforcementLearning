@@ -1,8 +1,9 @@
 # ACER
 
 `Actor-Critic的off-policy算法`
+其中 Naive ACER 是单纯使用了 Replay Buffer，而论文中的 ACER 使用了多种手段。
 
-# 它不是有效的，它不能够学到东西，为什么不能够使用 ER 呢？
+# Naive ACER 不是有效的，它不能够学到东西，为什么不能够使用 ER 呢？
 
 - policy gradient 估计的是经验的梯度，如果使用旧的 policy 产生的样本，那么我们就不在估计当前 policy 的梯度了，所以 policy gradient 不能使用 experience，就相当于你使用几十年前的房价来对比现在的房价一样，更新策略之后，之前的行为就不再是我这个策略做出来的了，所以我们不能够使用 experience
 
@@ -19,12 +20,13 @@
   - (2)偏差校正截断重要性权重
   - (3)更加高效的 Trust region policy optimization
 
-## 找了个 ACER 的代码
+## 拿来主义- github 上关于 ACER 的代码
 
-还没有搞懂这个是什么玩意，所以抄了个代码
-[链接](https://github.com/dchetelat/acer/)
+还没有搞懂这个是什么玩意，所以抄了个代码跟着他打了一遍，然后稍微重构了一下，写了注释，仅对于 discrete 状况使用，源代码在[acer-github 文件夹](./acer-github),重构的代码在[acer-refactor 文件夹里面](./acer-refactor)
 
-## 关于 AC 的改进
+[源代码链接](https://github.com/dchetelat/acer/)
+
+## ACER 关于 AC 的改进
 
 - Agent 与环境交互成本过高，需要一个算法能够减少与环境的交互，这个特性称为 sample efficiency，提高这个的方法之一就是 ER- Experience Replay，但是 Actor Critic 不能够直接使用 ER，那么我们需要开发出一种离线的 AC 算法，这也就是我们 ACER 的由来。
 
