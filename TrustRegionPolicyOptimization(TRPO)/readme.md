@@ -17,13 +17,9 @@
 
 ## 拿来主义
 
-`the code in this folder is not functional! the code in github https://github.com/Khrylx/PyTorch-RL is recommended.`
+- [拿来主义-github 现成代码-1](https://github.com/TianhongDai/reinforcement-learning-algorithms)
 
-Running_state.py 是做什么东西的？
-
-agent.py 第 124 行代码会出错，是真的搞不来
-
-[拿来主义-github 现成代码](https://github.com/Khrylx/PyTorch-RL)
+- [拿来主义-github 现成代码-2](https://github.com/Khrylx/PyTorch-RL)
 
 ## Trust Region 算法
 
