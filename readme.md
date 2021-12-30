@@ -20,7 +20,7 @@
 |     TD3     | ×    |
 |     PPO     | √    |
 |    DPPO     | ×    |
-|    TRPO     | ×    |
+|    TRPO     | √    |
 | DQNwithHER  | ×    |
 | DDPGwithHER | ×    |
 |    DIAYN    | ×    |
