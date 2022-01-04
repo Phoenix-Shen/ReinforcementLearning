@@ -339,6 +339,7 @@ step
 
 # 5. 杂谈&经验
 
+- Tensor.to(device)操作要细心，有可能损失为 None 因为.to(device)是一次操作，此时的 tensor 不再是叶子结点。
 - t.tensor.detach()： 返回 t.tensor 的数据而且 require_grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。
 - 关于 tensor.detach()与 tensor.data:x.data 和 x.detach()新分离出来的 tensor 的 requires_grad=False，即不可求导时两者之间没有区别，但是当当 requires_grad=True 的时候的两者之间的是有不同：x.data 不能被 autograd 追踪求微分，但是 x.detach 可以被 autograd()追踪求导。
 - with t.no_grad(): 在应用阶段，不需要使用梯度，那么可以使用这个去掉梯度
