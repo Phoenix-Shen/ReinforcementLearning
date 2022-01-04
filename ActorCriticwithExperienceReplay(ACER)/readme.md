@@ -22,7 +22,7 @@
 
 ## 拿来主义- github 上关于 ACER 的代码
 
-还没有搞懂这个是什么玩意，所以抄了个代码跟着他打了一遍，然后稍微重构了一下，写了注释，仅对于 discrete 状况使用，目前超参数还没有调整好，对于 lunarlander—v2 效果不好，源代码在[acer-github 文件夹](./acer-github),重构的代码在[acer-refactor 文件夹里面](./acer-refactor)
+还没有搞懂这个是什么玩意，所以抄了个代码跟着他打了一遍，然后稍微重构了一下，写了注释，仅对于 discrete 状况使用，目前超参数还没有调整好，对于 lunarlander—v2 效果不好，拿来主义的源代码在[acer-github 文件夹](./acer-github),重构的代码在[acer-refactor 文件夹里面](./acer-refactor)
 
 [源代码链接](https://github.com/dchetelat/acer/)
 

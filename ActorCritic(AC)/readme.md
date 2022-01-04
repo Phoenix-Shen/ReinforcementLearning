@@ -16,3 +16,7 @@ loss.backward()
 ## actor critic
 
 Actor-Critic 涉及到了两个神经网络, 而且每次都是在连续状态中更新参数, 每次参数更新前后都存在相关性, 导致神经网络只能片面的看待问题, 甚至导致神经网络学不到东西. Google DeepMind 为了解决这个问题, 修改了 Actor Critic 的算法也就是我们之后的 DDPG
+
+## A2C 与 AC
+
+在 models.py 里面，critic 返回的数值如果是 self.net(s)，那就是 AC,如果返回的是 TDerror，就是 A2C，多了个 Advantage，它意味着比平时好多少？

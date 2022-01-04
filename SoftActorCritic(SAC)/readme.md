@@ -1,13 +1,16 @@
+# Soft Actor Critic
+
+**_Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor_**
+
+- 集大成者
+- 面向 Maximum Entropy Reinforcement Learning 开发的一种 off-policy 算法，使用随机策略
+- 对比 DDPG，它不遗漏每一个好的动作
+
 # Model Free 算法
 
 1. TRPO、PPO
 2. DDPG、D4PG、TD3
 3. Soft Q-Learning、Soft Actor-Critic
-
-# Soft Actor Critic
-
-面向 Maximum Entropy Reinforcement Learning 开发的一种 off-policy 算法，使用随机策略  
-对比 DDPG，它不遗漏每一个好的动作
 
 # 基于最大熵的 RL 算法
 
@@ -29,4 +32,8 @@
 
 ![](./SAC_algo.png)
 
-soft 到底是什么 不太了解
+# Overview
+
+- 解决 PPO，TRPO 的低效
+- 解决 DDPG，TD3 的不稳定性
+- 所以使用了随机策略+经验池+最大化熵

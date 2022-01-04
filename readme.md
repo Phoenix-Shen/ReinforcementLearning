@@ -339,7 +339,7 @@ step
 
 # 5. 杂谈&经验
 
-- Tensor.to(device)操作要细心，有可能损失为 None 因为.to(device)是一次操作，此时的 tensor 不再是叶子结点。
+- Tensor.to(device)操作要细心，有可能梯度为 None 因为.to(device)是一次操作，之后的 tensor 有一个 grad_fn=copy 什么的，此时的 tensor 不再是叶子结点。
 - t.tensor.detach()： 返回 t.tensor 的数据而且 require_grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。
 - 关于 tensor.detach()与 tensor.data:x.data 和 x.detach()新分离出来的 tensor 的 requires_grad=False，即不可求导时两者之间没有区别，但是当当 requires_grad=True 的时候的两者之间的是有不同：x.data 不能被 autograd 追踪求微分，但是 x.detach 可以被 autograd()追踪求导。
 - with t.no_grad(): 在应用阶段，不需要使用梯度，那么可以使用这个去掉梯度
@@ -347,7 +347,7 @@ step
 - 使用 require_grad=False 可以冻结神经网络某一部分的参数，更新的时候就不能减 grad 了
 - tensor.item()，直接返回一个数据，但是只能适用于 tensor 里头只有一个元素的情况，否则要是用 tolist()或者 numpy()
 - 不建议使用 inplace 操作
-- hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。
+- hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。比如 theta_new = theta_old *0.95 + theta_new *0.05
 - pytorch 官网上有:https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 - nn.Module.eval()递归调用子模块，将 Module.train 改成 false
 - 类似于 tensor.pow, tensor.sum, tensor.mean, tensor.gather 这些操作都可以使用 torch.pow(tensor,\*args)等来代替，使用 t.pow 这种类型的函数可以直接知道它的参数（dim=？之类的），用 tensor.pow 的话可能会因为识别不出来这是个 tensor，导致这个方法出不来。（比如说 a=t.ones((1,1,1)),b=a+a，调用 b.sum 的时候按 TAB 就出不来)
@@ -430,5 +430,5 @@ step
 1. SAC，还没有完全理解 soft 是什么东西
 2. A3C，需要复习一下
 3. NAIVE ACER with trajectory storage
-4. 基础知识，有的算法是直接把别的网络的参数 copy 过来，维持两个网络，有的是不是用 backward 和 step 来更新网络，需要补齐一下 pytorch 的基础知识
+4. 基础知识，有的算法是直接把别的网络的参数 copy 过来，维持两个网络，采用软更新。有的是不是用 backward 和 step 来更新网络，需要补齐一下 pytorch 的基础知识
 5. 图神经网络 GNN
