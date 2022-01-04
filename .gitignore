@@ -6,3 +6,5 @@
 *.pkl
 #TF events in tensorboardX
 *.ssk
+# datasets
+PytorchAndPythonLearning/Pytorch/dataset

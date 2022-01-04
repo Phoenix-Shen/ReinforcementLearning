@@ -427,9 +427,7 @@ step
 # 7. TODO
 
 1. SAC，还没有完全理解 soft 是什么东西
-2. TRPO，TRPO 涉及到多线程，还有一些看不懂的东西
-3. A3C，需要复习一下
-4. ACER ，ACER 使用了高效 TRPO，得搞懂 TRPO 啥玩意
-5. NAIVE ACER with trajectory storage
-6. 基础知识，有的算法是直接把别的网络的参数 copy 过来，有的是不是用 backward 和 step 来更新网络，需要补齐一下 pytorch 的基础知识
-7. 图神经网络 GNN
+2. A3C，需要复习一下
+3. NAIVE ACER with trajectory storage
+4. 基础知识，有的算法是直接把别的网络的参数 copy 过来，维持两个网络，有的是不是用 backward 和 step 来更新网络，需要补齐一下 pytorch 的基础知识
+5. 图神经网络 GNN
