@@ -338,28 +338,22 @@ step
 <br><br><br>
 
 # 5. 杂谈&经验
-<<<<<<< HEAD
 
 - Tensor.to(device)操作要细心，有可能梯度为 None 因为.to(device)是一次操作，之后的 tensor 有一个 grad_fn=copy 什么的，此时的 tensor 不再是叶子结点。
 - t.tensor.detach()： 返回 t.tensor 的数据而且 require_grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。
-=======
-- nn.parameter()通常，我们的参数都是一些常见的结构（卷积、全连接等）里面的计算参数。而当我们的网络有一些其他的设计时，会需要一些额外的参数同样很着整个网络的训练进行学习更新，最后得到最优的值，经典的例子有注意力机制中的权重参数、Vision Transformer中的class token和positional embedding等。
-- tensor.clone()=原来张量的拷贝，而且require_grad=True
+- nn.parameter()通常，我们的参数都是一些常见的结构（卷积、全连接等）里面的计算参数。而当我们的网络有一些其他的设计时，会需要一些额外的参数同样很着整个网络的训练进行学习更新，最后得到最优的值，经典的例子有注意力机制中的权重参数、Vision Transformer 中的 class token 和 positional embedding 等。
+- tensor.clone()=原来张量的拷贝，而且 require_grad=True
 - Tensor.to(device)操作要细心，有可能损失为 None 因为.to(device)是一次操作，此时的 tensor 不再是叶子结点。
-- t.tensor.detach()： 返回 t.tensor 的数据而且 require_grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。新的tensor和原来的tensor共享数据内存，但不涉及梯度计算，即requires_grad=False。修改其中一个tensor的值，另一个也会改变，因为是共享同一块内存，但如果对其中一个tensor执行某些内置操作，则会报错，例如resize_、resize_as_、set_、transpose_。
->>>>>>> cad33e50fbecb96940a9f7a306738bd39736c79b
+- t.tensor.detach()： 返回 t.tensor 的数据而且 require\*grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。新的 tensor 和原来的 tensor 共享数据内存，但不涉及梯度计算，即 requires_grad=False。修改其中一个 tensor 的值，另一个也会改变，因为是共享同一块内存，但如果对其中一个 tensor 执行某些内置操作，则会报错，例如 resize*、resize*as*、set*、transpose\*。
 - 关于 tensor.detach()与 tensor.data:x.data 和 x.detach()新分离出来的 tensor 的 requires_grad=False，即不可求导时两者之间没有区别，但是当当 requires_grad=True 的时候的两者之间的是有不同：x.data 不能被 autograd 追踪求微分，但是 x.detach 可以被 autograd()追踪求导。
 - with t.no_grad(): 在应用阶段，不需要使用梯度，那么可以使用这个去掉梯度
 - 如果在更新的时候不调用 optimizer.zero_grad，两次更新的梯度会叠加。
 - 使用 require_grad=False 可以冻结神经网络某一部分的参数，更新的时候就不能减 grad 了
 - tensor.item()，直接返回一个数据，但是只能适用于 tensor 里头只有一个元素的情况，否则要是用 tolist()或者 numpy()
-<<<<<<< HEAD
 - 不建议使用 inplace 操作
 - hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。比如 theta_new = theta_old *0.95 + theta_new *0.05
-=======
 - 不建议使用 inplace 操作，要用的时候要细心
 - hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。
->>>>>>> cad33e50fbecb96940a9f7a306738bd39736c79b
 - pytorch 官网上有:https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 - nn.Module.eval()递归调用子模块，将 Module.train 改成 false
 - 类似于 tensor.pow, tensor.sum, tensor.mean, tensor.gather 这些操作都可以使用 torch.pow(tensor,\*args)等来代替，使用 t.pow 这种类型的函数可以直接知道它的参数（dim=？之类的），用 tensor.pow 的话可能会因为识别不出来这是个 tensor，导致这个方法出不来。（比如说 a=t.ones((1,1,1)),b=a+a，调用 b.sum 的时候按 TAB 就出不来)
