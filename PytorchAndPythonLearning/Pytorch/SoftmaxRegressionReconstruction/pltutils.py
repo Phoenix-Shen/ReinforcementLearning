@@ -4,9 +4,7 @@ from IPython import display
 from matplotlib import pyplot as plt
 import time
 import torch
-import torchvision as tv
-import torchvision.transforms as transforms
-import torch.utils.data as data
+
 
 def use_svg_display():
     """使用svg格式在Jupyter中显示绘图"""
@@ -120,20 +118,3 @@ def show_images(imgs, num_rows, num_cols, titles=None, scale=1.5):  # @save
         if titles:
             ax.set_title(titles[i])
     return axes
-
-
-def load_data_fashion_mnist(batch_size, resize=None, n_threads=4,data_root="./PytorchAndPythonLearning/Pytorch/dataset"):
-    """下载fashion-MNIST数据集 将其加载到内存当中去"""
-    transform = [transforms.ToTensor()]
-    if resize:
-        transform.insert(0, transforms.Resize(size=resize))
-    trans = transforms.Compose(transform)
-    mnist_train = tv.datasets.FashionMNIST(
-        root=data_root, train=True, transform=trans, download=True)
-    mnist_test = tv.datasets.FashionMNIST(
-        root=data_root, train=False, transform=trans, download=True)
-    train_loader = data.DataLoader(
-        mnist_train, batch_size, shuffle=True, num_workers=n_threads)
-    test_loader = data.DataLoader(
-        mnist_test, batch_size, shuffle=True, num_workers=n_threads)
-    return train_loader, test_loader
