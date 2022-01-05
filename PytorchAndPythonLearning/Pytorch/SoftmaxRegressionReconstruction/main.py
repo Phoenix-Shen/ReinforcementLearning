@@ -5,13 +5,7 @@ import torchvision.transforms as transforms
 from torch.functional import Tensor
 import torch as t
 from pltutils import *
-
-# HYPER PARAMETERS
-BATCH_SIZE = 256
-NUM_INPUTS = 784
-NUM_OUTPUTS = 10  # 10 类
-#DEVICE = t.device("cpu")
-DEVICE = t.device("cuda:0" if t.cuda.is_available() else "cpu")
+import torch.nn as nn
 
 # DATALOADER
 
@@ -33,46 +27,16 @@ def load_data_fashion_mnist(batch_size, resize=None, n_threads=4):
     return train_loader, test_loader
 
 
-# MODEL PARAMS
-W = t.normal(0, 0.01, size=(NUM_INPUTS, NUM_OUTPUTS),
-             requires_grad=True, device=DEVICE)
-b = t.zeros(NUM_OUTPUTS, requires_grad=True, device=DEVICE)
-
-# SOFTMAX
-# 相当于nn.Softmax(1)
-# 注意，虽然这在数学上看起来是正确的，
-# 但我们在代码实现中有点草率。 矩阵中的非常大或非常小的元素可能造成数值上溢或下溢，
-# 但我们没有采取措施来防止这点。
-
-
-def softmax(X: Tensor):
-    X_exp = t.exp(X)
-    #对列求和，再除以和
-    partition = X_exp.sum(dim=1, keepdim=True)
-    return X_exp/partition
-
-# MODEL
-
-
-def net(X: Tensor):
-    result = t.matmul(X.reshape((-1, W.shape[0])), W)+b
-    return softmax(result)
-# CROSSENTROPY
-
-
-def cross_entropy(y_hat: Tensor, y: Tensor) -> Tensor:
-    return -t.log(y_hat[range(len(y_hat)), y])
-
-# ACCURACY
-
-
 def accuracy(y_hat: Tensor, y: Tensor) -> Tensor:
     if len(y_hat.shape) > 1 and y_hat.shape[1] > 1:
         y_hat = y_hat.argmax(dim=1)
     cmp = y_hat.type(y.dtype) == y
     return float(cmp.type(y.dtype).sum())
 
-# TRAIIN
+
+def init_weights(m: nn.Module):
+    if type(m) == nn.Linear:
+        nn.init.normal_(m.weight, std=0.01)
 
 
 def train(net, train_iter: data.DataLoader, loss, updater, n_epochs=10):
@@ -92,21 +56,8 @@ def train(net, train_iter: data.DataLoader, loss, updater, n_epochs=10):
             else:
                 l.sum().backward()
                 updater(x.shape[0])
-            print("ep:{},accuracy:{},loss:{}".format(
+            print("ep:{},accuracy:{:.4f},loss:{:.4f}".format(
                 i, accuracy(y_hat, y)/y.shape[0], l.mean().item()))
-
-# OPTIMIZER
-
-
-def stochastic_gradient_desent(params: t.Tensor, lr, batch_size):
-    with t.no_grad():
-        for param in params:
-            param -= lr*param.grad/batch_size
-            param.grad.zero_()
-
-
-def updater(batch_size):
-    stochastic_gradient_desent([W, b], 0.1, batch_size)
 
 
 def predict(net, test_iter):
@@ -120,9 +71,28 @@ def predict(net, test_iter):
     print("test ACC:{}".format(correct))
     return correct
 
+# HYPER PARAMETERS
+BATCH_SIZE = 2048
+NUM_INPUTS = 784
+NUM_OUTPUTS = 10  # 10 类
+#DEVICE = t.device("cpu")
+DEVICE = t.device("cuda:0" if t.cuda.is_available() else "cpu")
 
-train_loader, test_loader = load_data_fashion_mnist(BATCH_SIZE, n_threads=0)
-train(net, train_loader, cross_entropy, updater, 1)
-predict(net, test_loader)
-
-# %%
+train_iter, test_iter = load_data_fashion_mnist(BATCH_SIZE,n_threads=0)
+lossfunc = nn.CrossEntropyLoss()
+net = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(784, 10)
+)
+net.to(DEVICE)
+optimizer = t.optim.SGD(net.parameters(), lr=0.05)
+# SOFTMAX 的缺点
+# 如果exp(net_output)里头有很大的数字，那么它会溢出掉
+# 变成NAN或者inf最后导致诈胡
+# 最好的办法是：减去一个最大值
+# 但是如果相减，就导致结果太小，求log的时候，就会下溢。
+# log的值为-inf
+# 尽管要计算指数函数，最终我们可以在计算交叉熵损失的时候可以取对数
+# 将Softmax和交叉熵结合在一起。
+train(net, train_iter, lossfunc, optimizer, 1)
+predict(net, test_iter)
