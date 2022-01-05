@@ -423,6 +423,10 @@ step
 
 - [深入浅出强化学习](https://daiwk.github.io/posts/rl.html)
 
+- [Machine Learning with Phil](https://www.youtube.com/channel/UC58v9cLitc8VaCjrcKyAbrw)
+
+- [Maziar Raissi YouTube](https://www.youtube.com/channel/UCxEiGqJ2e-Mg9oQMjVv6poQ)
+
 <br><br><br>
 
 # 7. TODO
