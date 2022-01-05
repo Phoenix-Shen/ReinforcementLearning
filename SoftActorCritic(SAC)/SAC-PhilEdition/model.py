@@ -236,6 +236,7 @@ class Agent():
         # 软状态值函数通过最小化均方误差来训练
         value_loss = 0.5 * F.mse_loss(value, value_target)
         value_loss.backward(retain_graph=True)
+        # 9. update phi
         self.value.optimizer.step()
 
         actions, log_probs = self.actor.sample_normal(
@@ -250,6 +251,7 @@ class Agent():
         actor_loss = T.mean(actor_loss)
         self.actor.optimizer.zero_grad()
         actor_loss.backward(retain_graph=True)
+        # 11. update parameter theta
         self.actor.optimizer.step()
         # 软Q值函数通过最小化软贝尔曼残差来训练
         self.critic_1.optimizer.zero_grad()
@@ -262,9 +264,10 @@ class Agent():
 
         critic_loss = critic_1_loss + critic_2_loss
         critic_loss.backward()
+        # 10. update omega
         self.critic_1.optimizer.step()
         self.critic_2.optimizer.step()
-
+        # 12. update phi' with soft updating
         self.update_network_parameters()
 
         return actor_loss.item(), critic_loss.item(), value_loss.item()
