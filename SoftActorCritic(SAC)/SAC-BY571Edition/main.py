@@ -5,7 +5,7 @@ import gym
 import numpy as np
 
 
-def SAC(n_ep: int, env: gym.Env, agent: Agent):
+def SAC(n_ep: int, env: gym.Env, agent: Agent, render: bool):
     scores_deque = deque(maxlen=100)
     avg_100_scores = []
     for i_episode in range(1, n_ep+1):
@@ -15,6 +15,8 @@ def SAC(n_ep: int, env: gym.Env, agent: Agent):
         state = state.reshape((1, env.observation_space.shape[0]))
         score = 0
         for t in count(0):
+            if render:
+                env.render()
             action = agent.act(state)
             action_v = action.numpy()
             action_v = np.clip(action_v*env.action_space.high[0],
@@ -37,6 +39,6 @@ def SAC(n_ep: int, env: gym.Env, agent: Agent):
 
 
 if __name__ == "__main__":
-    env = gym.make("Pendulum-v1")
+    env = gym.make("Pendulum-v0")
     agent = Agent(3, 1)
-    SAC(1000, env, agent)
+    SAC(1000, env, agent, True)
