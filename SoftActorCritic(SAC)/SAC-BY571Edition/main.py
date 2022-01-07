@@ -39,6 +39,6 @@ def SAC(n_ep: int, env: gym.Env, agent: Agent, render: bool):
 
 
 if __name__ == "__main__":
-    env = gym.make("Pendulum-v0")
-    agent = Agent(3, 1)
-    SAC(1000, env, agent, True)
+    env = gym.make("LunarLanderContinuous-v2")
+    agent = Agent(8, 2)
+    SAC(1000, env, agent)
