@@ -251,10 +251,10 @@ class Agent():
         if self.fixed_alpha == None:
             # compute Q targets for current state y_i
             Q_targets = rewards.cpu()+(self.reward_decay*(1-dones.cpu()) *
-                                       (Q_target_next.cpu()-self.alpha*log_pis_next.squeeze(0).cpu()))
+                                       (Q_target_next.cpu()-self.alpha*log_pis_next.sum(1, keepdim=True).cpu()))
         else:
             Q_targets = rewards.cpu()+(self.reward_decay*(1-dones.cpu()) *
-                                       (Q_target_next.cpu()-self.fixed_alpha*log_pis_next.squeeze(0).cpu()))
+                                       (Q_target_next.cpu()-self.fixed_alpha*log_pis_next.sum(1, keepdim=True).cpu()))
         # compute critic loss
         Q_1 = self.critic1(states, actions).cpu()
         Q_2 = self.critic2(states, actions).cpu()

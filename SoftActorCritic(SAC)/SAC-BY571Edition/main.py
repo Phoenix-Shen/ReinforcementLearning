@@ -15,6 +15,7 @@ def SAC(n_ep: int, env: gym.Env, agent: Agent):
         state = state.reshape((1, env.observation_space.shape[0]))
         score = 0
         for t in count(0):
+            env.render()
             action = agent.act(state)
             action_v = action.numpy()
             action_v = np.clip(action_v*env.action_space.high[0],
@@ -37,6 +38,6 @@ def SAC(n_ep: int, env: gym.Env, agent: Agent):
 
 
 if __name__ == "__main__":
-    env = gym.make("Pendulum-v1")
-    agent = Agent(3, 1)
+    env = gym.make("LunarLanderContinuous-v2")
+    agent = Agent(8, 2)
     SAC(1000, env, agent)
