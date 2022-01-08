@@ -225,7 +225,7 @@ class Agent():
         """Updates actor, critics and entropy_alpha parameters using given batch of experience tuples.
         Q_targets = r + γ * (min_critic_target(next_state, actor_target(next_state)) - α *log_pi(next_action|next_state))
         Critic_loss = MSE(Q, Q_target)
-        Actor_loss = α * log_pi(a|s) - Q(s,a)
+        Actor_loss = -[Q(s,a)-α * log_pi(a|s)]
         where:
             actor_target(state) -> action
             critic_target(state, action) -> Q-value
