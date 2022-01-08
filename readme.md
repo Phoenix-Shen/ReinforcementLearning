@@ -13,7 +13,7 @@
 |     PG      | √    |
 | ActorCritic | √    |
 |     A3C     | √    |
-|     A2C     | ×    |
+|     A2C     | √    |
 |     SAC     | ×    |
 |    ACER     | √    |
 |    DDPG     | √    |
@@ -318,7 +318,7 @@ step
 2. ER 能够使用历史数据，高效采样
 3. 熵最大化以鼓励探索
 
-## 8. DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay && TD3 && A2C
+## 8. DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay && TD3
 
 待完成
 
@@ -332,6 +332,7 @@ step
 - tensorboardX
 - torch
 - gym
+- box2d (box2d for lunarlander-v2, download WHL file and execupte "pip install \*\*\*.whl" otherwise you will suffer building problems)
 
 ---
 
