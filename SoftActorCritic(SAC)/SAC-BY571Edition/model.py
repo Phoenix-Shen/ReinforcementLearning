@@ -94,6 +94,9 @@ class Actor(nn.Module):
         distribution = distributions.Normal(0, 1)
         e = distribution.sample().to(self.device)
         action = t.tanh(mu + e * std)
+        # 但是我们的action是有界的，所以加上t.tanh()进行限制边界
+        # 已知x原始的概率分布f(x),而且y=g(x)，为严格单调函数，g'存在，h(·)为g的反函数，求f(y)
+        # f_a(at)=f_x(v(at))|v'(at)|即下面的f_x(mu + e * std)/(1-tanh^2(xt))
         log_prob = distributions.Normal(mu, std).log_prob(mu + e * std) - t.log(
             1 - action.pow(2) + epsilon
         )  # epsilon : prevent divide by zero
