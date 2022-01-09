@@ -314,9 +314,16 @@ step
 
 ## 7. SAC
 
+CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCriticWithoutValueNet>)
+
+越来越麻烦
+
 1. 采用分离策略网络以及值函数网络的 AC 架构
 2. ER 能够使用历史数据，高效采样
 3. 熵最大化以鼓励探索
+4. 采用 target net 和 double critic 架构
+5. reparameterize 使 log standard deviation 可微
+6. 一次采样多次进行梯度下降
 
 ## 8. DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay && TD3
 

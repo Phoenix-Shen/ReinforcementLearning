@@ -1,5 +1,6 @@
 # %%
 import numpy as np
+import random
 
 
 class Replay_buffer():
@@ -18,19 +19,23 @@ class Replay_buffer():
         # reset the ptr if reached maximum capacity
         self.ptr = (self.ptr+1) % self.buffer_size
 
-    # do not use for loop to sample beacuse it is
     def sample(self):
-        indexes = np.random.choice(range(len(self.storage)), self.batch_size)
-        samples = np.array(self.storage)[indexes]
 
-        obs, action, reward, obs_, done = \
-            samples[:, 0], samples[:, 1], samples[:,
-                                                  2], samples[:, 3], samples[:, 4]
-        return np.array(obs), np.array(action), np.array(reward), np.array(obs_), np.array(done)
+        idx = [random.randint(0, len(self.storage) - 1)
+               for _ in range(self.batch_size)]
+        obses, actions, rewards, obses_, dones = [], [], [], [], []
+        for i in idx:
+            data = self.storage[i]
+            obs, action, reward, obs_, done = data
+            obses.append(np.array(obs, copy=False))
+            actions.append(np.array(action, copy=False))
+            rewards.append(reward)
+            obses_.append(np.array(obs_, copy=False))
+            dones.append(done)
+        return np.array(obses), np.array(actions), np.array(rewards), np.array(obses_), np.array(dones)
 
 
-"""
-# vscode debug cell for test
+"""# vscode debug cell for test
 # %%
 buffer = Replay_buffer(1000, 2)
 

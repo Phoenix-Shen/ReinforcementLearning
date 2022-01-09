@@ -40,7 +40,7 @@ update_cycles: 100
 
 # MEMORY SETTINGS
 buffer_size: 1.0e+6
-batch_size: 256
+batch_size: 1024
 
 # EVALUATION SETTINGS
 eval_interval: 100

@@ -9,6 +9,7 @@ from torch.distributions import Normal
 import gym
 from tensorboardX import SummaryWriter
 import os
+import numpy as np
 
 
 def layer_init(layer: nn.Linear):
@@ -17,7 +18,7 @@ def layer_init(layer: nn.Linear):
     Use uniform distribution to init data
     """
     fan_in = layer.weight.data.size()[0]
-    lim = 1.0 / t.sqrt(fan_in)
+    lim = 1.0 / np.sqrt(fan_in)
     return (-lim, lim)
 
 
@@ -94,8 +95,8 @@ class Actor(nn.Module):
 
     def choose_action(self, obs: Tensor) -> float:
         # obs shape: [1,n_features]
-        state = t.FloatTensor(obs).unsqueeze(0).to(self.device)
-        actions, _ = self.sample_normal(state, reparameterize=False)
+        #state = t.FloatTensor(obs).unsqueeze(0).to(self.device)
+        actions, _ = self.sample_normal(obs, reparameterize=False)
         # action shape [1,n_actions]
         return actions.cpu().detach().numpy()[0]
 
@@ -253,7 +254,8 @@ class Agent(nn.Module):
         done = False
         for epoch in range(self.n_epochs):
             while not done:
-                obs_tensor = t.FloatTensor(obs, self.actor.device).unsqueeze(0)
+                obs_tensor = t.tensor(
+                    obs, dtype=t.float32, device=self.actor.device).unsqueeze(0)
                 action = self.actor.choose_action(obs_tensor)
 
                 obs_, reward, done, _ = self.env.step(action)
@@ -265,7 +267,7 @@ class Agent(nn.Module):
                 result = self._update_network()
 
                 # write data to TensorboardX
-                for key in result.keys:
+                for key in result.keys():
                     self.writer.add_scalar(key, result[key], self.global_step)
 
                 self.global_step += 1
@@ -273,7 +275,7 @@ class Agent(nn.Module):
             if epoch % self.eval_interval == 0:
                 avg_rewards = self._eval()
                 self.writer.add_scalar("EVAL:avg_rewards", avg_rewards, epoch)
-
+                print(f"epoch:{epoch}, AVG_REWARDS:{avg_rewards}")
             # Save the model
             if (epoch+1) % self.save_frequency == 0:
                 self.save_model()
@@ -294,12 +296,12 @@ class Agent(nn.Module):
         ##################
         obses, actions, rewards, obses_, dones = self.memory.sample()
         # to_tensor
-        obses = t.FloatTensor(obses, device=self.actor.device)
-        actions = t.FloatTensor(actions, device=self.actor.device)
-        rewards = t.FloatTensor(rewards, device=self.actor.device).unsqueeze(0)
-        obses_ = t.FloatTensor(obses_, device=self.actor.device)
+        obses = t.FloatTensor(obses).to(self.actor.device)
+        actions = t.FloatTensor(actions).to(self.actor.device)
+        rewards = t.FloatTensor(rewards).unsqueeze(1).to(self.actor.device)
+        obses_ = t.FloatTensor(obses_, ).to(self.actor.device)
         inverse_dones = t.FloatTensor(
-            dones, device=self.actor.device).unsqueeze(0)
+            dones).unsqueeze(1).to(self.actor.device)
 
         # conpute the current actions and log_probs under current policy PI
         actions_, log_prob = self.actor.sample_normal(
@@ -322,7 +324,7 @@ class Agent(nn.Module):
             alpha = self.log_alpha.exp()
         else:
             # else use fixed value
-            alpha = t.FloatTensor(self.alpha, device=self.actor.device)
+            alpha = t.tensor(self.alpha).unsqueeze(0).to(self.actor.device)
 
         ##################
         #update the actor#
@@ -372,12 +374,12 @@ class Agent(nn.Module):
         # save the losses in a dictionary#
         ##################################
         dic = dict()
-        if alpha_loss:
-            dic["alpha_loss"] = actor_loss.item()
+        if not self.alpha:
+            dic["alpha_loss"] = alpha_loss.item()
+            dic["alpha"] = alpha.item()
         dic["c1"] = loss_c1.item()
         dic["c2"] = loss_c2.item()
         dic["actor"] = actor_loss.item()
-        dic["alpha"] = alpha.item()
 
         return dic
 
@@ -390,8 +392,8 @@ class Agent(nn.Module):
 
         for _ in range(self.init_exporation_steps):
             with t.no_grad():
-                obs_tensor = t.FloatTensor(
-                    obs, device=self.actor.device).unsqueeze(0)
+                obs_tensor = t.tensor(
+                    obs, dtype=t.float32, device=self.actor.device).unsqueeze(0)
                 # generate the policy
                 action = self.actor.choose_action(obs_tensor)
             # input the action and get rewards
@@ -430,7 +432,7 @@ class Agent(nn.Module):
             while not done:
                 with t.no_grad():
                     obs_tensor = t.FloatTensor(
-                        obs, device=self.actor.device).unsqueeze(0)
+                        obs).unsqueeze(0).to(self.actor.device)
                     mean, _ = self.actor.forward(obs_tensor)
                     # we dont need std for exploration
                     action = t.tanh(mean).detach().cpu().numpy()[0]
@@ -452,6 +454,7 @@ class Agent(nn.Module):
             self.save_dir, f"CRITIC1 {time}.pth"))
         t.save(self.critic2.state_dict(), os.path.join(
             self.save_dir, f"CRITIC2 {time}.pth"))
+        print(f'{time},model saved')
 
     def load_model(self):
         pass
