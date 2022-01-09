@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import torch.distributions as distributions
 
 
-def layer_init(layer):
+def layer_init(layer: nn.Linear):
     """
     Get the arguments of uniorm_(from,to)
     Use uniform distribution to init data
