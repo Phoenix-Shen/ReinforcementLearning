@@ -34,17 +34,21 @@ log_std_min: -20
 # the value is none if you want the model tune the value automatically
 entropy_weights: 0.2
 # the interval to update the target network
-target_update_interval: 1
+target_update_interval: 10
 # how many updates apply in the update
-update_cycles: 1000
+update_cycles: 100
 
 # MEMORY SETTINGS
 buffer_size: 1.0e+6
 batch_size: 256
 
+# EVALUATION SETTINGS
+eval_interval: 100
+eval_episodes: 10
 # LOGS AND MODEL SAVING PATH
 
 # where to store the tensorboardX logs?
 log_dir: SoftActorCritic(SAC)/logs
 # the interval of saving the parameters of the actor and the critic
-save_interval: 500
+save_frequency: 500
+save_dir: SoftActorCritic(SAC)/saved_models

@@ -1,3 +1,4 @@
+import datetime
 from memory import Replay_buffer
 import torch as t
 import torch.nn as nn
@@ -6,6 +7,8 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.distributions import Normal
 import gym
+from tensorboardX import SummaryWriter
+import os
 
 
 def layer_init(layer: nn.Linear):
@@ -53,7 +56,7 @@ class Actor(nn.Module):
         # call weight init
         self.init_weights()
 
-    def forward(self, obs: Tensor) -> Tensor:
+    def forward(self, obs: Tensor) -> tuple[Tensor, Tensor]:
         x = F.relu(self.fc1(obs))
         x = F.relu(self.fc2(x))
         mean = self.mean(x)
@@ -63,12 +66,12 @@ class Actor(nn.Module):
         # return mean and std for the reparameterization trick
         return mean, log_std.exp()
 
-    def choose_action(self, obs: Tensor) -> Tensor:
-        pass
-
-    def sample_normal(self, obs: Tensor, reparameterize=True, epsilon=1e-6) -> tuple[Tensor, Tensor]:
+    def sample_normal(self,
+                      obs: Tensor,
+                      reparameterize=True,
+                      epsilon=1e-6) -> tuple[Tensor, Tensor]:
         """
-        sample an action from a normal distribution, 
+        sample an action from a normal distribution,
         you can choose whether to use reparameterize option
         (the epsilon is a small number that prevent divide by zero)
         """
@@ -105,7 +108,7 @@ class Actor(nn.Module):
 
 class Critic(nn.Module):
     """
-    the critic takes the (action,state) pair as an input 
+    the critic takes the (action,state) pair as an input
     and output Q(a,s),which we call state-action value
     """
 
@@ -165,7 +168,12 @@ class Agent(nn.Module):
                  init_exporation_steps: int,
                  n_epochs: int,
                  update_cycle: int,
-                 update_target_interval,
+                 update_target_interval: int,
+                 eval_episodes: int,
+                 eval_interval: int,
+                 log_dir: str,
+                 save_frequency: int,
+                 save_dir: str,
                  cuda: bool) -> None:
         super().__init__()
         # parameters
@@ -188,24 +196,39 @@ class Agent(nn.Module):
         self.n_epochs = n_epochs
         self.update_cycle = update_cycle
         self.update_target_interval = update_target_interval
+        self.eval_episodes = eval_episodes
+        self.eval_interval = eval_interval
+        self.log_dir = log_dir
+        self.save_frequency = save_frequency
+        self.save_dir = save_dir
         self.CUDA = cuda
 
         # replay buffer
         self.memory = Replay_buffer(self.buffer_size, self.batch_size)
 
         # Actor network
-        self.actor = Actor(self.n_features, self.n_actions,
-                           self.hidden_size, self.log_std_max, self.log_std_min, self.lr_a, self.max_action, self.CUDA)
+        self.actor = Actor(self.n_features,
+                           self.n_actions,
+                           self.hidden_size,
+                           self.log_std_max,
+                           self.log_std_min,
+                           self.lr_a,
+                           self.max_action,
+                           self.CUDA)
         # Critic network
         self.critic1 = Critic(self.n_features+self.n_actions,
-                              self.hidden_size, self.lr_c, self.CUDA)
+                              self.hidden_size,
+                              self.lr_c, self.CUDA)
         self.critic2 = Critic(self.n_features+self.n_actions,
-                              self.hidden_size, self.lr_c, self.CUDA)
+                              self.hidden_size,
+                              self.lr_c, self.CUDA)
         # Target Critic network
         self.target_critic1 = Critic(self.n_features+self.n_actions,
-                                     self.hidden_size, self.lr_c, self.CUDA)
+                                     self.hidden_size,
+                                     self.lr_c, self.CUDA)
         self.target_critic2 = Critic(self.n_features+self.n_actions,
-                                     self.hidden_size, self.lr_c, self.CUDA)
+                                     self.hidden_size,
+                                     self.lr_c, self.CUDA)
         self.target_critic1.load_state_dict(self.critic1.state_dict())
         self.target_critic2.load_state_dict(self.critic2.state_dict())
 
@@ -215,10 +238,16 @@ class Agent(nn.Module):
         self.target_entropy = -self.n_features
         self.optimizer_alpha = optim.Adam([self.log_alpha], lr=self.lr_a)
 
+        # global step which will be used for target net update and tensorboardX's global step
+        self.global_step = 0
+
+        # tensorboardX writer
+        self.writer = SummaryWriter(self.log_dir)
+
     def learn(self):
         # fill up the buffer
         self._initial_exploration()
-        global_step = 0
+        print("->>> TRAINING ...")
         # reset the env and start to train
         obs = self.env.reset()
         done = False
@@ -231,28 +260,131 @@ class Agent(nn.Module):
                 self.memory.add(obs, action, reward, obs_, float(done))
                 obs = obs_
 
-            # after collecting the samples, start to update the network
+            # after collecting the samples, start to update the network for many times
             for _ in range(self.update_cycle):
-                self._update_network()
-                # update the target network
-                if global_step % self.update_target_interval == 0:
-                    self._update_target_networks()
+                result = self._update_network()
+
+                # write data to TensorboardX
+                for key in result.keys:
+                    self.writer.add_scalar(key, result[key], self.global_step)
+
+                self.global_step += 1
+            # Evaluate the performance of policy network
+            if epoch % self.eval_interval == 0:
+                avg_rewards = self._eval()
+                self.writer.add_scalar("EVAL:avg_rewards", avg_rewards, epoch)
+
+            # Save the model
+            if (epoch+1) % self.save_frequency == 0:
+                self.save_model()
 
     def _update_network(self):
-        # sample a batch from the memory
+        """
+        Update the parameters of 5 networks
+
+        actor 2*critic and 2*critic_target
+        """
+        self.actor.train()
+        self.critic1.train()
+        self.critic2.train()
+        self.target_critic1.train()
+        self.target_critic2.train()
+        ##################
+        #  sample data   #
+        ##################
         obses, actions, rewards, obses_, dones = self.memory.sample()
         # to_tensor
         obses = t.FloatTensor(obses, device=self.actor.device)
         actions = t.FloatTensor(actions, device=self.actor.device)
         rewards = t.FloatTensor(rewards, device=self.actor.device).unsqueeze(0)
         obses_ = t.FloatTensor(obses_, device=self.actor.device)
-        inverse_dones = t.FloatTensor(dones).unsqueeze(0)
+        inverse_dones = t.FloatTensor(
+            dones, device=self.actor.device).unsqueeze(0)
+
+        # conpute the current actions and log_probs under current policy PI
+        actions_, log_prob = self.actor.sample_normal(
+            obses, reparameterize=True)
+
+        ##############
+        #update alpha#
+        ##############
+
+        # if we use adaptive alpha, we should update it
+        alpha = 0
+        if self.alpha is None:
+            # we want to only update alpha , so use the detach method
+            alpha_loss = -(self.log_alpha*(log_prob +
+                           self.target_entropy).detach().cpu()).mean()
+            self.optimizer_alpha.zero_grad()
+            alpha_loss.backward()
+            self.optimizer_alpha.step()
+            # if α is not defined , use the automatically tuning
+            alpha = self.log_alpha.exp()
+        else:
+            # else use fixed value
+            alpha = t.FloatTensor(self.alpha, device=self.actor.device)
+
         ##################
         #update the actor#
         ##################
-        pis = self.
+
+        # get the Q value for the new actions
+        q_actions_ = t.min(self.critic1.forward(
+            obses, actions_), self.critic2.forward(obses, actions_))
+        actor_loss = (alpha*log_prob-q_actions_).mean()
+        self.actor.optimizer.zero_grad()
+        actor_loss.backward()
+        self.actor.optimizer.step()
+
+        ###################
+        #update the critic#
+        ###################
+
+        # get the Q value according to the past action
+        q1_val = self.critic1(obses, actions)
+        q2_val = self.critic2(obses, actions)
+        # get predicted next_state actions and Qvalues
+        with t.no_grad():
+            actions_next, log_prob_next = self.actor.sample_normal(
+                obses_, reparameterize=True)
+            target_q1 = self.target_critic1(obses_, actions_next)
+            target_q2 = self.target_critic2(obses_, actions_next)
+            target_qvalue_next = t.min(
+                target_q1, target_q2)-alpha*log_prob_next.sum(1, keepdim=True)
+            target_qvalue = self.reward_scale*rewards + \
+                inverse_dones*self.reward_decay*target_qvalue_next
+        loss_c1 = 0.5*F.mse_loss(q1_val, target_qvalue)
+        loss_c2 = 0.5*F.mse_loss(q2_val, target_qvalue)
+        self.critic1.optimizer.zero_grad()
+        self.critic2.optimizer.zero_grad()
+        loss_c1.backward()
+        loss_c2.backward()
+        self.critic1.optimizer.step()
+        self.critic2.optimizer.step()
+
+        ###############################
+        # soft update of the targetNet#
+        ###############################
+        if self.global_step % self.update_target_interval:
+            self._update_target_networks()
+
+        ##################################
+        # save the losses in a dictionary#
+        ##################################
+        dic = dict()
+        if alpha_loss:
+            dic["alpha_loss"] = actor_loss.item()
+        dic["c1"] = loss_c1.item()
+        dic["c2"] = loss_c2.item()
+        dic["actor"] = actor_loss.item()
+        dic["alpha"] = alpha.item()
+
+        return dic
 
     def _initial_exploration(self):
+        """
+        use current policy to fill the buffer for the next training operation
+        """
         print("Start to fill the buffer")
         obs = self.env.reset()
 
@@ -285,3 +417,41 @@ class Agent(nn.Module):
         for target_param, param in zip(target_net.parameters(), current_net.parameters()):
             target_param.data.copy_(
                 self.tau * param.data + (1 - self.tau) * target_param.data)
+
+    def _eval(self):
+        self.actor.eval()
+
+        total_reward = 0
+
+        for _ in range(self.eval_episodes):
+            obs = self.env.reset()
+            episode_reward = 0
+            done = False
+            while not done:
+                with t.no_grad():
+                    obs_tensor = t.FloatTensor(
+                        obs, device=self.actor.device).unsqueeze(0)
+                    mean, _ = self.actor.forward(obs_tensor)
+                    # we dont need std for exploration
+                    action = t.tanh(mean).detach().cpu().numpy()[0]
+                obs_, reward, done, _ = self.env.step(action*self.max_action)
+                episode_reward += reward
+                obs = obs_
+            total_reward += episode_reward
+        # back to train mode
+        self.actor.train()
+        return total_reward/self.eval_episodes
+
+    def save_model(self):
+        time = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
+        t.save(self.actor.state_dict(), os.path.join(
+            self.save_dir, f"ACTOR {time}.pth"))
+        t.save(self.critic1.state_dict(), os.path.join(
+            self.save_dir, f"CRITIC1 {time}.pth"))
+        t.save(self.critic2.state_dict(), os.path.join(
+            self.save_dir, f"CRITIC2 {time}.pth"))
+
+    def load_model(self):
+        pass
