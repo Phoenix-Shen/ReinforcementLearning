@@ -315,6 +315,9 @@ class Agent():
             self.soft_update(self.critic1, self.target_critic1, self.tau)
             self.soft_update(self.critic2, self.target_critic2, self.tau)
 
+            print(
+                f'step:{step},actor_loss:{actor_loss.item()},c1loss:{critic1_loss.item()},c2loss:{critic2_loss.item()}')
+
     def soft_update(self, local_model: nn.Module, target_model: nn.Module, tau):
         """Soft update model parameters.
         θ_target = τ*θ_local + (1 - τ)*θ_target

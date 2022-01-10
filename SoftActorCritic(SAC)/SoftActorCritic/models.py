@@ -1,4 +1,6 @@
 import datetime
+
+import torch
 from memory import Replay_buffer
 import torch as t
 import torch.nn as nn
@@ -44,7 +46,7 @@ class Actor(nn.Module):
         # optimizer
         self.optimizer = optim.Adam(self.parameters(), lr)
         # call weight init
-        self.init_weights()
+        # self.init_weights()
 
     def forward(self, obs: Tensor) -> tuple[Tensor, Tensor]:
         x = F.relu(self.fc1(obs))
@@ -76,7 +78,7 @@ class Actor(nn.Module):
         else:
             actions = dist.sample()
 
-        action = t.tanh(actions)*t.tensor(self.max_action).to(self.device)
+        action = t.tanh(actions).to(self.device)
         log_probs = dist.log_prob(actions)-t.log(1.-action.pow(2)+epsilon)
         log_probs = log_probs.sum(1, keepdim=True)
 
@@ -87,7 +89,7 @@ class Actor(nn.Module):
         #state = t.FloatTensor(obs).unsqueeze(0).to(self.device)
         actions, _ = self.sample_normal(obs, reparameterize=False)
         # action shape [1,n_actions]
-        return actions.cpu().detach().numpy()[0]
+        return actions.cpu().detach().numpy()[0]*self.max_action
 
     def init_weights(self):
         nn.init.kaiming_uniform_(self.fc1.weight.data,
@@ -126,13 +128,13 @@ class Critic(nn.Module):
         # optimizer
         self.optimizer = optim.Adam(self.parameters(), lr)
         # call weight init
-        self.weight_init()
+        # self.init_weights()
 
     def forward(self, obs: Tensor, action: Tensor) -> Tensor:
         pair = t.cat([obs, action], dim=1)
         return self.net(pair)
 
-    def weight_init(self):
+    def init_weights(self):
         for layer in self.net:
             if isinstance(layer, nn.Linear):
                 nn.init.kaiming_uniform_(
@@ -240,7 +242,14 @@ class Agent(nn.Module):
         # tensorboardX writer
         self.writer = SummaryWriter(self.log_dir)
 
+        print("Actor And Critic are initialized...")
+
     def learn(self):
+        self.actor.train()
+        self.critic1.train()
+        self.critic2.train()
+        self.target_critic1.train()
+        self.target_critic2.train()
         # fill up the buffer
         self._initial_exploration()
         print("->>> TRAINING ...")
@@ -281,11 +290,7 @@ class Agent(nn.Module):
 
         actor 2*critic and 2*critic_target
         """
-        self.actor.train()
-        self.critic1.train()
-        self.critic2.train()
-        self.target_critic1.train()
-        self.target_critic2.train()
+
         ##################
         #  sample data   #
         ##################
@@ -298,7 +303,7 @@ class Agent(nn.Module):
         inverse_dones = t.FloatTensor(
             1-dones).unsqueeze(1).to(self.actor.device)
 
-        # conpute the current actions and log_probs under current policy PI
+        # compute the current actions and log_probs under current policy PI
         actions_, log_prob = self.actor.sample_normal(
             obses, reparameterize=True)
 
@@ -319,7 +324,8 @@ class Agent(nn.Module):
             alpha = self.log_alpha.exp()
         else:
             # else use fixed value
-            alpha = t.tensor(self.alpha).unsqueeze(0).to(self.actor.device)
+            alpha = t.tensor(self.alpha, dtype=t.float32).unsqueeze(
+                0).to(self.actor.device)
 
         ##################
         #update the actor#
@@ -341,20 +347,20 @@ class Agent(nn.Module):
         q1_val = self.critic1(obses, actions)
         q2_val = self.critic2(obses, actions)
         # get predicted next_state actions and Qvalues
-        with t.no_grad():
-            actions_next, log_prob_next = self.actor.sample_normal(
-                obses_, reparameterize=True)
 
-            target_q1 = self.target_critic1(obses_, actions_next)
-            target_q2 = self.target_critic2(obses_, actions_next)
+        actions_next, log_prob_next = self.actor.sample_normal(
+            obses_, reparameterize=True)
 
-            target_qvalue_next = t.min(
-                target_q1, target_q2)-alpha*log_prob_next
+        target_q1 = self.target_critic1(obses_, actions_next)
+        target_q2 = self.target_critic2(obses_, actions_next)
 
-            target_qvalue = self.reward_scale*rewards + \
-                inverse_dones*self.reward_decay*target_qvalue_next
-        loss_c1 = 0.5*F.mse_loss(q1_val, target_qvalue)
-        loss_c2 = 0.5*F.mse_loss(q2_val, target_qvalue)
+        target_qvalue_next = t.min(
+            target_q1, target_q2)-alpha*log_prob_next
+
+        target_qvalue = self.reward_scale*rewards + \
+            inverse_dones*self.reward_decay*target_qvalue_next
+        loss_c1 = 0.5*F.mse_loss(q1_val, target_qvalue.detach())
+        loss_c2 = 0.5*F.mse_loss(q2_val, target_qvalue.detach())
         self.critic1.optimizer.zero_grad()
         self.critic2.optimizer.zero_grad()
         loss_c1.backward()
@@ -367,6 +373,7 @@ class Agent(nn.Module):
         ###############################
         if self.global_step % self.update_target_interval == 0:
             self._update_target_networks()
+            #print(f"update target critic network at globalstep {self.global_step}")
 
         ##################################
         # save the losses in a dictionary#
@@ -385,7 +392,7 @@ class Agent(nn.Module):
         """
         use current policy to fill the buffer for the next training operation
         """
-        print("Start to fill the buffer")
+        print("Start to fill the buffer...")
         obs = self.env.reset()
 
         for _ in range(self.init_exporation_steps):
@@ -452,7 +459,7 @@ class Agent(nn.Module):
             self.save_dir, f"CRITIC1 {time}.pth"))
         t.save(self.critic2.state_dict(), os.path.join(
             self.save_dir, f"CRITIC2 {time}.pth"))
-        print(f'{time},model saved')
+        print(f'{time},model saved at global step {self.global_step}')
 
     def load_model(self):
         pass

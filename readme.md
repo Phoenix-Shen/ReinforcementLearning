@@ -314,7 +314,7 @@ step
 
 ## 7. SAC
 
-CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCriticWithoutValueNet>)
+CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
 越来越麻烦
 

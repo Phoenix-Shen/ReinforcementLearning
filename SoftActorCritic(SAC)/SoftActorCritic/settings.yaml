@@ -3,10 +3,10 @@ env_name: LunarLanderContinuous-v2
 # NETWORK SETTINGS
 
 # network's hidden size
-hiddenlayer_size: 128
+hiddenlayer_size: 512
 # learning rate of the actor and critic
-# use 1.0,don't use 1e-4 or it will be considered as string
-lr_actor: 7.0e-4
+# use 1.0e-4,don't use 1e-4 or it will be considered as string
+lr_actor: 1.0e-4
 lr_critic: 1.0e-4
 # soft update coefficient
 tau: 0.005
@@ -16,7 +16,7 @@ tau: 0.005
 # use cuda?
 cuda: True
 #the number of total epochs
-n_episodes: 50000
+n_episodes: 10000
 # the steps of the initial exploration
 init_exploration_steps: 2048
 # reward scale, a common trick
@@ -28,19 +28,19 @@ log_std_max: 2
 log_std_min: -20
 # entropy weights, it is the alpha in the paper but now they include the alpha as a parameter to be learnt,
 # the value is none if you want the model tune the value automatically
-entropy_weights: 0.01
+entropy_weights: 0.02
 # the interval to update the target network
-target_update_interval: 1
+target_update_interval: 5
 # how many updates apply in the update
-update_cycles: 25
+update_cycles: 1
 
 # MEMORY SETTINGS
 buffer_size: 1.0e+6
-batch_size: 256
+batch_size: 512
 
 # EVALUATION SETTINGS
-eval_interval: 50
-eval_episodes: 5
+eval_interval: 100
+eval_episodes: 10
 
 # LOGS AND MODEL SAVING PATH
 
