@@ -9,17 +9,6 @@ from torch.distributions import Normal
 import gym
 from tensorboardX import SummaryWriter
 import os
-import numpy as np
-
-
-def layer_init(layer: nn.Linear):
-    """
-    Get the arguments of uniorm_(from,to)
-    Use uniform distribution to init data
-    """
-    fan_in = layer.weight.data.size()[0]
-    lim = 1.0 / np.sqrt(fan_in)
-    return (-lim, lim)
 
 
 class Actor(nn.Module):
@@ -355,10 +344,13 @@ class Agent(nn.Module):
         with t.no_grad():
             actions_next, log_prob_next = self.actor.sample_normal(
                 obses_, reparameterize=True)
+
             target_q1 = self.target_critic1(obses_, actions_next)
             target_q2 = self.target_critic2(obses_, actions_next)
+
             target_qvalue_next = t.min(
                 target_q1, target_q2)-alpha*log_prob_next
+
             target_qvalue = self.reward_scale*rewards + \
                 inverse_dones*self.reward_decay*target_qvalue_next
         loss_c1 = 0.5*F.mse_loss(q1_val, target_qvalue)
@@ -373,7 +365,7 @@ class Agent(nn.Module):
         ###############################
         # soft update of the targetNet#
         ###############################
-        if self.global_step % self.update_target_interval:
+        if self.global_step % self.update_target_interval == 0:
             self._update_target_networks()
 
         ##################################
