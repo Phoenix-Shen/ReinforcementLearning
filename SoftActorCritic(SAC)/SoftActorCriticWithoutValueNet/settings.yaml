@@ -3,28 +3,24 @@ env_name: LunarLanderContinuous-v2
 # NETWORK SETTINGS
 
 # network's hidden size
-hiddenlayer_size: 256
+hiddenlayer_size: 128
 # learning rate of the actor and critic
-# use 3.0,don't use 3e-4 or it will be considered as string
-lr_actor: 3.0e-4
-lr_critic: 3.0e-4
+# use 1.0,don't use 1e-4 or it will be considered as string
+lr_actor: 7.0e-4
+lr_critic: 1.0e-4
 # soft update coefficient
-tau: 0.01
+tau: 0.005
 
 # TRAINING SETTINGS
 
 # use cuda?
 cuda: True
-# the training loop per epoch
-train_loop_per_epoch: 1
 #the number of total epochs
-n_episodes: 3000
-# epoch_length
-epoch_length: 1000
+n_episodes: 5000
 # the steps of the initial exploration
-init_exploration_steps: 1000
+init_exploration_steps: 2048
 # reward scale, a common trick
-reward_scale: 1
+reward_scale: 1.14514
 # reward_decay
 gamma: 0.99
 # the max and min of log standard variance value
@@ -34,7 +30,7 @@ log_std_min: -20
 # the value is none if you want the model tune the value automatically
 entropy_weights: 0.2
 # the interval to update the target network
-target_update_interval: 10
+target_update_interval: 1
 # how many updates apply in the update
 update_cycles: 100
 
@@ -43,12 +39,18 @@ buffer_size: 1.0e+6
 batch_size: 1024
 
 # EVALUATION SETTINGS
-eval_interval: 100
-eval_episodes: 10
+eval_interval: 50
+eval_episodes: 5
+
 # LOGS AND MODEL SAVING PATH
 
 # where to store the tensorboardX logs?
 log_dir: SoftActorCritic(SAC)/logs
 # the interval of saving the parameters of the actor and the critic
-save_frequency: 500
+save_frequency: 1000
 save_dir: SoftActorCritic(SAC)/saved_models
+
+##################
+#predict settings#
+##################
+actor_model_dir: ~

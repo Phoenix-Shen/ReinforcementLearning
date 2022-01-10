@@ -236,7 +236,8 @@ class Agent(nn.Module):
         # Adaptive temperature α
         self.log_alpha = t.zeros(
             1, requires_grad=True, device='cuda' if self.CUDA else 'cpu')
-        self.target_entropy = -self.n_features
+        self.target_entropy = t.tensor(-self.n_features,
+                                       device=self.actor.device, dtype=t.float32)
         self.optimizer_alpha = optim.Adam([self.log_alpha], lr=self.lr_a)
 
         # global step which will be used for target net update and tensorboardX's global step
@@ -301,7 +302,7 @@ class Agent(nn.Module):
         rewards = t.FloatTensor(rewards).unsqueeze(1).to(self.actor.device)
         obses_ = t.FloatTensor(obses_, ).to(self.actor.device)
         inverse_dones = t.FloatTensor(
-            dones).unsqueeze(1).to(self.actor.device)
+            1-dones).unsqueeze(1).to(self.actor.device)
 
         # conpute the current actions and log_probs under current policy PI
         actions_, log_prob = self.actor.sample_normal(
@@ -316,7 +317,7 @@ class Agent(nn.Module):
         if self.alpha is None:
             # we want to only update alpha , so use the detach method
             alpha_loss = -(self.log_alpha*(log_prob +
-                           self.target_entropy).detach().cpu()).mean()
+                           self.target_entropy).detach()).mean()
             self.optimizer_alpha.zero_grad()
             alpha_loss.backward()
             self.optimizer_alpha.step()
@@ -352,7 +353,7 @@ class Agent(nn.Module):
             target_q1 = self.target_critic1(obses_, actions_next)
             target_q2 = self.target_critic2(obses_, actions_next)
             target_qvalue_next = t.min(
-                target_q1, target_q2)-alpha*log_prob_next.sum(1, keepdim=True)
+                target_q1, target_q2)-alpha*log_prob_next
             target_qvalue = self.reward_scale*rewards + \
                 inverse_dones*self.reward_decay*target_qvalue_next
         loss_c1 = 0.5*F.mse_loss(q1_val, target_qvalue)
