@@ -4,6 +4,8 @@
 
 于是照着教程敲了两个版本的，一个是首页 Readme 里面 Machine Learning with Phil 的代码，一个是[BY571 的版本](https://github.com/BY571/Soft-Actor-Critic-and-Extensions)
 
+重构了个版本，在 SoftActorCriticWithoutValueNet 里头，但是不知道为什么 actor loss 降不下来
+
 ---
 
 **_Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor_**

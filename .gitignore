@@ -5,6 +5,6 @@
 *.pth
 *.pkl
 #TF events in tensorboardX
-*.ssk
+**/events.*
 # datasets
 PytorchAndPythonLearning/Pytorch/dataset

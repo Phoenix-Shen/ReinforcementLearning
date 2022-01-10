@@ -101,10 +101,14 @@ class Actor(nn.Module):
         return actions.cpu().detach().numpy()[0]
 
     def init_weights(self):
-        self.fc1.weight.data.uniform_(*layer_init(self.fc1))
-        self.fc2.weight.data.uniform_(*layer_init(self.fc2))
-        self.mean.weight.data.uniform_(-3e-3, 3e-3)
-        self.log_std.weight.data.uniform_(-3e-3, 3e-3)
+        nn.init.kaiming_uniform_(self.fc1.weight.data,
+                                 a=0, mode='fan_in', nonlinearity='relu')
+        nn.init.kaiming_uniform_(self.fc2.weight.data,
+                                 a=0, mode='fan_in', nonlinearity='relu')
+        nn.init.kaiming_uniform_(
+            self.mean.weight.data, a=0, mode='fan_in', nonlinearity='relu')
+        nn.init.kaiming_uniform_(
+            self.log_std.weight.data, a=0, mode='fan_in', nonlinearity='relu')
 
 
 class Critic(nn.Module):
@@ -142,7 +146,8 @@ class Critic(nn.Module):
     def weight_init(self):
         for layer in self.net:
             if isinstance(layer, nn.Linear):
-                layer.weight.data.uniform_(*layer_init(layer))
+                nn.init.kaiming_uniform_(
+                    layer.weight.data, a=0, mode='fan_in', nonlinearity='relu')
 
 
 class Agent(nn.Module):
