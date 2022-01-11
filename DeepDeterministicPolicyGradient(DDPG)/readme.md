@@ -2,9 +2,12 @@
 
 ---
 
-- `他在连续的动作空间上面有较好的表现`
-- DDPG 是一种 ActorCritic 结构
+- `他在连续的动作空间上面有较好的表现，就是为了解决Qlearning中maxQ的问题`
+- DDPG 是一种 ActorCritic 结构，但是他不是 ActorCritic，因为他们的更新方式不同
+- AC 和 PG 采用的是带权重的梯度更新，策略网络的损失是-log_probability\*Q_pi(S,A),Q_pi(S,A)评价这个策略好不好，好的话我们要多一些这种动作，不好的话，就少一点。
+- 而我们 DDPG 中的策略网络的损失是-Qvalue，这是 Qlearning 中的东西，我们的 Actor 需要使 Qvalue 最大就行了
 - 它继承了 DQN 的 fixed Q target 和 Policy Gradient 的思想
+- 对于离散空间，无法计算 Q 的梯度，所以要用 Gumbel-Softmax Trick 来使用采样的方式输出离散动作
 
 ---
 

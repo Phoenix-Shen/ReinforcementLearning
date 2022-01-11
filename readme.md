@@ -14,7 +14,7 @@
 | ActorCritic | √    |
 |     A3C     | √    |
 |     A2C     | √    |
-|     SAC     | ×    |
+|     SAC     | √    |
 |    ACER     | √    |
 |    DDPG     | √    |
 |     TD3     | ×    |
@@ -400,9 +400,12 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
     - 可以学习确定性的策略（deterministic）
     - 避免对值函数的过度估计（over estimation）
 - GYM 环境
+
   - 经典控制问题，discrete
   - Atari Games
   - Mujuco
+
+- Copy 和 DeepCopy：是否生成了新的对象？
 
 ---
 

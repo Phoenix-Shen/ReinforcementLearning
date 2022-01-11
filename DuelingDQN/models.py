@@ -140,6 +140,7 @@ class _DQN(nn.Module):
         # advantage
         advantage = self.advantage_layer(feature2)
         # 其实在这里写advantage.mean(dim=1).expand_as(advantage)也是可以的
+        # advantage满足 sum(advantage)=0
         return value+advantage-advantage.mean(dim=1, keepdim=True)
 
 #########################
