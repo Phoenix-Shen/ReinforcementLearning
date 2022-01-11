@@ -2,8 +2,8 @@
 **/.vscode
 **/__pycache__
 # MODELS
-*.pth
-*.pkl
+**/*.pth
+**/*.pkl
 #TF events in tensorboardX
 **/events.*
 # datasets
