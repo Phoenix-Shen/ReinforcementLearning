@@ -4,7 +4,7 @@ from models import Agent
 import gym
 
 if __name__ == "__main__":
-    with open("./SoftActorCritic(SAC)/SoftActorCriticWithoutValueNet/settings.yaml", "r", encoding="utf-8") as f:
+    with open("./SoftActorCritic(SAC)/SoftActorCritic/settings.yaml", "r", encoding="utf-8") as f:
         args = yaml.load(f.read(), Loader=yaml.FullLoader)
     print("###############YOUR SETTINGS#################")
     for key in args.keys():
