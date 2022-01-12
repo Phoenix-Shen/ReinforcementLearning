@@ -333,11 +333,21 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
 # 4. Requirements
 
-- numpy
-- tensorboardX
-- torch
-- gym
-- box2d (box2d for lunarlander-v2, download WHL file and execupte "pip install \*\*\*.whl" otherwise you will suffer building problems)
+pipreqs ./ --encoding=utf8
+
+[requirements.txt there, run pip install -r requirements.txt](./requirements.txt)
+
+- box2d (box2d for lunarlander-v2 and other gym envs, download WHL file and execute "pip install \*\*\*.whl" otherwise you will suffer building problems)
+- gym==0.21.0
+- ipython==7.31.0 (jupyter notebook)
+- matplotlib==3.4.3 (jupyter notebook)
+- numpy==1.20.3
+- pandas==1.3.4
+- PyYAML==6.0 (load settings)
+- tensorboardX==2.4.1
+- torch==1.10.1+cu113
+- torchvision==0.11.2+cu113
+- typing_extensions==3.10.0.2
 
 ---
 
