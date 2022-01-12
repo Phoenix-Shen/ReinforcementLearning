@@ -17,7 +17,7 @@
 |     SAC     | √    |
 |    ACER     | √    |
 |    DDPG     | √    |
-|     TD3     | ×    |
+|     TD3     | √    |
 |     PPO     | √    |
 |    DPPO     | ×    |
 |    TRPO     | √    |
@@ -196,7 +196,7 @@ step
 - Q 表无法进行所有情况的枚举，在某些情况下是不可行的，比如下围棋。<br>
   Features: `Expericence Replay and Fixed Q-targets`
 
-- Experience Replay : `将每一次实验得到的惊艳片段记录下来，然后作为经验，投入到经验池中，每次训练的时候随机取出一个 BATCH，可以复用数据。`
+- Experience Replay : `将每一次实验得到的经验片段记录下来，然后作为经验，投入到经验池中，每次训练的时候随机取出一个 BATCH，可以复用数据。`
 
 - Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以不能够进行分别更新操作，那么我们需要将网络参数复制一份，解决该问题。`
 
@@ -297,35 +297,33 @@ step
 
 <br>
 
-## 5. PPO
+## 5. PPO Off-Policy
 
-- 感觉像 Actor-Critic 和 DQN 的折中，先取一部分经验，然后进行网络参数的更新
-- Actor-Critic 是每走一步进行参数更新
-- DQN 是直接积累经验然后从经验池子中学习
+- 使用 importance sampling 来使用过去的经验
 - PPO 是积累部分经验(一个 trajectory)，然后进行多轮的梯度下降
+- 对 importance weight 进行裁剪从而控制更新步长
+  <br>
 
-<br>
-
-## 6. TRPO
+## 6. TRPO Off-Policy
 
 - 使用 L(theta|theta_old)来近似目标函数 J(theta)
 - 使用 KL 散度或者是二次距离来约束 theta 与 theta_old 之间的差距
 - 因此，相比于普通的 PG 算法，它更稳定，因为他对于学习率不敏感
 
-## 7. SAC
+## 7. Soft Actor Critic Off-Policy
 
 CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
 越来越麻烦
 
-1. 采用分离策略网络以及值函数网络的 AC 架构
+1. 采用分离策略网络以及值函数网络的 **AC 架构**，这里 actor 是学习策略，使 Q 值最大（即 state-action value 最大）
 2. ER 能够使用历史数据，高效采样
 3. 熵最大化以鼓励探索
 4. 采用 target net 和 double critic 架构
 5. reparameterize 使 log standard deviation 可微
 6. 一次采样多次进行梯度下降
 
-## 8. DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay && TD3
+## 8. DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay
 
 待完成
 

@@ -1,4 +1,4 @@
-# PPO onpolicy 算法
+# PPO onpolicy 算法 - OPENAI BASELINE
 
 - 主要为了解决 actor critic 训练步长的问题，在这里实现了 ppo-clip
 - On-policy 是要用 πθ 收集数据，当 θ 更新了，我们就要重新进行数据收集。
@@ -34,3 +34,18 @@ on：与环境交互的这个 agent 就是我们要学习的 agent，off：不�
 - ![](./algorithm.png)
 - 目标：最大化优势函数，并且使新旧策略的差异不能够太大
 - https://blog.csdn.net/tanjia6999/article/details/99716133
+- PPO 性能更 TRPO 差不多，但是更加的简单。
+
+# PPO Offpolicy 思路
+
+假设有两个策略 PI 和 PIold
+
+在 s 状态下，他们对于一个离散的动作，输出的概率分别是 [0.5, 0.5], [0.9, 0.1]，假设 PI 的一次采样是 5 个 a1，5 个 a2，PIold 采样是 9 个 a1，1 个 a2
+
+critic 网络输出的 td error 为[1, 2]
+
+显然，我们如果要更新 PI 的话，我们的方向是提高动作 2 的概率，但是最后下来，我们如果使用 PIold 的数据来更新 PI，a1 的概率被提高了 9 次，最后 a1 的概率应该是比 a2 高的，所以不能够使用 Replay Buffer
+
+---
+
+解决方法就是： importance sampling
