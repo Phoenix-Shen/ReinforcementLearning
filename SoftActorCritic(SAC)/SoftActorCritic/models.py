@@ -1,6 +1,4 @@
 import datetime
-
-import torch
 from memory import Replay_buffer
 import torch as t
 import torch.nn as nn
@@ -92,14 +90,14 @@ class Actor(nn.Module):
         return actions.cpu().detach().numpy()[0]*self.max_action
 
     def init_weights(self):
-        nn.init.kaiming_uniform_(self.fc1.weight.data,
-                                 a=0, mode='fan_in', nonlinearity='relu')
-        nn.init.kaiming_uniform_(self.fc2.weight.data,
-                                 a=0, mode='fan_in', nonlinearity='relu')
-        nn.init.kaiming_uniform_(
-            self.mean.weight.data, a=0, mode='fan_in', nonlinearity='relu')
-        nn.init.kaiming_uniform_(
-            self.log_std.weight.data, a=0, mode='fan_in', nonlinearity='relu')
+        nn.init.orthogonal_(self.fc1.weight, 1.)
+        nn.init.constant_(self.fc1.bias, 1e-6)
+        nn.init.orthogonal_(self.fc2.weight, 1.)
+        nn.init.constant_(self.fc2.bias, 1e-6)
+        nn.init.orthogonal_(self.mean.weight, 1.)
+        nn.init.constant_(self.mean.bias, 1e-6)
+        nn.init.orthogonal_(self.log_std.weight, 1.)
+        nn.init.constant_(self.log_std.bias, 1e-6)
 
 
 class Critic(nn.Module):
@@ -137,8 +135,9 @@ class Critic(nn.Module):
     def init_weights(self):
         for layer in self.net:
             if isinstance(layer, nn.Linear):
-                nn.init.kaiming_uniform_(
-                    layer.weight.data, a=0, mode='fan_in', nonlinearity='relu')
+                nn.init.orthogonal_(
+                    layer.weight, 1.0)
+                nn.init.constant_(layer.bias, 1e-6)
 
 
 class Agent(nn.Module):
@@ -347,18 +346,18 @@ class Agent(nn.Module):
         q1_val = self.critic1(obses, actions)
         q2_val = self.critic2(obses, actions)
         # get predicted next_state actions and Qvalues
+        with t.no_grad():
+            actions_next, log_prob_next = self.actor.sample_normal(
+                obses_, reparameterize=True)
 
-        actions_next, log_prob_next = self.actor.sample_normal(
-            obses_, reparameterize=True)
+            target_q1 = self.target_critic1(obses_, actions_next)
+            target_q2 = self.target_critic2(obses_, actions_next)
 
-        target_q1 = self.target_critic1(obses_, actions_next)
-        target_q2 = self.target_critic2(obses_, actions_next)
+            target_qvalue_next = t.min(
+                target_q1, target_q2)-alpha*log_prob_next
 
-        target_qvalue_next = t.min(
-            target_q1, target_q2)-alpha*log_prob_next
-
-        target_qvalue = self.reward_scale*rewards + \
-            inverse_dones*self.reward_decay*target_qvalue_next
+            target_qvalue = self.reward_scale*rewards + \
+                inverse_dones*self.reward_decay*target_qvalue_next
         loss_c1 = 0.5*F.mse_loss(q1_val, target_qvalue.detach())
         loss_c2 = 0.5*F.mse_loss(q2_val, target_qvalue.detach())
         self.critic1.optimizer.zero_grad()

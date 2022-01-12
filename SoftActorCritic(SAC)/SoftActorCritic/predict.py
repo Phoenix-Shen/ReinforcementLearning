@@ -1,3 +1,4 @@
+from torch._C import device
 from models import Actor
 import torch as t
 import yaml
@@ -26,9 +27,9 @@ if __name__ == "__main__":
         while not done:
             env.render()
             with t.no_grad():
-                obs_tensor = t.tensor(obs, actor.device).unsqueeze(0)
-                mean, _ = actor.forward(obs)
-                actions = t.tanh(mean).detach().numpy().cpu()
+                obs_tensor = t.tensor(obs, device=actor.device).unsqueeze(0)
+                mean, _ = actor.forward(obs_tensor)
+                actions = t.tanh(mean).cpu().detach().numpy()[0]
             obs_, reward, done, _ = env.step(actions)
             reward_sum += reward
 

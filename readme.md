@@ -323,7 +323,14 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 5. reparameterize 使 log standard deviation 可微
 6. 一次采样多次进行梯度下降
 
-## 8. DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay
+## 8. TwinDelayedDeepDeterministicPolicyGradient(TD3)
+
+1. 双 Critic
+2. 延迟更新 Actor
+3. soft update
+4. 使用 replay buffer
+
+## 9. DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay
 
 待完成
 
@@ -450,12 +457,13 @@ pipreqs ./ --encoding=utf8
 
 - [Maziar Raissi YouTube](https://www.youtube.com/channel/UCxEiGqJ2e-Mg9oQMjVv6poQ)
 
-<br><br><br>
+- [Tianhong Dai 的 GitHub](https://github.com/TianhongDai)
+
+- [DPPO](https://github.com/ZYunfeii/DRL_algorithm_library)
+  <br><br><br>
 
 # 7. TODO
 
-1. SAC，还没有完全理解 soft 是什么东西
-2. A3C，需要复习一下
-3. NAIVE ACER with trajectory storage
-4. 基础知识，有的算法是直接把别的网络的参数 copy 过来，维持两个网络，采用软更新。有的是不是用 backward 和 step 来更新网络，需要补齐一下 pytorch 的基础知识
-5. 图神经网络 GNN
+1. SAC，效果不好，Loss 降下来了但是分数依然很低
+2. TD3，效果也不好，总不可能我写的算法效果都不行吧？可能是参数问题，也可能是那个该死的 tau=0.01 使网络参数更新很慢。
+3. 图神经网络 GNN
