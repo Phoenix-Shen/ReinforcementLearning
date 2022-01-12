@@ -19,4 +19,4 @@ Actor-Critic 涉及到了两个神经网络, 而且每次都是在连续状态�
 
 ## A2C 与 AC
 
-在 models.py 里面，critic 返回的数值如果是 self.net(s)，那就是 AC,如果返回的是 TDerror，就是 A2C，多了个 Advantage，它意味着比平时好多少？
+**_在 models.py 里面，critic 返回的数值如果是 self.net(s)，那就是 AC,如果返回的是 TDerror，就是 A2C，多了个 Advantage，它意味着比平时好多少？_**

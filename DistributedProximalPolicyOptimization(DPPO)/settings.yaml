@@ -1,0 +1,16 @@
+# learning rates
+lr_c:
+lr_a:
+# known as gamma
+reward_decay:
+# how many times should the network update?
+actor_update_step:
+critic_update_step:
+#the clipped ratio
+epsilon:
+# Coefficient for calculating the GAE
+tau:
+max_episode:
+env_name: LuanarLanderContinuous-v2
+# sample collection length (episodes)
+sample_collection_length: 8
