@@ -406,6 +406,7 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
   - Mujuco
 
 - Copy 和 DeepCopy：是否生成了新的对象？
+- Soft Update 的时候，要用 param.data.copy\_不要直接用 param.copy\_，会报错 a leaf Variable that requires grad is being used in an in-place operation.
 
 ---
 

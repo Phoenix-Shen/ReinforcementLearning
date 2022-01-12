@@ -10,7 +10,7 @@ class Replay_buffer():
         self.batch_size = batch_size
         self.n_features = n_features
         self.n_actions = n_actions
-        self.memory = t.zeros((batch_size, n_features*2+2+n_actions))
+        self.memory = t.zeros((buffer_size, n_features*2+2+n_actions))
         self.memory_ptr = 0
 
     def store_transition(self, s: np.ndarray, a: np.ndarray, r: float, done: float, s_: np.ndarray):
@@ -36,6 +36,6 @@ class Replay_buffer():
                               self.n_actions:self.n_features+self.n_actions+1]
         dones = self.memory[index, self.n_features +
                             self.n_actions+1:self.n_features+self.n_actions+2]
-        states_ = self.memory[index, self.n_features+self.n_actions+1:]
+        states_ = self.memory[index, self.n_features+self.n_actions+2:]
 
         return states, actions, rewards, dones, states_
