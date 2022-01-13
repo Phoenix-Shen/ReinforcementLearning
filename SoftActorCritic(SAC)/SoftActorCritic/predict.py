@@ -1,4 +1,3 @@
-from torch._C import device
 from models import Actor
 import torch as t
 import yaml
@@ -35,4 +34,4 @@ if __name__ == "__main__":
 
             obs = obs_
 
-    print("episode:{},reward:{}".format(ep, reward_sum))
+    print("episode:{},reward:{}".format(ep+1, reward_sum/(ep+1)))

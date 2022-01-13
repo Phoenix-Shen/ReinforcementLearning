@@ -13,7 +13,9 @@
 
 焯，又写了个 BUG，导致 memory 没有新内容进来，真的垃圾玩意！见 models.py 257 行，之前写了个 done=False ，之后是 True 了，就没变过。
 
-![](./result.png)
+![](./actorloss.png)
+![](./criticloss.png)
+![](./eprewards.png)
 
 ---
 

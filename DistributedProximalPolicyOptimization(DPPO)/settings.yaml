@@ -14,3 +14,6 @@ max_episode:
 env_name: LuanarLanderContinuous-v2
 # sample collection length (episodes)
 sample_collection_length: 8
+max_step:
+# buffersize
+max_buffer_size:
