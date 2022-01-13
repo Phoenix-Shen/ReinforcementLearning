@@ -17,7 +17,7 @@ if __name__ == "__main__":
         env.action_space.high,
         args["cuda"],
     )
-
+    total_reward = 0
     actor.load_state_dict(t.load(args["actor_model_dir"]))
     for ep in range(10):
         done = False
@@ -33,5 +33,6 @@ if __name__ == "__main__":
             reward_sum += reward
 
             obs = obs_
-
-    print("episode:{},reward:{}".format(ep+1, reward_sum/(ep+1)))
+        total_reward += reward_sum
+        print(f"epoch {ep} finished, reward is {reward_sum  }")
+    print("total episode:{},avg_reward:{}".format(10, total_reward/10))

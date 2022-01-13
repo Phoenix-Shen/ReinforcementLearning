@@ -11,7 +11,7 @@
 
 重构了个版本，在 SoftActorCritic 里头，但是不知道为什么 actor loss 降不下来，有可能是我太心急了，训练轮数不够。
 
-焯，又写了个 BUG，导致 memory 没有新内容进来，真的垃圾玩意！见 models.py 257 行，之前写了个 done=False ，之后是 True 了，就没变过。
+焯，又写了个 BUG，导致 memory 没有新内容进来，真的垃圾玩意！见 models.py 257 行，之前写了个 done=False ，之后是 True 了没变过。
 
 ![](./actorloss.png)
 ![](./criticloss.png)

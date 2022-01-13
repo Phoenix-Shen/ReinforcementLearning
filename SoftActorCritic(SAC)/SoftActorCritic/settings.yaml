@@ -53,4 +53,4 @@ save_dir: SoftActorCritic(SAC)/SoftActorCritic/saved_models
 ##################
 #predict settings#
 ##################
-actor_model_dir: SoftActorCritic(SAC)\SoftActorCritic\saved_models\ACTOR 2022-01-13 17-45-33.pth
+actor_model_dir: SoftActorCritic(SAC)\SoftActorCritic\saved_models\ACTOR 2022-01-13 22-26-39.pth
