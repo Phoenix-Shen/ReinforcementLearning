@@ -254,8 +254,9 @@ class Agent(nn.Module):
         print("->>> TRAINING ...")
         # reset the env and start to train
         obs = self.env.reset()
-        done = False
+
         for epoch in range(self.n_epochs):
+            done = False
             while not done:
                 obs_tensor = t.tensor(
                     obs, dtype=t.float32, device=self.actor.device).unsqueeze(0)

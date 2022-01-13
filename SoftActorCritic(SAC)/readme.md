@@ -2,9 +2,18 @@
 
 敲一遍没搞懂啊？
 
-于是照着教程敲了两个版本的，一个是首页 Readme 里面 Machine Learning with Phil 的代码，一个是[BY571 的版本](https://github.com/BY571/Soft-Actor-Critic-and-Extensions)
+于是照着教程敲了两个版本的:
 
-重构了个版本，在 SoftActorCriticWithoutValueNet 里头，但是不知道为什么 actor loss 降不下来，有可能是我太心急了，训练轮数不够。
+- 一个是首页 Readme 里面 Machine Learning with Phil 的代码
+- 一个是[BY571 的版本](https://github.com/BY571/Soft-Actor-Critic-and-Extensions)
+
+---
+
+重构了个版本，在 SoftActorCritic 里头，但是不知道为什么 actor loss 降不下来，有可能是我太心急了，训练轮数不够。
+
+焯，又写了个 BUG，导致 memory 没有新内容进来，真的垃圾玩意！见 models.py 257 行，之前写了个 done=False ，之后是 True 了，就没变过。
+
+![](./result.png)
 
 ---
 

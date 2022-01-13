@@ -1,4 +1,4 @@
-env_name: Pendulum-v0
+env_name: LunarLanderContinuous-v2
 
 # NETWORK SETTINGS
 
@@ -20,17 +20,17 @@ n_episodes: 100000
 # the steps of the initial exploration
 init_exploration_steps: 10000
 # reward scale, a common trick
-reward_scale: 1
+reward_scale: 0.114514
 # reward_decay
 gamma: 0.99
 # the max and min of log standard variance value
-log_std_max: 2
+log_std_max: 1
 log_std_min: -20
 # entropy weights, it is the alpha in the paper but now they include the alpha as a parameter to be learnt,
 # the value is none if you want the model tune the value automatically
 entropy_weights: 0.1
 # the interval to update the target network
-target_update_interval: 1
+target_update_interval: 5
 # how many updates apply in the update
 update_cycles: 5
 
