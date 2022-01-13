@@ -1,5 +1,5 @@
 import datetime
-from memory import Replay_buffer
+from memory import ReplayBuffer
 import torch as t
 import torch.nn as nn
 import torch.optim as optim
@@ -200,7 +200,8 @@ class Agent(nn.Module):
         self.CUDA = cuda
 
         # replay buffer
-        self.memory = Replay_buffer(self.buffer_size, self.batch_size)
+        self.memory = ReplayBuffer(
+            self.buffer_size, self.env.observation_space.shape, self.n_actions)
 
         # Actor network
         self.actor = Actor(self.n_features,
@@ -263,7 +264,8 @@ class Agent(nn.Module):
                 action = self.actor.choose_action(obs_tensor)
 
                 obs_, reward, done, _ = self.env.step(action)
-                self.memory.add(obs, action, reward, obs_, float(done))
+                self.memory.store_transition(
+                    obs, action, reward, obs_, float(done))
                 obs = obs_
 
             # after collecting the samples, start to update the network for many times
@@ -294,7 +296,8 @@ class Agent(nn.Module):
         ##################
         #  sample data   #
         ##################
-        obses, actions, rewards, obses_, dones = self.memory.sample()
+        obses, actions, rewards, obses_, dones = self.memory.sample_buffer(
+            self.batch_size)
         # to_tensor
         obses = t.FloatTensor(obses).to(self.actor.device)
         actions = t.FloatTensor(actions).to(self.actor.device)
@@ -404,7 +407,8 @@ class Agent(nn.Module):
             # input the action and get rewards
             obs_, reward, done, _ = self.env.step(action)
             # store in the episode
-            self.memory.add(obs, action, reward, obs_, float(done))
+            self.memory.store_transition(
+                obs, action, reward, obs_, float(done))
             obs = obs_
             if done:
                 # if done, then reset the env and start another loop

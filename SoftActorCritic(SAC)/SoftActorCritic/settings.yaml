@@ -18,17 +18,17 @@ cuda: True
 #the number of total epochs
 n_episodes: 100000
 # the steps of the initial exploration
-init_exploration_steps: 10000
+init_exploration_steps: 4096
 # reward scale, a common trick
-reward_scale: 0.114514
+reward_scale: 1
 # reward_decay
 gamma: 0.99
 # the max and min of log standard variance value
-log_std_max: 1
+log_std_max: 2
 log_std_min: -20
 # entropy weights, it is the alpha in the paper but now they include the alpha as a parameter to be learnt,
 # the value is none if you want the model tune the value automatically
-entropy_weights: 0.1
+entropy_weights: 0.2
 # the interval to update the target network
 target_update_interval: 5
 # how many updates apply in the update
@@ -36,7 +36,7 @@ update_cycles: 5
 
 # MEMORY SETTINGS
 buffer_size: 1.0e+6
-batch_size: 256
+batch_size: 4096
 
 # EVALUATION SETTINGS
 eval_interval: 100
