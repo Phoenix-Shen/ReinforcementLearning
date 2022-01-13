@@ -16,15 +16,15 @@ tau: 0.05
 # use cuda?
 cuda: True
 #the number of total epochs
-n_episodes: 100000
+n_episodes: 10000
 # the steps of the initial exploration
-init_exploration_steps: 4096
+init_exploration_steps: 8192
 # reward scale, a common trick
-reward_scale: 1
+reward_scale: 1.0
 # reward_decay
 gamma: 0.99
 # the max and min of log standard variance value
-log_std_max: 2
+log_std_max: 2.5
 log_std_min: -20
 # entropy weights, it is the alpha in the paper but now they include the alpha as a parameter to be learnt,
 # the value is none if you want the model tune the value automatically
@@ -32,14 +32,14 @@ entropy_weights: 0.2
 # the interval to update the target network
 target_update_interval: 5
 # how many updates apply in the update
-update_cycles: 5
+update_cycles: 25
 
 # MEMORY SETTINGS
 buffer_size: 1.0e+6
-batch_size: 4096
+batch_size: 8192
 
 # EVALUATION SETTINGS
-eval_interval: 100
+eval_interval: 20
 eval_episodes: 10
 
 # LOGS AND MODEL SAVING PATH
@@ -47,10 +47,10 @@ eval_episodes: 10
 # where to store the tensorboardX logs?
 log_dir: SoftActorCritic(SAC)/SoftActorCritic/logs
 # the interval of saving the parameters of the actor and the critic
-save_frequency: 5000
+save_frequency: 100
 save_dir: SoftActorCritic(SAC)/SoftActorCritic/saved_models
 
 ##################
 #predict settings#
 ##################
-actor_model_dir: SoftActorCritic(SAC)\SoftActorCritic\saved_models\ACTOR 2022-01-12 22-17-40.pth
+actor_model_dir: SoftActorCritic(SAC)\SoftActorCritic\saved_models\ACTOR 2022-01-13 17-45-33.pth
