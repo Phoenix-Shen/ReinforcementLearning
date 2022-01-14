@@ -39,3 +39,16 @@ class Replay_buffer():
         states_ = self.memory[index, self.n_features+self.n_actions+2:]
 
         return states, actions, rewards, dones, states_
+
+
+"""#%%
+import numpy as np
+mem = Replay_buffer(1,1,8,2)
+s = np.ones((8))
+s_ = np.ones((8))*2
+a = np.zeros((2))+5
+r = 114514
+done = False
+mem.store_transition(s,a,r,done,s_)
+# %%
+"""

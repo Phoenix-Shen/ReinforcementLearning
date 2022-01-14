@@ -1,5 +1,7 @@
 # 强化学习
 
+Note that the algorithm code comes from some experts in the field of reinforcement learning or I refactored the algorithms myself.
+
 ## 进度
 
 |   method    | done |
@@ -187,7 +189,7 @@ step
 
 <br>
 
-## 4. DQN
+## 4. DQN Off-Policy
 
 - 神经网络 Q(s,a;w)近似 Q\*函数，Q\*能够告诉我们每个动作能够得到的平均回报。我们需要 agent 遵循这个 Q\*函数。
 
@@ -213,12 +215,12 @@ step
   - 于是我们的 loss = 0.5\* ||[predict - target ]||，再进行梯度下降就可以了
     <br>
 
-## 5. Dueling DQN
+## 5. Dueling DQN Off-Policy
 
 将 Q 值的计算分成状态值 state_value 和每个动作的值 advantage，可以获得更好的性能
 <br><br><br>
 
-## 6. DQN with Prioritized Experience Replay
+## 6. DQN with Prioritized Experience Replay Off-Policy
 
 在 DQN 中，我们有 Experience Replay，但是这是经验是随机抽取的，我们需要让好的、成功的记忆多多被学习到，所以我们在抽取经验的时候，就需要把这些记忆优先给网络学习，于是就有了`Prioritized`Experience Replay
 
@@ -231,7 +233,7 @@ step
 - 所以我们可以转为策略学习+值学习，他是 Value based methods 和 Policy based methods 的结合
 - 状态价值 V_pi(s)=Σa pi(a|s)\* Q_pi(s,a)，使用 Actor 来近似 pi，使用 Critic 来近似 Q_pi
 
-## 1. Policy Gradient
+## 1. Policy Gradient On-Policy
 
 核心思想：让好的行为多被选择，坏的行为少被选择。<br>
 采用一个参数 vt，让好的行为权重更大<br>
@@ -239,7 +241,7 @@ step
 
 <br>
 
-## 2. Actor Critic
+## 2. Actor Critic On-Policy
 
 直观的来说：使用神经网络来近似价值函数 V，瞎子背着瘸子
 
@@ -276,7 +278,7 @@ step
 
 <br>
 
-## 3. DDPG
+## 3. DDPG Off-Policy
 
 ![](./DeepDeterministicPolicyGradient/principle.png)
 
@@ -288,7 +290,7 @@ step
 
 <br>
 
-## 4. A3C
+## 4. A3C On-Policy
 
 - A3C 里面有多个 agent 对网络进行异步更新，相关性较低
 - 不需要积累经验，占用内存少
@@ -297,14 +299,14 @@ step
 
 <br>
 
-## 5. PPO Off-Policy
+## 5. PPO On-Policy
 
 - 使用 importance sampling 来使用过去的经验
 - PPO 是积累部分经验(一个 trajectory)，然后进行多轮的梯度下降
 - 对 importance weight 进行裁剪从而控制更新步长
   <br>
 
-## 6. TRPO Off-Policy
+## 6. TRPO On-Policy
 
 - 使用 L(theta|theta_old)来近似目标函数 J(theta)
 - 使用 KL 散度或者是二次距离来约束 theta 与 theta_old 之间的差距
@@ -374,7 +376,7 @@ pipreqs ./ --encoding=utf8
 - tensor.item()，直接返回一个数据，但是只能适用于 tensor 里头只有一个元素的情况，否则要是用 tolist()或者 numpy()
 - 不建议使用 inplace 操作
 - hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。比如 theta_new = theta_old *0.95 + theta_new *0.05
-- pytorch 官网上有:https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+- pytorch 官网上有的 Qlearning 例子:https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 - nn.Module.eval()递归调用子模块，将 Module.train 改成 false
 - 类似于 tensor.pow, tensor.sum, tensor.mean, tensor.gather 这些操作都可以使用 torch.pow(tensor,\*args)等来代替，使用 t.pow 这种类型的函数可以直接知道它的参数（dim=？之类的），用 tensor.pow 的话可能会因为识别不出来这是个 tensor，导致这个方法出不来。（比如说 a=t.ones((1,1,1)),b=a+a，调用 b.sum 的时候按 TAB 就出不来)
 - 同上一条，在传参的时候尽量把参数的类型写清楚，不然在下面使用的时候按 tab 也出不来，十分难顶。例如
@@ -423,6 +425,17 @@ pipreqs ./ --encoding=utf8
 - Copy 和 DeepCopy：是否生成了新的对象？
 - Soft Update 的时候，要用 param.data.copy\_不要直接用 param.copy\_，会报错 a leaf Variable that requires grad is being used in an in-place operation.
 
+- 关于 Actor 的输出：
+  - 连续动作
+    1. Actor 输出直接的动作，使用 tanh()来进行边界控制，比如说 DDPG 和 TD3 里面的，在动作上面增加噪声来保持随机性
+    2. Actor 输出 mean 和 std，比如说 SAC 里面的，之后根据 mean 和 std 的正态分布进行采样，保持随机性
+  - 离散动作
+    1. Actor 输出动作的概率，而不是由 mean 和 std 所决定的密度函数，根据概率进行采样，如 AC 里面的，根据概率进行采样来保持随机性
+    2. Actor 使用 Gumbel-Softmax Trick（隶属于 reparameterization trick）输出离散动作
+  - 梯度传播问题
+    1. 对于 1，直接使用 logProb 进行梯度回传
+    2. 对于 2，使用重参数技巧使梯度得以回传
+
 ---
 
 <br><br><br>
@@ -464,6 +477,5 @@ pipreqs ./ --encoding=utf8
 
 # 7. TODO
 
-1. SAC，效果不好，Loss 降下来了但是分数依然很低
-2. TD3，效果也不好，总不可能我写的算法效果都不行吧？可能是参数问题，也可能是那个该死的 tau=0.01 使网络参数更新很慢。
-3. 图神经网络 GNN
+1. TD3，效果不好，总不可能我写的算法效果都不行吧？可能是超参数问题，也可能是那个该死的 tau=0.01 使网络参数更新很慢。
+2. 图神经网络 GNN

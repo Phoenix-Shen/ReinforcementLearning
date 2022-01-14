@@ -198,7 +198,7 @@ class Agent():
         s = s.to(self.device)
         a = a.to(self.device)
         r = r.to(self.device)
-        inverse_done = (1-done).to(self.device)
+        inverse_done = (1.-done).to(self.device)
         s_ = s_.to(self.device)
 
         with t.no_grad():
