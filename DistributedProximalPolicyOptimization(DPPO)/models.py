@@ -1,7 +1,8 @@
 # %%
 
-from math import acos
+
 import multiprocessing
+from typing import OrderedDict
 from numpy import ndarray
 import torch as t
 import gym
@@ -132,13 +133,18 @@ class LocalActor():
     多线程里面的actor，仅仅是用于多线程收集数据，增加效率
     """
 
-    def __init__(self, n_features, n_actions, hidden_size, max_mem_size) -> None:
-        self.actor = Actor(n_features, n_actions, hidden_size)
-        self.buffer = BufferTuple(max_mem_size)
+    def __init__(self, args: dict, actor_state_dict: OrderedDict) -> None:
+        self.actor = Actor(args["n_features"],
+                           args["n_actions"], args["hidden_size"])
+        self.buffer = BufferTuple(args["max_mem_size"])
+        self.actor.load_state_dict(actor_state_dict)
+        self.env = gym.make(args["env"])
 
-    def collect_data() -> BufferTuple:
-        rewards = list()
-        steps = list()
+    def collect_data(self) -> BufferTuple:
 
         step_counter = 0
-        while step_counter <
+        while step_counter < self.buffer.max_size:
+            done = False
+            obs = self.env.reset()
+            while not done:
+                action = self.actor.choose_action(obs)
