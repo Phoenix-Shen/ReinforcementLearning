@@ -27,7 +27,8 @@ class Replay_buffer():
         self.memory_ptr += 1
 
     def sample(self):
-        index = np.random.choice(self.buffer_size, size=self.batch_size)
+        index = np.random.choice(
+            min(self.memory_ptr, self.buffer_size), size=self.batch_size)
 
         states = self.memory[index, :self.n_features]
         actions = self.memory[index,

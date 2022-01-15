@@ -1,6 +1,6 @@
 hidden_size: 256
-lr_a: 3.0e-4
-lr_c: 3.0e-4
+lr_a: 1.0e-4
+lr_c: 1.0e-4
 reward_decay: 0.99
 buffer_size: 114514
 batch_size: 8196
@@ -9,11 +9,11 @@ max_epoch: 50000
 log_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\logs
 tau: 0.05
 policy_noise: 0.1
-noise_clip: 0.15
+noise_clip: 0.2
 update_policy_interval: 5
 cuda: True
 display_interval: 100
 model_save_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models
 save_frequency: 500
-actor_dir: ~
-critic_dir: ~
+actor_dir:
+critic_dir:

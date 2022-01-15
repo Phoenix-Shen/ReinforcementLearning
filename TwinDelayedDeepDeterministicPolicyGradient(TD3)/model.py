@@ -129,6 +129,7 @@ class Agent():
         self.noise_clip = noise_clip
         self.policy_noise = policy_noise
         self.buffer_size = buffer_size
+        self.batch_size = batch_size
         self.GAMMA = reward_decay
         self.env = env
         self.max_epoch = max_epoch
@@ -186,7 +187,7 @@ class Agent():
             if ep % self.display_interval == 0:
                 print(f"epoch:[{ep}/{self.max_epoch}],ep_reward:{ep_reward}")
             # if buffer is filled with data, start training process
-            if self.mem.memory_ptr > self.buffer_size:
+            if self.mem.memory_ptr > self.batch_size:
                 self._update_networks(ep)
 
             if (ep+1) % self.save_frequency == 0:
