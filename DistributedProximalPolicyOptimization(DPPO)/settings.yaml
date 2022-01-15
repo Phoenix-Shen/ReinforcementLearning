@@ -1,19 +1,49 @@
+env: LunarLanderContinuous-v2
+n_features: 8
+n_actions: 2
+
+##############
+## training ##
+##############
+
 # learning rates
-lr_c:
-lr_a:
+cuda: True
+lr_c: 1.0e-4
+lr_a: 1.0e-4
+# hiddensize of the net
+hidden_size: 256
 # known as gamma
-reward_decay:
-# how many times should the network update?
-actor_update_step:
-critic_update_step:
-#the clipped ratio
-epsilon:
-# Coefficient for calculating the GAE
-tau:
-max_episode:
-env_name: LuanarLanderContinuous-v2
-# sample collection length (episodes)
-sample_collection_length: 8
-max_step:
+reward_decay: 0.99
+# how many times should the network update when a batch of data was collected?
+update_steps: 8
+# lambda_adv
+lambda_adv: 0.98
+# lambda_entropy
+lambda_entropy: 0.01
+#the clipped ratio known as epsilon
+ratio_clamp: 0.25
+# how many steps should we train the networks
+max_episode: 150
+# reward_scale , a common trick to stabalize the training procedure
+reward_scale: 1
+# batch size
+batch_size: 256
+
+#####################
+## data collection ##
+#####################
+# threads for collecting the data
+n_threads: 6
 # buffersize
-max_buffer_size:
+max_mem_size: 800
+
+eval_frequency: 5
+
+#########################
+# model save and log dir#
+#########################
+model_save_dir: DistributedProximalPolicyOptimization(DPPO)\saved_models
+actor_dir: DistributedProximalPolicyOptimization(DPPO)\saved_models\ACTOR 2022-01-15 15-38-52.pth
+critic_dir:
+save_frequency: 50
+log_dir: DistributedProximalPolicyOptimization(DPPO)\logs
