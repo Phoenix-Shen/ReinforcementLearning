@@ -15,5 +15,5 @@ cuda: True
 display_interval: 100
 model_save_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models
 save_frequency: 500
-actor_dir:
+actor_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models\ACTOR 2022-01-15 04-13-48.pth
 critic_dir:
