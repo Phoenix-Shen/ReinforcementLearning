@@ -21,7 +21,7 @@ Note that the algorithm code comes from some experts in the field of reinforceme
 |    DDPG     | √    |
 |     TD3     | √    |
 |     PPO     | √    |
-|    DPPO     | ×    |
+|    DPPO     | √    |
 |    TRPO     | √    |
 | DQNwithHER  | ×    |
 | DDPGwithHER | ×    |
@@ -367,7 +367,6 @@ pipreqs ./ --encoding=utf8
 - Tensor.to(device)操作要细心，有可能梯度为 None 因为.to(device)是一次操作，之后的 tensor 有一个 grad_fn=copy 什么的，此时的 tensor 不再是叶子结点。
 - nn.parameter()通常，我们的参数都是一些常见的结构（卷积、全连接等）里面的计算参数。而当我们的网络有一些其他的设计时，会需要一些额外的参数同样很着整个网络的训练进行学习更新，最后得到最优的值，经典的例子有注意力机制中的权重参数、Vision Transformer 中的 class token 和 positional embedding 等。
 - tensor.clone()=原来张量的拷贝，而且 require_grad=True
-- Tensor.to(device)操作要细心，有可能损失为 None 因为.to(device)是一次操作，此时的 tensor 不再是叶子结点。
 - t.tensor.detach()： 返回 t.tensor 的数据而且 require\*grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。新的 tensor 和原来的 tensor 共享数据内存，但不涉及梯度计算，即 requires_grad=False。修改其中一个 tensor 的值，另一个也会改变，因为是共享同一块内存，但如果对其中一个 tensor 执行某些内置操作，则会报错，例如 resize*、resize*as*、set*、transpose\*。
 - 关于 tensor.detach()与 tensor.data:x.data 和 x.detach()新分离出来的 tensor 的 requires_grad=False，即不可求导时两者之间没有区别，但是当 requires_grad=True 的时候的两者之间的是有不同：x.data 不能被 autograd 追踪求微分，但是 x.detach 可以被 autograd()追踪求导。
 - with t.no_grad(): 在应用阶段，不需要使用梯度，那么可以使用这个去掉梯度
@@ -477,5 +476,6 @@ pipreqs ./ --encoding=utf8
 
 # 7. TODO
 
-1. TD3，效果不好，总不可能我写的算法效果都不行吧？可能是超参数问题，也可能是那个该死的 tau=0.01 使网络参数更新很慢。
-2. 图神经网络 GNN
+1. DQN with HER
+2. DDPG with HER
+3. DIAYN
