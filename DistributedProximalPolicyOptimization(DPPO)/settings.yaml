@@ -43,7 +43,7 @@ eval_frequency: 5
 # model save and log dir#
 #########################
 model_save_dir: DistributedProximalPolicyOptimization(DPPO)\saved_models
-actor_dir: DistributedProximalPolicyOptimization(DPPO)\saved_models\ACTOR 2022-01-15 15-38-52.pth
+actor_dir: DistributedProximalPolicyOptimization(DPPO)\saved_models\ACTOR 2022-01-16 00-39-17.pth
 critic_dir:
 save_frequency: 50
 log_dir: DistributedProximalPolicyOptimization(DPPO)\logs

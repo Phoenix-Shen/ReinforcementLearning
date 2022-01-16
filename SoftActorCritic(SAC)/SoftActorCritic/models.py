@@ -44,7 +44,7 @@ class Actor(nn.Module):
         # optimizer
         self.optimizer = optim.Adam(self.parameters(), lr)
         # call weight init
-        # self.init_weights()
+        self.init_weights()
 
     def forward(self, obs: Tensor) -> tuple[Tensor, Tensor]:
         x = F.relu(self.fc1(obs))
@@ -126,7 +126,7 @@ class Critic(nn.Module):
         # optimizer
         self.optimizer = optim.Adam(self.parameters(), lr)
         # call weight init
-        # self.init_weights()
+        self.init_weights()
 
     def forward(self, obs: Tensor, action: Tensor) -> Tensor:
         pair = t.cat([obs, action], dim=1)

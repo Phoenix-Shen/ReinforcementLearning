@@ -426,14 +426,12 @@ pipreqs ./ --encoding=utf8
 
 - 关于 Actor 的输出：
   - 连续动作
-    1. Actor 输出直接的动作，使用 tanh()来进行边界控制，比如说 DDPG 和 TD3 里面的，在动作上面增加噪声来保持随机性
-    2. Actor 输出 mean 和 std，比如说 SAC 里面的，之后根据 mean 和 std 的正态分布进行采样，保持随机性
+    - Actor 输出 mean 和 std，比如说 SAC 里面的，之后根据 mean 和 std 的正态分布进行采样，保持随机性
   - 离散动作
     1. Actor 输出动作的概率，而不是由 mean 和 std 所决定的密度函数，根据概率进行采样，如 AC 里面的，根据概率进行采样来保持随机性
-    2. Actor 使用 Gumbel-Softmax Trick（隶属于 reparameterization trick）输出离散动作
   - 梯度传播问题
-    1. 对于 1，直接使用 logProb 进行梯度回传
-    2. 对于 2，使用重参数技巧使梯度得以回传
+    1. 对于带权重的参数更新，如 PG，AC，A3C，PPO，使用采样动作的 log_prob 进行梯度回传
+    2. 对于要将采样动作放进 Critic 里面计算动作-状态价值的，如 SAC，DDPG，TD3，等，如果他们需要对动作进行采样（尤其是 SAC，采用 action~N(mean,std)进行采样），那么必须使用使用重参数技巧使梯度得以回传，否则直接丢进 critic 就行。
 
 ---
 
