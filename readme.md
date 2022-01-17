@@ -4,28 +4,27 @@ Note that the algorithm code comes from some experts in the field of reinforceme
 
 ## 进度
 
-|   method    | done |
-| :---------: | ---- |
-| Qlearnling  | √    |
-|    Sarsa    | √    |
-| SarsaLambda | √    |
-|     DQN     | √    |
-| DuelingDQN  | √    |
-| DQNwithPER  | √    |
-|     PG      | √    |
-| ActorCritic | √    |
-|     A3C     | √    |
-|     A2C     | √    |
-|     SAC     | √    |
-|    ACER     | √    |
-|    DDPG     | √    |
-|     TD3     | √    |
-|     PPO     | √    |
-|    DPPO     | √    |
-|    TRPO     | √    |
-| DQNwithHER  | ×    |
-| DDPGwithHER | ×    |
-|    DIAYN    | ×    |
+|     method      | done |
+| :-------------: | ---- |
+|   Qlearnling    | √    |
+|      Sarsa      | √    |
+|   SarsaLambda   | √    |
+|       DQN       | √    |
+|   DQNwithPER    | √    |
+|   DQNwithHER    | ×    |
+|   DuelingDQN    | √    |
+| Policy Gradient | √    |
+|   AC and A2C    | √    |
+|      ACER       | √    |
+|       A3C       | √    |
+|       SAC       | √    |
+|      DDPG       | √    |
+|   DDPGwithHER   | ×    |
+|       TD3       | √    |
+|      TRPO       | √    |
+|       PPO       | √    |
+|      DPPO       | √    |
+|      DIAYN      | ×    |
 
 ---
 
@@ -437,7 +436,7 @@ pipreqs ./ --encoding=utf8
 
 <br><br><br>
 
-# 6. 引用
+# 6. 参考资料
 
 - [莫烦 python](https://mofanpy.com/)
 
@@ -470,10 +469,15 @@ pipreqs ./ --encoding=utf8
 - [Tianhong Dai 的 GitHub](https://github.com/TianhongDai)
 
 - [DPPO](https://github.com/ZYunfeii/DRL_algorithm_library)
-  <br><br><br>
+
+- [OPENAI spinning up](https://spinningup.qiwihui.com/zh_CN/latest/user/introduction.html)
+
+<br><br><br>
 
 # 7. TODO
 
-1. DQN with HER
-2. DDPG with HER
-3. DIAYN
+1. ERE PER HER 这些玩意
+2. OpenAI spinning up 好好看看
+3. 继续学习 D2L 书里面的 MLP
+4. 手写优化器
+5. GNN

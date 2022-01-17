@@ -2,7 +2,7 @@
 
 敲一遍没搞懂啊？
 
-于是照着教程敲了两个版本的:
+于是照着教程敲了[两个版本的](./SAC-OtherGithbVersion):
 
 - 一个是首页 Readme 里面 Machine Learning with Phil 的代码
 - 一个是[BY571 的版本](https://github.com/BY571/Soft-Actor-Critic-and-Extensions)
@@ -11,7 +11,7 @@
 
 重构了个版本，在 SoftActorCritic 里头，但是不知道为什么 actor loss 降不下来，有可能是我太心急了，训练轮数不够。
 
-焯，又写了个 BUG，导致 memory 没有新内容进来，真的垃圾玩意！见 models.py 257 行，之前写了个 done=False ，之后是 True 了没变过。
+焯，又写了个 BUG，导致 memory 没有新内容进来，真的垃圾玩意！
 
 ![](./actorloss.png)
 ![](./criticloss.png)
@@ -56,7 +56,7 @@
 
 ![](./SAC_algo.png)<br>
 
-因此 SAC 需要维持三个网络：状态价值网络、软 Q 值网络、策略网络，为了使训练更加稳定，我们还需要一个状态价值目标网络（target net）；此外，一个 Q 值网络就是可以的，但是两个更加好，训练的时候取两者中较小的，一共是 *5*个网络，但是现在一般不用状态价值网络了，故减成 3 个
+因此 SAC 需要维持三个网络：状态价值网络、软 Q 值网络、策略网络，为了使训练更加稳定，我们还需要一个状态价值目标网络（target net）；此外，一个 Q 值网络就是可以的，但是两个更加好，训练的时候取两者中较小的，一共是 *6*个网络，但是现在一般不用状态价值网络了，故减成 5 个
 
 # 发展历程
 
@@ -66,7 +66,7 @@
 4. TRPO 使用 KL 散度来约束 actor critic 的步长，稳定！
 5. PPO 比 TRPO 在算法上更好！
 
-# 为什么能够收敛
+# 收敛和更新
 
 1. 将熵加入到 J（theta）里面会不会影响到训练？->文中证明不会，它会收敛到一个软 Qvalue
 2. Actor 更新（Soft Policy Improvement），限制参数更新步长。 Update the policy towards the exponential of the new Q-function
