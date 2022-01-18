@@ -70,3 +70,7 @@
 
 1. 将熵加入到 J（theta）里面会不会影响到训练？->文中证明不会，它会收敛到一个软 Qvalue
 2. Actor 更新（Soft Policy Improvement），限制参数更新步长。 Update the policy towards the exponential of the new Q-function
+
+# PER
+
+对于奖励很稀疏的环境来说，我们需要增加 PER 来增加收敛速度。
