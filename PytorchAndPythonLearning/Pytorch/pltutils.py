@@ -7,6 +7,8 @@ import torch
 import torchvision as tv
 import torchvision.transforms as transforms
 import torch.utils.data as data
+import random
+
 
 def use_svg_display():
     """使用svg格式在Jupyter中显示绘图"""
@@ -122,7 +124,7 @@ def show_images(imgs, num_rows, num_cols, titles=None, scale=1.5):  # @save
     return axes
 
 
-def load_data_fashion_mnist(batch_size, resize=None, n_threads=4,data_root="./PytorchAndPythonLearning/Pytorch/dataset"):
+def load_data_fashion_mnist(batch_size, resize=None, n_threads=4, data_root="./PytorchAndPythonLearning/Pytorch/dataset"):
     """下载fashion-MNIST数据集 将其加载到内存当中去"""
     transform = [transforms.ToTensor()]
     if resize:
@@ -137,3 +139,13 @@ def load_data_fashion_mnist(batch_size, resize=None, n_threads=4,data_root="./Py
     test_loader = data.DataLoader(
         mnist_test, batch_size, shuffle=True, num_workers=n_threads)
     return train_loader, test_loader
+
+
+def data_iter(batch_size: int, features: torch.Tensor, labels: torch.Tensor):
+    num_examples = len(features)
+    indices = list(range(num_examples))
+    random.shuffle(indices)
+    for i in range(0, num_examples, batch_size):
+        batch_indices = torch.tensor(
+            indices[i:min(i+batch_size, num_examples)])
+        yield features[batch_indices], labels[batch_indices]
