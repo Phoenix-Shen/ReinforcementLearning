@@ -4,7 +4,7 @@ lr_c: 1.0e-3
 reward_decay: 0.99
 buffer_size: 114514
 batch_size: 512
-env: Pendulum-v1
+env: LunarLanderContinuous-v2
 max_epoch: 50000
 log_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\logs
 tau: 0.05
@@ -15,7 +15,7 @@ cuda: True
 display_interval: 100
 model_save_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models
 save_frequency: 2000
-actor_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models\ACTOR 2022-01-15 04-13-48.pth
+actor_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models\ACTOR 2022-01-19 16-38-00.pth
 critic_dir:
 ################
 # PER SETTINGS #

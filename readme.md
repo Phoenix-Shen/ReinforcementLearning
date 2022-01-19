@@ -4,27 +4,29 @@ Note that the algorithm code comes from some experts in the field of reinforceme
 
 ## 进度
 
-|     method      | done |
-| :-------------: | ---- |
-|   Qlearnling    | √    |
-|      Sarsa      | √    |
-|   SarsaLambda   | √    |
-|       DQN       | √    |
-|   DQNwithPER    | √    |
-|   DQNwithHER    | ×    |
-|   DuelingDQN    | √    |
-| Policy Gradient | √    |
-|   AC and A2C    | √    |
-|      ACER       | √    |
-|       A3C       | √    |
-|       SAC       | √    |
-|      DDPG       | √    |
-|   DDPGwithHER   | ×    |
-|       TD3       | √    |
-|      TRPO       | √    |
-|       PPO       | √    |
-|      DPPO       | √    |
-|      DIAYN      | ×    |
+where the \* mark means the algorithm is important and worth diving into it
+
+|          method          | done |
+| :----------------------: | ---- |
+|        Qlearnling        | √    |
+|          Sarsa           | √    |
+|       SarsaLambda        | √    |
+|          \*DQN           | √    |
+|       \*DQNwithPER       | √    |
+|        DQNwithHER        | ×    |
+|        DuelingDQN        | √    |
+|    \*Policy Gradient     | √    |
+|       \*AC and A2C       | √    |
+|           ACER           | √    |
+|           A3C            | √    |
+| \*SAC with PER(optional) | √    |
+|          \*DDPG          | √    |
+|       DDPGwithHER        | ×    |
+|  TD3 with PER(optional)  | √    |
+|           TRPO           | √    |
+|          \*PPO           | √    |
+|           DPPO           | √    |
+|          DIAYN           | ×    |
 
 ---
 
@@ -434,7 +436,7 @@ pipreqs ./ --encoding=utf8
     2. 对于要将采样动作放进 Critic 里面计算动作-状态价值的，如 SAC，DDPG，TD3，等，如果他们需要对动作进行采样（尤其是 SAC，采用 action~N(mean,std)进行采样），那么必须使用使用重参数技巧使梯度得以回传，否则直接丢进 critic 就行。
 
 - 关于使用经验池的**AC 架构**算法调参
-  - 所谓的 AC 架构算法有，DDPG TD3 SAC DQN with PER DQN with HER 等等
+  - 所谓的 AC 架构算法有，DDPG TD3 SAC DQN with PER DQN with HER 等等，他们不是采用带权重的梯度上升，所以是 AC 架构
   - 超参数一般有
     ```
     mem_size
