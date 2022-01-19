@@ -35,6 +35,12 @@ if __name__ == "__main__":
         args["save_frequency"],
         args["actor_dir"],
         args["critic_dir"],
+        args["mem_alpha"],
+        args["mem_beta"],
+        args["beta_increment"],
+        args["epsilon"],
+        args["clipped_abs_error"],
+        args["HER"]
     )
 
     agent.learn()

@@ -4,27 +4,29 @@ Note that the algorithm code comes from some experts in the field of reinforceme
 
 ## 进度
 
-|     method      | done |
-| :-------------: | ---- |
-|   Qlearnling    | √    |
-|      Sarsa      | √    |
-|   SarsaLambda   | √    |
-|       DQN       | √    |
-|   DQNwithPER    | √    |
-|   DQNwithHER    | ×    |
-|   DuelingDQN    | √    |
-| Policy Gradient | √    |
-|   AC and A2C    | √    |
-|      ACER       | √    |
-|       A3C       | √    |
-|       SAC       | √    |
-|      DDPG       | √    |
-|   DDPGwithHER   | ×    |
-|       TD3       | √    |
-|      TRPO       | √    |
-|       PPO       | √    |
-|      DPPO       | √    |
-|      DIAYN      | ×    |
+where the \* mark means the algorithm is important and worth diving into it
+
+|          method          | done |
+| :----------------------: | ---- |
+|        Qlearnling        | √    |
+|          Sarsa           | √    |
+|       SarsaLambda        | √    |
+|          \*DQN           | √    |
+|       \*DQNwithPER       | √    |
+|        DQNwithHER        | ×    |
+|        DuelingDQN        | √    |
+|    \*Policy Gradient     | √    |
+|       \*AC and A2C       | √    |
+|           ACER           | √    |
+|           A3C            | √    |
+| \*SAC with PER(optional) | √    |
+|          \*DDPG          | √    |
+|       DDPGwithHER        | ×    |
+|  TD3 with PER(optional)  | √    |
+|           TRPO           | √    |
+|          \*PPO           | √    |
+|           DPPO           | √    |
+|          DIAYN           | ×    |
 
 ---
 
@@ -311,7 +313,7 @@ step
 - 使用 KL 散度或者是二次距离来约束 theta 与 theta_old 之间的差距
 - 因此，相比于普通的 PG 算法，它更稳定，因为他对于学习率不敏感
 
-## 7. Soft Actor Critic Off-Policy
+## 7. Soft Actor Critic Off-Policy (实现了 PER)
 
 CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
@@ -424,6 +426,7 @@ pipreqs ./ --encoding=utf8
 - Soft Update 的时候，要用 param.data.copy\_不要直接用 param.copy\_，会报错 a leaf Variable that requires grad is being used in an in-place operation.
 
 - 关于 Actor 的输出：
+
   - 连续动作
     - Actor 输出 mean 和 std，比如说 SAC 里面的，之后根据 mean 和 std 的正态分布进行采样，保持随机性
   - 离散动作
@@ -431,6 +434,20 @@ pipreqs ./ --encoding=utf8
   - 梯度传播问题
     1. 对于带权重的参数更新，如 PG，AC，A3C，PPO，使用采样动作的 log_prob 进行梯度回传
     2. 对于要将采样动作放进 Critic 里面计算动作-状态价值的，如 SAC，DDPG，TD3，等，如果他们需要对动作进行采样（尤其是 SAC，采用 action~N(mean,std)进行采样），那么必须使用使用重参数技巧使梯度得以回传，否则直接丢进 critic 就行。
+
+- 关于使用经验池的**AC 架构**算法调参
+  - 所谓的 AC 架构算法有，DDPG TD3 SAC DQN with PER DQN with HER 等等，他们不是采用带权重的梯度上升，所以是 AC 架构
+  - 超参数一般有
+    ```
+    mem_size
+    batch_size
+    tau
+    gamma
+    lr_c
+    lr_a
+    ```
+  - 其中对于性能(收敛速度)影响较大的是 tau,lr_c,lr_a,batch_size
+  - 一定要选好这几个参数，不然网络收敛速度很慢，较差的参数要四五个小时，较好的，半个小时就行
 
 ---
 
@@ -476,8 +493,10 @@ pipreqs ./ --encoding=utf8
 
 # 7. TODO
 
-1. ERE PER HER 这些玩意
-2. OpenAI spinning up 好好看看
-3. 继续学习 D2L 书里面的 MLP
-4. 手写优化器
-5. GNN
+1. 21 号[ERE](https://arxiv.org/abs/1906.04009v1) HER 这些玩意
+2. 22 号 GNN
+3. OpenAI spinning up 好好看看
+4. 继续学习 D2L 书里面的 MLP
+5. 手写优化器
+6. 重写 Memory 类,改成统一接口
+7. 写几个 abstract 类，统一 Actor 和 Critic 的接口
