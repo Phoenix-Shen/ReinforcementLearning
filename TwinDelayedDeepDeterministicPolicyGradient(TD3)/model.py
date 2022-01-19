@@ -3,7 +3,7 @@ import torch as t
 import torch.nn as nn
 from torch import Tensor
 import torch.optim as optim
-from memory import Replay_buffer
+from memory import Replay_buffer, ProritizedExperienceReplay
 import gym
 from tensorboardX import SummaryWriter
 import torch.nn.functional as F
@@ -117,7 +117,13 @@ class Agent():
                  model_save_dir: str,
                  save_frequency: int,
                  actor_dir: str,
-                 critic_dir: str) -> None:
+                 critic_dir: str,
+                 mem_alpha: float,
+                 mem_beta: float,
+                 beta_increment: float,
+                 epsilon: float,
+                 clipped_abs_error: float,
+                 HER: bool) -> None:
         # save parameters
         self.actor_dir = actor_dir
         self.critic_dir = critic_dir
@@ -137,6 +143,12 @@ class Agent():
         self.tau = tau
         self.CUDA = cuda
         self.device = t.device("cuda:0" if self.CUDA else "cpu")
+        self.mem_alpha = mem_alpha
+        self.mem_beta = mem_beta
+        self.beta_increment = beta_increment
+        self.epsilon = epsilon
+        self.clipped_abs_error = clipped_abs_error
+        self.HER = HER
         # networks
         self.actor = Actor(n_features, n_actions,
                            max_action, hidden_size)
@@ -157,8 +169,21 @@ class Agent():
             self.critic.to(self.device)
             self.critic_target.to(self.device)
         # Memory
-        self.mem = Replay_buffer(
-            buffer_size, batch_size, n_features, n_actions)
+        if self.HER:
+            self.mem = ProritizedExperienceReplay(
+                self.buffer_size,
+                self.batch_size,
+                self.clipped_abs_error,
+                self.epsilon,
+                self.mem_alpha,
+                self.mem_beta,
+                self.beta_increment)
+        else:
+            self.mem = Replay_buffer(
+                buffer_size,
+                batch_size,
+                n_features,
+                n_actions)
         # Load pretrained models
         if self.actor_dir is not None and self.critic_dir is not None:
 
@@ -194,13 +219,18 @@ class Agent():
                 self.save_model()
 
     def _update_networks(self, step):
-        s, a, r, done, s_ = self.mem.sample()
+        if self.HER:
+            idx, s, a, r, done, s_, ISweights = self.mem.sample()
+        else:
+            s, a, r, done, s_ = self.mem.sample()
 
         s = s.to(self.device)
         a = a.to(self.device)
         r = r.to(self.device)
         inverse_done = (1.-done).to(self.device)
         s_ = s_.to(self.device)
+        if self.HER:
+            ISweights = ISweights.to(self.device)
 
         with t.no_grad():
             noise = t.clamp((t.rand_like(a)*self.policy_noise),
@@ -213,9 +243,16 @@ class Agent():
             tar_q = r+inverse_done*self.GAMMA*tar_q
 
         cur_q1, cur_q2 = self.critic(s, a)
-
-        loss_critic = F.mse_loss(cur_q1, tar_q.detach()) + \
-            F.mse_loss(cur_q2, tar_q.detach())
+        tderr1 = tar_q.detach()-cur_q1
+        tderr2 = tar_q.detach()-cur_q2
+        if self.HER:
+            loss_critic = (t.pow(tderr1, 2)*ISweights +
+                           t.pow(tderr2, 2)*ISweights).mean()/2
+            prios = abs((tderr1+tderr2)/2+1e-5).squeeze()
+            self.mem.batch_update(idx, prios.detach().cpu().numpy())
+        else:
+            loss_critic = (t.pow(tderr1, 2) +
+                           t.pow(tderr2, 2)).mean()/2
         self.critic_optim.zero_grad()
         loss_critic.backward()
         self.critic_optim.step()
