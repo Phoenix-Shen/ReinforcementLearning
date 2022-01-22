@@ -18,3 +18,17 @@ DDPG 的改进方法
 3. batch_size 对训练的影响尚不清楚
 
 4. 要选择合适的 policy_noise、noise_clip，否则会影响到网络对于价值函数的判断，从而导致损失降下去了，但是训练效果不好
+
+# HER 多大程度上会拖慢学习速度？
+
+for Pendulum-v1
+
+with HER
+
+![](WithHER.png)
+
+NO HER
+
+![](NoHER.png)
+
+因为这两个是同时开始训练的，但是它们的进度不同，说明 HER 还是拖累了训练速度，无 HER 比有 HER**快了 17%**

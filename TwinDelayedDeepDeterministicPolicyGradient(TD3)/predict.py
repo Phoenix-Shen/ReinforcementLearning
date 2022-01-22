@@ -24,7 +24,8 @@ if __name__ == "__main__":
             with t.no_grad():
                 obs_tensor = t.tensor(obs, ).unsqueeze(0)
                 action_tensor = actor.forward(obs_tensor)
-                actions = action_tensor.cpu().detach().numpy()[0]
+                actions = action_tensor.cpu().detach().numpy()[
+                    0]*env.action_space.high
             obs_, reward, done, _ = env.step(actions)
             reward_sum += reward
 

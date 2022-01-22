@@ -57,4 +57,4 @@ save_dir: SoftActorCritic(SAC)/SoftActorCriticWithPrioritizedExperienceReplay/sa
 ##################
 #predict settings#
 ##################
-actor_model_dir: SoftActorCritic(SAC)\SoftActorCriticWithPrioritizedExperienceReplay\saved_models\ACTOR 2022-01-13 22-26-39.pth
+actor_model_dir: SoftActorCritic(SAC)\SoftActorCriticWithPrioritizedExperienceReplay\saved_models\ACTOR 2022-01-19 21-27-11.pth

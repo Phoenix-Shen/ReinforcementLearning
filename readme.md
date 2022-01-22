@@ -348,12 +348,12 @@ pipreqs ./ --encoding=utf8
 [requirements.txt there, run pip install -r requirements.txt](./requirements.txt)
 
 - box2d (box2d for lunarlander-v2 and other gym envs, download WHL file and execute "pip install \*\*\*.whl" otherwise you will suffer building problems)
-- gym==0.21.0
+- gym==0.21.0 (Incorrect versions of the gym environment can cause errors, such as v1 and v2 of LunarLander and v0 and v1 of pendulum)
 - ipython==7.31.0 (jupyter notebook)
 - matplotlib==3.4.3 (jupyter notebook)
 - numpy==1.20.3
 - pandas==1.3.4
-- PyYAML==6.0 (load settings)
+- PyYAML==6.0 (In some algorithms such as SAC, TD3, the settings are stored in a YAML file and need to be read with a library)
 - tensorboardX==2.4.1
 - torch==1.10.1+cu113
 - torchvision==0.11.2+cu113
