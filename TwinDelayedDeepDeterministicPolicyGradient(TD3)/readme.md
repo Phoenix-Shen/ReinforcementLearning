@@ -1,5 +1,7 @@
 # TwinDelayedDeepDeterministicPolicyGradient(TD3)
 
+TD3 的算法没啥问题，但是我写的代码似乎效果很差，不知道是哪个部分出了问题。
+
 DDPG 的改进方法
 
 - Twin：采用类似于 DoubleDQN 的方式解决了 DDPG 中 Critic 对动作的过估计（over estimate）问题

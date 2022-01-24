@@ -28,7 +28,8 @@ if __name__ == "__main__":
             with t.no_grad():
                 obs_tensor = t.tensor(obs, device=actor.device).unsqueeze(0)
                 mean, _ = actor.forward(obs_tensor)
-                actions = t.tanh(mean).cpu().detach().numpy()[0]
+                actions = t.tanh(mean).cpu().detach().numpy()[
+                    0]*env.action_space.high
             obs_, reward, done, _ = env.step(actions)
             reward_sum += reward
 
