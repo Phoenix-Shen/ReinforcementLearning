@@ -9,6 +9,7 @@ from tensorboardX import SummaryWriter
 import torch.nn.functional as F
 import datetime
 import os
+import numpy as np
 
 
 class Actor(nn.Module):
@@ -123,10 +124,12 @@ class Agent():
                  beta_increment: float,
                  epsilon: float,
                  clipped_abs_error: float,
-                 PER: bool) -> None:
+                 PER: bool,
+                 action_noise: float) -> None:
         # save parameters
         self.actor_dir = actor_dir
         self.critic_dir = critic_dir
+        self.n_actions = n_actions
         self.save_frequency = save_frequency
         self.model_save_dir = model_save_dir
         self.display_interval = display_interval
@@ -149,6 +152,7 @@ class Agent():
         self.epsilon = epsilon
         self.clipped_abs_error = clipped_abs_error
         self.PER = PER
+        self.action_noise = action_noise
         # networks
         self.actor = Actor(n_features, n_actions,
                            max_action, hidden_size)
@@ -191,7 +195,11 @@ class Agent():
 
     def choose_action(self, obs: ndarray) -> ndarray:
         obs = t.tensor(obs, dtype=t.float32).unsqueeze(0).to(self.device)
-        return self.actor.forward(obs).cpu().detach().numpy()[0]*self.max_action
+        action = self.actor.forward(obs).cpu().detach().numpy()[
+            0]*self.max_action
+        action += self.action_noise * \
+            np.random.randn(self.n_actions)
+        return np.clip(action, self.env.action_space.low, self.env.action_space.high)
 
     def learn(self):
         for ep in range(self.max_epoch):

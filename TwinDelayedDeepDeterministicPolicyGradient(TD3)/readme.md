@@ -2,7 +2,9 @@
 
 TD3 的算法没啥问题，但是我写的代码似乎效果很差，不知道是哪个部分出了问题。
 
-DDPG 的改进方法
+---
+
+TD3:DDPG 的改进方法
 
 - Twin：采用类似于 DoubleDQN 的方式解决了 DDPG 中 Critic 对动作的过估计（over estimate）问题
 - Delayed：延迟 Actor 更新，更加稳定
@@ -34,3 +36,20 @@ NO PER
 ![](NoPER.png)
 
 因为这两个是同时开始训练的，但是它们的进度不同，说明 PER 还是拖累了训练速度，无 PER 比有 PER**快了 17%**
+
+# HER
+
+搞得不是很清楚
+**只适用于 pendulum 环境**
+
+_因为它的 goal 计算和 reward 计算是因环境而异的，没有统一的解决方案_
+
+1. 解决的问题：在稀疏奖励的环境中训练 agent
+2. 假设条件：知道要学习的目标 goal，知道如何优化奖励函数 reward function
+3. 主要想法：将 goal 加入 transition tuples(s,a,r,s',goal)利用 goal 之间的相似性，使得完成不同 goal 的 transition tuples 可以辅助其它的 goal 做训练
+
+局限：
+
+1. 目标 goal 有时候不清楚
+2. 不知道如何优化奖励函数 reward function
+3. s 不能被修改的情况

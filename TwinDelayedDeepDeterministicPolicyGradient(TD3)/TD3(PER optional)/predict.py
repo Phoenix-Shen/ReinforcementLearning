@@ -3,7 +3,7 @@ import torch as t
 import yaml
 import gym
 if __name__ == "__main__":
-    with open("TwinDelayedDeepDeterministicPolicyGradient(TD3)\settings.yaml", "r", encoding="utf-8") as f:
+    with open("TwinDelayedDeepDeterministicPolicyGradient(TD3)\TD3(PER optional)\settings.yaml", "r", encoding="utf-8") as f:
         args = yaml.load(f.read(), Loader=yaml.FullLoader)
     env = gym.make(args["env"])
 

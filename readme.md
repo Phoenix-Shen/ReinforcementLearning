@@ -6,27 +6,27 @@ Note that the algorithm code comes from some experts in the field of reinforceme
 
 where the \* mark means the algorithm is important and worth diving into it
 
-|          method          | done |
-| :----------------------: | ---- |
-|        Qlearnling        | √    |
-|          Sarsa           | √    |
-|       SarsaLambda        | √    |
-|          \*DQN           | √    |
-|       \*DQNwithPER       | √    |
-|        DQNwithHER        | ×    |
-|        DuelingDQN        | √    |
-|    \*Policy Gradient     | √    |
-|       \*AC and A2C       | √    |
-|           ACER           | √    |
-|           A3C            | √    |
-| \*SAC with PER(optional) | √    |
-|          \*DDPG          | √    |
-|       DDPGwithHER        | ×    |
-|  TD3 with PER(optional)  | √    |
-|           TRPO           | √    |
-|          \*PPO           | √    |
-|           DPPO           | √    |
-|          DIAYN           | ×    |
+|        method        | done |
+| :------------------: | ---- |
+|     \*Qlearnling     | √    |
+|        Sarsa         | √    |
+|     SarsaLambda      | √    |
+|        \*DQN         | √    |
+|     \*DQNwithPER     | √    |
+|      DQNwithHER      | ×    |
+|      DuelingDQN      | √    |
+|  \*Policy Gradient   | √    |
+|     \*AC and A2C     | √    |
+|         ACER         | √    |
+|         A3C          | √    |
+| \*SAC (PER optional) | √    |
+|        \*DDPG        | √    |
+|     DDPGwithHER      | ×    |
+|  TD3 (PER optional)  | √    |
+|         TRPO         | √    |
+|        \*PPO         | √    |
+|         DPPO         | √    |
+|        DIAYN         | ×    |
 
 ---
 
@@ -493,8 +493,8 @@ pipreqs ./ --encoding=utf8
 
 # 7. TODO
 
-1. 21 号[ERE](https://arxiv.org/abs/1906.04009v1) HER 这些玩意
-2. 22 号 GNN
+1. HER
+2. H-DQN
 3. OpenAI spinning up 好好看看
 4. 继续学习 D2L 书里面的 MLP
 5. 手写优化器
