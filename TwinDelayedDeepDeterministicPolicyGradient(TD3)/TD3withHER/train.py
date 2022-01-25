@@ -1,10 +1,11 @@
+import numpy as np
 import yaml
 from model import Agent
 import gym
 
 if __name__ == "__main__":
 
-    with open("TwinDelayedDeepDeterministicPolicyGradient(TD3)/settings.yaml", "r", encoding="utf-8") as f:
+    with open("TwinDelayedDeepDeterministicPolicyGradient(TD3)\TD3withHER\settings.yaml", "r", encoding="utf-8") as f:
         args = yaml.load(f.read(), yaml.FullLoader)
 
     print("###################YOUR SETTINGS###################")
@@ -13,7 +14,7 @@ if __name__ == "__main__":
     print("->>>>training...")
     env = gym.make(args["env"])
     agent = Agent(
-        env.observation_space.shape[0],
+        env.observation_space.shape[0]*2,
         env.action_space.shape[0],
         args["hidden_size"],
         env.action_space.high,
@@ -35,12 +36,8 @@ if __name__ == "__main__":
         args["save_frequency"],
         args["actor_dir"],
         args["critic_dir"],
-        args["mem_alpha"],
-        args["mem_beta"],
-        args["beta_increment"],
-        args["epsilon"],
-        args["clipped_abs_error"],
-        args["HER"]
+        args["action_noise"],
+        np.array([1, 0, 0], dtype=np.float32)
     )
 
     agent.learn()
