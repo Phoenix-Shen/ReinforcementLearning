@@ -15,8 +15,8 @@ cuda: True
 display_interval: 100
 model_save_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models
 save_frequency: 2000
-actor_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models\ACTOR 2022-01-24 05-33-01.pth
-critic_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models\CRITIC 2022-01-24 05-33-01.pth
+actor_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models\lunarlanderPERv2.pth
+critic_dir:
 ################
 # PER SETTINGS #
 ################
