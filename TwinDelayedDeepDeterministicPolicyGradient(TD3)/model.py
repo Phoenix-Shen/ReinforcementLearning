@@ -123,7 +123,7 @@ class Agent():
                  beta_increment: float,
                  epsilon: float,
                  clipped_abs_error: float,
-                 HER: bool) -> None:
+                 PER: bool) -> None:
         # save parameters
         self.actor_dir = actor_dir
         self.critic_dir = critic_dir
@@ -148,7 +148,7 @@ class Agent():
         self.beta_increment = beta_increment
         self.epsilon = epsilon
         self.clipped_abs_error = clipped_abs_error
-        self.HER = HER
+        self.PER = PER
         # networks
         self.actor = Actor(n_features, n_actions,
                            max_action, hidden_size)
@@ -169,7 +169,7 @@ class Agent():
             self.critic.to(self.device)
             self.critic_target.to(self.device)
         # Memory
-        if self.HER:
+        if self.PER:
             self.mem = ProritizedExperienceReplay(
                 self.buffer_size,
                 self.batch_size,
@@ -219,7 +219,7 @@ class Agent():
                 self.save_model()
 
     def _update_networks(self, step):
-        if self.HER:
+        if self.PER:
             idx, s, a, r, done, s_, ISweights = self.mem.sample()
         else:
             s, a, r, done, s_ = self.mem.sample()
@@ -229,7 +229,7 @@ class Agent():
         r = r.to(self.device)
         inverse_done = (1.-done).to(self.device)
         s_ = s_.to(self.device)
-        if self.HER:
+        if self.PER:
             ISweights = ISweights.to(self.device)
 
         with t.no_grad():
@@ -245,7 +245,7 @@ class Agent():
         cur_q1, cur_q2 = self.critic(s, a)
         tderr1 = tar_q.detach()-cur_q1
         tderr2 = tar_q.detach()-cur_q2
-        if self.HER:
+        if self.PER:
             loss_critic = (t.pow(tderr1, 2)*ISweights +
                            t.pow(tderr2, 2)*ISweights).mean()/2
             prios = abs((tderr1+tderr2)/2+1e-5).squeeze()

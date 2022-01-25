@@ -21,8 +21,8 @@ critic_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models\CRITIC 
 # PER SETTINGS #
 ################
 
-#use HER?
-HER: True
+#use PER?
+PER: True
 mem_alpha: 0.6
 mem_beta: 0.4
 beta_increment: 0.0001

@@ -21,16 +21,16 @@ DDPG 的改进方法
 
 4. 要选择合适的 policy_noise、noise_clip，否则会影响到网络对于价值函数的判断，从而导致损失降下去了，但是训练效果不好
 
-# HER 多大程度上会拖慢学习速度？
+# PER 多大程度上会拖慢学习速度？
 
 for Pendulum-v1
 
-with HER
+with PER
 
-![](WithHER.png)
+![](WithPER.png)
 
-NO HER
+NO PER
 
-![](NoHER.png)
+![](NoPER.png)
 
-因为这两个是同时开始训练的，但是它们的进度不同，说明 HER 还是拖累了训练速度，无 HER 比有 HER**快了 17%**
+因为这两个是同时开始训练的，但是它们的进度不同，说明 PER 还是拖累了训练速度，无 PER 比有 PER**快了 17%**

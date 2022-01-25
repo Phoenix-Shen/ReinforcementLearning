@@ -40,7 +40,7 @@ if __name__ == "__main__":
         args["beta_increment"],
         args["epsilon"],
         args["clipped_abs_error"],
-        args["HER"]
+        args["PER"]
     )
 
     agent.learn()
