@@ -27,7 +27,7 @@ for Pendulum-v1
 
 with PER
 
-![](WithPER.png)
+![](./WithPER.png)
 
 NO PER
 

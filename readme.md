@@ -326,7 +326,7 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 5. reparameterize 使 log standard deviation 可微
 6. 一次采样多次进行梯度下降
 
-## 8. TwinDelayedDeepDeterministicPolicyGradient(TD3)
+## 8. TwinDelayedDeepDeterministicPolicyGradient(TD3) Off-Policy
 
 1. 双 Critic
 2. 延迟更新 Actor
