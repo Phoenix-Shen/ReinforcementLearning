@@ -163,6 +163,11 @@ class Agent():
         self.critic_target = Critic(n_features, n_actions, hidden_size)
         self.critic_optim = optim.Adam(self.critic.parameters(), lr=lr_c)
         self.actor_optim = optim.Adam(self.actor.parameters(), lr=lr_a)
+        # Load pretrained models
+        if self.actor_dir is not None and self.critic_dir is not None:
+
+            self.load_model()
+
         # copy parameters
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.critic_target.load_state_dict(self.critic.state_dict())
@@ -188,10 +193,6 @@ class Agent():
                 batch_size,
                 n_features,
                 n_actions)
-        # Load pretrained models
-        if self.actor_dir is not None and self.critic_dir is not None:
-
-            self.load_model()
 
     def choose_action(self, obs: ndarray) -> ndarray:
         obs = t.tensor(obs, dtype=t.float32).unsqueeze(0).to(self.device)
