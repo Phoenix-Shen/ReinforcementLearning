@@ -5,7 +5,7 @@ reward_decay: 0.99
 buffer_size: 100000
 batch_size: 8192
 env: Pendulum-v1
-max_epoch: 200000
+max_epoch: 50000
 log_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\logs
 tau: 0.01
 action_noise: 0.1
