@@ -345,7 +345,7 @@ pipreqs ./ --encoding=utf8
 
 [requirements.txt there, run pip install -r requirements.txt](./requirements.txt)
 
-- box2d (box2d for lunarlander-v2 and other gym envs, download WHL file and execute "pip install \*\*\*.whl" otherwise you will suffer building problems)
+- box2d (box2d for lunarlander-v2 and other gym envs, download WHL file and execute "pip install \*\*\*.whl" otherwise you will suffer building problems o(╥﹏╥)o)
 - gym==0.21.0 (Incorrect versions of the gym environment can cause errors, such as v1 and v2 of LunarLander and v0 and v1 of pendulum)
 - ipython==7.31.0 (jupyter notebook)
 - matplotlib==3.4.3 (jupyter notebook)

@@ -149,3 +149,7 @@ def data_iter(batch_size: int, features: torch.Tensor, labels: torch.Tensor):
         batch_indices = torch.tensor(
             indices[i:min(i+batch_size, num_examples)])
         yield features[batch_indices], labels[batch_indices]
+
+
+def annotate(text, xy, xytext):
+    plt.gca().annotate(text, xy, xytext, arrowprops=dict(arrowstyle="->"))
