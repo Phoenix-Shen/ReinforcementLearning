@@ -6,8 +6,8 @@ repeat_times: 50
 lr_a: 4.0e-4
 lr_c: 4.0e-4
 hidden_size: 256
-reward_decay: 0.985
-tau: 0.005
+reward_decay: 0.99
+tau: 0.01
 act_noise: 0.1
 target_noise: 0.2
 tar_noise_clip: 0.5
@@ -21,7 +21,7 @@ log_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\logs
 # 多少轮展示一下训练进度
 display_interval: 10
 # 继续训练时ac的目录
-actor_dir:
+actor_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models\ACTOR 2022-01-26 21-14-47.pth
 critic_dir:
 model_save_dir: TwinDelayedDeepDeterministicPolicyGradient(TD3)\saved_models
-save_frequency: 100
+save_frequency: 500
