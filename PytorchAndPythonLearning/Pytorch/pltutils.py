@@ -124,7 +124,7 @@ def show_images(imgs, num_rows, num_cols, titles=None, scale=1.5):  # @save
     return axes
 
 
-def load_data_fashion_mnist(batch_size, resize=None, n_threads=4, data_root="./PytorchAndPythonLearning/Pytorch/dataset"):
+def load_data_fashion_mnist(batch_size, resize=None, n_threads=0, data_root="./PytorchAndPythonLearning/Pytorch/dataset"):
     """下载fashion-MNIST数据集 将其加载到内存当中去"""
     transform = [transforms.ToTensor()]
     if resize:
