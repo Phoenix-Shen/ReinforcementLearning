@@ -47,7 +47,7 @@ b = t.zeros(NUM_OUTPUTS, requires_grad=True, device=DEVICE)
 
 def softmax(X: Tensor):
     X_exp = t.exp(X)
-    #对列求和，再除以和
+    # 对列求和，再除以和
     partition = X_exp.sum(dim=1, keepdim=True)
     return X_exp/partition
 
@@ -121,6 +121,7 @@ def predict(net, test_iter):
     return correct
 
 
+# %%
 train_loader, test_loader = load_data_fashion_mnist(BATCH_SIZE, n_threads=0)
 train(net, train_loader, cross_entropy, updater, 1)
 predict(net, test_loader)
