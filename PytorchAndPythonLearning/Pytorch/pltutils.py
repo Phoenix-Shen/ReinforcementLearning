@@ -129,7 +129,7 @@ def show_images(imgs, num_rows, num_cols, titles=None, scale=1.5):  # @save
     return axes
 
 
-def load_data_fashion_mnist(batch_size, resize=None, n_threads=0, data_root="./PytorchAndPythonLearning/Pytorch/dataset"):
+def load_data_fashion_mnist(batch_size, resize=None, n_threads=0, data_root=r"C:\Users\ssk\Desktop\Reinforcement learning\Code\PytorchAndPythonLearning\Pytorch\dataset"):
     """下载fashion-MNIST数据集 将其加载到内存当中去"""
     transform = [transforms.ToTensor()]
     if resize:
@@ -348,5 +348,29 @@ class Accumulator:
         return self.data[idx]
 
 
+numpy = lambda x, *args, **kwargs: x.detach().numpy(*args, **kwargs)
 size = lambda x, *args, **kwargs: x.numel(*args, **kwargs)
+reshape = lambda x, *args, **kwargs: x.reshape(*args, **kwargs)
+to = lambda x, *args, **kwargs: x.to(*args, **kwargs)
 reduce_sum = lambda x, *args, **kwargs: x.sum(*args, **kwargs)
+argmax = lambda x, *args, **kwargs: x.argmax(*args, **kwargs)
+astype = lambda x, *args, **kwargs: x.type(*args, **kwargs)
+transpose = lambda x, *args, **kwargs: x.t(*args, **kwargs)
+reduce_mean = lambda x, *args, **kwargs: x.mean(*args, **kwargs)
+
+
+def accuracy(y_hat, y):
+    """计算预测正确的数量
+    Defined in :numref:`sec_softmax_scratch`"""
+    if len(y_hat.shape) > 1 and y_hat.shape[1] > 1:
+        y_hat = argmax(y_hat, axis=1)
+    cmp = astype(y_hat, y.dtype) == y
+    return float(reduce_sum(astype(cmp, y.dtype)))
+
+
+def try_gpu(i=0):
+    """如果存在，则返回gpu(i)，否则返回cpu()
+    Defined in :numref:`sec_use_gpu`"""
+    if torch.cuda.device_count() >= i + 1:
+        return torch.device(f'cuda:{i}')
+    return torch.device('cpu')
