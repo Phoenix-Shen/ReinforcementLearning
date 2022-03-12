@@ -1,6 +1,13 @@
 # simple implementation of CAM in PyTorch for the networks such as ResNet, DenseNet, SqueezeNet, Inception
 # last update by BZ, June 30, 2021
 
+"""
+对于全卷积网络，提取的特征在空间上还没有被破坏，
+也就是说，目标定位的能力还没有失去，
+这时可以通过最后一层softmax分类器的权重来是它可视化，这是attention的前身 
+
+"""
+
 import io
 from PIL import Image
 from torch import Tensor
@@ -53,6 +60,16 @@ def returnCAM(feature_conv: np.ndarray, weight_softmax: np.ndarray, class_idx):
     size_upsample = (256, 256)
     bz, nc, h, w = feature_conv.shape
     output_cam = []
+    """
+    equals ::
+
+    n_channels = 512
+    output_tensor = t.zeros((512,49))
+    for i in range(n_channels):
+        output_tensor[i] = weight_softmax[i] * feature_conv [i,:].reshape(-1)
+    output_tensor = output_tensor.sum(dim = 0)
+    # output_tensor.shape is (49) , and it indicates how much attention should be paid to every location
+    """
     for idx in class_idx:
         weight_softmax = weight_softmax[idx]
         feature_conv = feature_conv.reshape((nc, h*w))
