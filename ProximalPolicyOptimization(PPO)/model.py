@@ -102,7 +102,7 @@ class PPO(object):
         # Step 8 Finally end for
             timesteps_so_far += np.sum(batch_lens)
             self.sw.add_scalar("avg_reward", np.mean(
-                batch_r), timesteps_so_far)
+                np.concatenate(batch_r)), timesteps_so_far)
     # the function to collect data
 
     def rollout(self):
@@ -166,7 +166,7 @@ class PPO(object):
         batch_rewards_togo = []
         for ep_rews in reversed(batch_rewards):
             discounted_reward = 0
-            for rew in ep_rews:
+            for rew in reversed(ep_rews):
                 discounted_reward = rew+discounted_reward*self.gamma
                 batch_rewards_togo.insert(0, discounted_reward)
         batch_rewards_togo = t.FloatTensor(batch_rewards_togo)

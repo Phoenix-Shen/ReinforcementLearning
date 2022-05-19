@@ -1,5 +1,7 @@
 # PPO onpolicy 算法 - OPENAI BASELINE
 
+<https://medium.com/@eyyu/coding-ppo-from-scratch-with-pytorch-part-1-4-613dfc1b14c8>
+
 - 主要为了解决 actor critic 训练步长的问题，在这里实现了 ppo-clip
 - On-policy 是要用 πθ 收集数据，当 θ 更新了，我们就要重新进行数据收集。
 - 这个方法十分慢，我们能不能使用 πθ'收集数据，把这个数据给 πθ 使用进行训练，由于 θ'是不变的，那我们就可以进行数据重用。
@@ -33,7 +35,7 @@ on：与环境交互的这个 agent 就是我们要学习的 agent，off：不�
 - 要想不减，自然想到一个方法：theta=theta+一个正值
 - ![](./algorithm.png)
 - 目标：最大化优势函数，并且使新旧策略的差异不能够太大
-- https://blog.csdn.net/tanjia6999/article/details/99716133
+- <https://blog.csdn.net/tanjia6999/article/details/99716133>
 - PPO 性能更 TRPO 差不多，但是更加的简单。
 
 # PPO Offpolicy 思路

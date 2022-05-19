@@ -4,7 +4,7 @@ import gym
 import numpy as np
 from tensorboardX import SummaryWriter
 if __name__ == "__main__":
-    model_dir = "./ProximalPolicyOptimization/saved_models/ACTOR 2021-12-14 16-45-2.pth"
+    model_dir = "./ProximalPolicyOptimization(PPO)/saved_models/ACTOR 2021-12-14 16-45-2.pth"
     writer = SummaryWriter("./ProximalPolicyOptimization/logs")
     env = gym.make("Pendulum-v1")
     ppo = model.PPO(env, writer)
@@ -21,8 +21,3 @@ if __name__ == "__main__":
         s_, r, _, _ = env.step(a)
         s = s_
         print("action:{},reward:{}".format(a, r))
-
-# %%
-import torch as t
-import torch.nn as nn
-nn.Module.eval()

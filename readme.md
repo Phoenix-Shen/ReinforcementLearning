@@ -246,9 +246,9 @@ step
 
 - 就目前在网上看到的情况有以下几种 AC 架构
 
-  1.  使用 Actor 来学习策略，Critic 学习 V(s)，接受状态 s 作为输入
-  2.  使用 Actor 来学习策略，Critic 学习 Q_pi(a,s)，接受状态 s，a 的 concatenation 作为输入
-  3.  使用 Actor 来学习策略，Critic 学习 Q_pi(a,s)，接受状态 s，a 的 concatenation 作为输入，但是 s 是作为特征（features）从 actor 提取出来的，也就是说共享卷积层参数。
+  1. 使用 Actor 来学习策略，Critic 学习 V(s)，接受状态 s 作为输入
+  2. 使用 Actor 来学习策略，Critic 学习 Q_pi(a,s)，接受状态 s，a 的 concatenation 作为输入
+  3. 使用 Actor 来学习策略，Critic 学习 Q_pi(a,s)，接受状态 s，a 的 concatenation 作为输入，但是 s 是作为特征（features）从 actor 提取出来的，也就是说共享卷积层参数。
 
 - 训练：
 
@@ -259,15 +259,15 @@ step
 
 - 步骤：
 
-  1.  获取状态 st
-  2.  通过 pi(·|st;theta_t)的分布进行一个随机采样，得到下一步的动作 at
-  3.  执行动作，获取状态 st+1 和奖励 rt
-  4.  使用 td error 来更新 w
+  1. 获取状态 st
+  2. 通过 pi(·|st;theta_t)的分布进行一个随机采样，得到下一步的动作 at
+  3. 执行动作，获取状态 st+1 和奖励 rt
+  4. 使用 td error 来更新 w
       - 计算 q(st,at;w)和 q(st+1,at+1;w)
       - 计算 td target ： yt = rt + gamma \* q(st+1,at+1;w) ，显然 yt 比 q(st,at;w)更加可靠
       - 计算二次距离 ||predict - target||/2，
       - 进行梯度下降，让损失变得更小
-  5.  使用 policy gradient（策略梯度）来更新 theta
+  5. 使用 policy gradient（策略梯度）来更新 theta
       - 定义梯度 g（a，theta）=q(st,a;w)\*log pi( a|s;theta)关于 theta 的导数，那么我们 V(s;theta，w)关于 theta 的导数就是 E_A[g(A,theta)],就是一个期望
       - 由于无法求 E_A[g(A,theta)]，我们只能够抽样进行蒙特卡洛近似，所以直接使用 g 来代替 E_A[g(A,theta)]作为期望的近似。
       - 进行抽样，并计算 g（a，theta_t）并进行梯度上升，使期望越来越高
@@ -373,8 +373,8 @@ pipreqs ./ --encoding=utf8
 - 使用 require_grad=False 可以冻结神经网络某一部分的参数，更新的时候就不能减 grad 了
 - tensor.item()，直接返回一个数据，但是只能适用于 tensor 里头只有一个元素的情况，否则要是用 tolist()或者 numpy()
 - 不建议使用 inplace 操作
-- hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。比如 theta_new = theta_old *0.95 + theta_new *0.05
-- pytorch 官网上有的 Qlearning 例子:https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+- hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。比如 theta_new = theta_old *0.95 + theta_new*0.05
+- pytorch 官网上有的 Qlearning 例子:<https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html>
 - nn.Module.eval()递归调用子模块，将 Module.train 改成 false
 - 类似于 tensor.pow, tensor.sum, tensor.mean, tensor.gather 这些操作都可以使用 torch.pow(tensor,\*args)等来代替，使用 t.pow 这种类型的函数可以直接知道它的参数（dim=？之类的），用 tensor.pow 的话可能会因为识别不出来这是个 tensor，导致这个方法出不来。（比如说 a=t.ones((1,1,1)),b=a+a，调用 b.sum 的时候按 TAB 就出不来)
 - 同上一条，在传参的时候尽量把参数的类型写清楚，不然在下面使用的时候按 tab 也出不来，十分难顶。例如
@@ -436,6 +436,7 @@ pipreqs ./ --encoding=utf8
 - 关于使用经验池的**AC 架构**算法调参
   - 所谓的 AC 架构算法有，DDPG TD3 SAC DQN with PER DQN with HER 等等，他们不是采用带权重的梯度上升，所以是 AC 架构
   - 超参数一般有
+
     ```
     mem_size
     batch_size
@@ -444,6 +445,7 @@ pipreqs ./ --encoding=utf8
     lr_c
     lr_a
     ```
+
   - 其中对于性能(收敛速度)影响较大的是 tau,lr_c,lr_a,batch_size
   - 一定要选好这几个参数，不然网络收敛速度很慢，较差的参数要四五个小时，较好的，半个小时就行
 
