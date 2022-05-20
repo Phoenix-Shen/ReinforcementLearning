@@ -4,8 +4,8 @@ import gym
 import numpy as np
 from tensorboardX import SummaryWriter
 if __name__ == "__main__":
-    model_dir = "./ProximalPolicyOptimization(PPO)/saved_models/ACTOR 2021-12-14 16-45-2.pth"
-    writer = SummaryWriter("./ProximalPolicyOptimization/logs")
+    model_dir = "./ProximalPolicyOptimization(PPO)/saved_models/ACTOR 2022-5-20 15-54-15.pth"
+    writer = SummaryWriter("./ProximalPolicyOptimization(PPO)/logs")
     env = gym.make("Pendulum-v1")
     ppo = model.PPO(env, writer)
     ppo.actor.load_state_dict(t.load(model_dir))
@@ -18,6 +18,9 @@ if __name__ == "__main__":
         env.render()
         a = ppo.actor.forward(t.FloatTensor(s)).detach().numpy()
 
-        s_, r, _, _ = env.step(a)
+        s_, r, done, _ = env.step(a)
         s = s_
         print("action:{},reward:{}".format(a, r))
+
+        if done:
+            s = env.reset()

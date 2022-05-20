@@ -18,11 +18,11 @@ class FeedForwardNN(nn.Module):
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(n_features, 128),
+            nn.Linear(n_features, 256),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(256, 256),
             nn.ReLU(),
-            nn.Linear(128, n_actions)
+            nn.Linear(256, n_actions)
         )
 
     def forward(self, observation: np.ndarray):
@@ -101,8 +101,9 @@ class PPO(object):
                     timesteps_so_far, i, actor_loss.item(), critic_loss.item()))
         # Step 8 Finally end for
             timesteps_so_far += np.sum(batch_lens)
+            ep_sum_rewards = [sum(rw) for rw in batch_r]
             self.sw.add_scalar("avg_reward", np.mean(
-                np.concatenate(batch_r)), timesteps_so_far)
+                ep_sum_rewards), timesteps_so_far)
     # the function to collect data
 
     def rollout(self):

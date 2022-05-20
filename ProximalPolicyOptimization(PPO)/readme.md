@@ -1,5 +1,13 @@
 # PPO onpolicy 算法 - OPENAI BASELINE
 
+BipedalWalker-v3
+
+![BipedalWalker-v3](./lossBipedalWalker-v3.png)
+
+LunarLanderContinuous-v2
+
+![lunarlander](./LunarLander.png)
+
 <https://medium.com/@eyyu/coding-ppo-from-scratch-with-pytorch-part-1-4-613dfc1b14c8>
 
 - 主要为了解决 actor critic 训练步长的问题，在这里实现了 ppo-clip
@@ -25,6 +33,8 @@ on：与环境交互的这个 agent 就是我们要学习的 agent，off：不�
 ## 在代码中，将会实现 PPO-Clip 算法，这是 OpenAI 提出的
 
 效果很差，因为“偶尔的胜利”不足以使网络的参数完全修正，但是 offpolicy 的 dqn with per 能够多次学习成功的经验，所以对于这个 Pendulum-v1 来说，8 太行
+
+对于月球车来说也是不行的，他会走向local minimum（飞天上不下来）
 
 # TrustRegionPolicyOptimization
 
