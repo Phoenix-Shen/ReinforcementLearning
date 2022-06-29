@@ -2,6 +2,12 @@
 
 Note that the algorithm code comes from some experts in the field of reinforcement learning or I refactored the algorithms myself.
 
+本仓库中的强化学习算法来自于Medium、YouTube、CSDN等等网站，详细的信息请见该readme下面的“参考资料”这一小节，或许会对您有些帮助
+
+此外，TRPO我似乎没有搞懂，代码并没有调试，请不要运行运行TRPO的代码。
+
+如果遇到bug，请给我提issue，O(∩_∩)O。
+
 ## 进度
 
 where the \* mark means the algorithm is important and worth diving into it
