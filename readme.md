@@ -34,50 +34,57 @@ where the \* mark means the algorithm is important and worth diving into it
 
 1. **代理(agent)在一个环境(environment)中执行动作/行为(action)。环境如何对代理的动作做出响应由一个已知或未知的模型(model)来定义。执行代理可以停留在环境中的某个状态(state) $s\in \mathcal{S}$，可以通过执行某个行为/动作(action) $a\in \mathcal{A}$来从一个状态$s$进入到另一个状态$s'$。代理会到达什么状态由状态转移概率$(P)$决定。代理执行了一个动作之后，环境会给出一定的奖励(reward) $r\in\mathcal{R}$作为反馈。**
 
-2. 几乎所有的强化学习问题可以使用马尔科夫决策过程（MDPs）来描述，MDP 中的所有状态都具有“马尔科夫性”：未来仅仅依赖于当前的状态，并不与历史状态相关，在给定当前状态下，未来与过去条件独立，也就是当前状态包含了决定未来所需的所有信息。
+2. 几乎所有的强化学习问题可以使用马尔科夫决策过程（MDPs）来描述，MDP 中的所有状态都具有“马尔科夫性”：未来仅仅依赖于当前的状态，并不与历史状态相关，在给定当前状态下，未来与过去条件独立，也就是**当前状态包含了决定未来所需的所有信息**。
 
-3. 策略：即智能体 agent 的行为函数 PI，是当前状态到一个动作的映射，它可以是随机性的也可以是确定性的：
+3. 策略：即智能体 agent 的行为函数 $\pi$，是当前状态到一个动作的映射，它可以是随机性的(random)也可以是确定性的(deterministic)：
 
-   1. PI(s)=a
-   2. PI(a|s)=P_pi[A=a|S=s]
+   1. $\pi(s)=a$
+   2. $\pi(a \mid s)= \mathbb{P}_{\pi}(A=a \mid S=s)$
 
-4. 价值函数 Q(s,a)：价值函数是衡量一个状态或者是一个`(状态，行为)元组`的好坏，它是 U_t 的期望；未来的奖励（称为`回报`）定义为带衰减的后续奖励之和(discounted rewards)
+4. 动作-价值函数(Action-value Function) $Q(s,a)$：动作-价值函数是衡量一个状态或者是一个`(状态，行为)元组`的好坏，它是 $U_t$ 的期望:$Q_{\pi}(s_t,a_t) = \mathbb{E}[U_t\vert S_t = s_t, A_t = a_t]$；未来的奖励（称为`回报`）定义为带衰减的后续奖励之和(discounted rewards)
 
-   1. $$ G*t = R*{t+1} + \gamma R*{t+2} + \dots = \sum*{k=0}^{\infty} \gamma^k R\_{t+k+1} $$
-   2. gamma 作为对未来奖励的`惩罚`(`penaty`)，因为：
+   1. $$ U_t = R_{t+1} + \gamma R_{t+2} + \dots = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1} $$
+      在[下面第六节](#1-关键概念-key-concepts)中会详细讲到
+
+   2. $\gamma$ 作为对未来奖励的`惩罚`(`penaty`)，因为：
       1. 未来奖励的不确定性
       2. 未来奖励不会直接提供收益
-      3. 数学上便利，无需在乎太远的奖励，被 gamma 衰减掉了
+      3. 数学上便利，无需在乎太远的奖励，被 $\gamma$ 衰减掉了
       4. 使用衰减系数，无需担心存在无限循环的转移图
-   3. Q\*(st,at)=max_pi Q_pi(st,at)，可以对 at 做评价，这个动作有多好
+   3. $Q^*(s_t,a_t)=\mathop{\max}_{\pi} Q_{\pi}(s_t,a_t)$，可以对 $a_t$ 做评价，这个动作有多好,求出来了$Q^*$之后，Agent便可以根据这个动作价值函数选取最优的动作
 
-5. 价值函数存在两种形式：状态 s 的状态价值——`回报的期望值`；某个（state，action）元组的行为价值函数——`该行为能够获得多大收益`？
+5. 状态-价值函数(State-Value Function)存在两种形式：状态 $s$ 的状态价值——`回报的期望值`；某个（state，action）元组的行为价值函数——`该行为相比于平均状态能够获得多大收益`？
+
+    $V(s)$能够表示当前局势的好坏。而$Q_{\pi}(s,a)$能够衡量Agent在s状态下选取动作a的好坏。
 
    1. 我们可以利用行为的分布以及行为的价值函数来推导`状态价值函数`
-      $$ V*{\pi}(s) = \sum*{a \in \mathcal{A}} Q\_{\pi}(s, a) \pi(a \vert s) $$
+      $$ \begin{aligned}V_{\pi}(s) &= \sum_{a \in \mathcal{A}} Q_{\pi}(s, a) \pi(a \vert s) \\&=\mathbb{E}_A[Q_{\pi}(s, A)]
+      \end{aligned}$$
    2. 定义行为价值函数和状态价值函数之间的差称为`优势(advantage)`函数，意味着这个动作比`平均状态`好多少？
-      $$ A*{\pi}(s, a) = Q*{\pi}(s, a) - V\_{\pi}(s) $$
-   3. 对$V*{\pi}(S)$求期望，我们可以得到这个 policy PI 的好坏
+      $$ A_{\pi}(s, a) = Q_{\pi}(s, a) - V_{\pi}(s) $$
+   3. 对$V_{\pi}(S)$求期望$\mathbb{E}_S[V_{\pi}(S)]$，我们可以得到这个 policy $\pi$ 的好坏
 
-6. 贝斯曼方程与 Return(aka cumulative future reward)
+6. 贝斯曼方程与 Return(aka cumulative future reward),**注意Return跟上面的奖励Reward是不一样的。**
 
    1. 贝尔曼方程指的是一系列的等式，它将价值函数分解为直接奖励加上衰减后的未来奖励。(discounted rewards)
-   2. return(aka cumulative future reward):U_t=(R_t)+(R_t+1)+(R_t+2)+...
-   3. discounted return (aka cumulative discounted future reward) :U_t=gamma^0*(R_t)+gamma^1*(R_t+1)+gamma^2\*(R_t+2)+...,其中 gamma 是一个超参数。在这里，U_t 也是个位置变量，因为动作还没有发生，我们没有办法获得 t 时候的奖励以及 t 时刻之后的奖励，所以 R 都是随机的，那么我们的 U_t 也是随机的，因为下面的第七点`强化学习的随机性`
+   2. return(aka cumulative future reward), `Return并不是reward`，它可以这么表示: $U_t={R_t}+R_{t+1}+R_{t+2}+...$
+   3. discounted return (aka cumulative discounted future reward) : $U_t=\gamma^0 R_t+\gamma^1R_{t+1}+\gamma^2R_{t+2}+...$ ,其中 $\gamma$ 是一个超参数。在这里，$U_t$ 也是个位置变量，因为动作还没有发生，我们没有办法获得 $t$ 时候的奖励以及 $t$ 时刻之后的奖励，所以 $R$ 都是随机的，那么我们的 $U_t$ 也是随机的，因为下面的第七点`强化学习的随机性`，所以我们在这里使用$R$来表示奖励，因为它是随机变量。
+   4. 根据上面的分析，我们可以得知，$R_i$由$S_i$和$A_i$决定，那么$U_t$由一系列随机变量决定：$A_t,A_{t+1},A_{t+2},\dots \ and \ S_t,S_{t+1},S_{t+2},\dots $
 
 7. 强化学习的随机性
 
-   1. `动作具有随机性`，Pi（theta）只输出各个动作的概率，动作是根据概率随机抽样而选取的
-   2. `状态转换具有随机性`，并不是说在状态 s_i 的情况下选取动作 a 就一定会转移到一个固定的状态 s_i+1，这个状态也是随机的，他可能是 s1,s2,s3.....中的任意一个
+   1. `动作具有随机性`，$\pi(\theta)$只输出各个动作的概率，动作是根据概率随机抽样而选取的，即$\mathbb{P}[A=a \vert S=s] =\pi(a\vert s)$
+   2. `状态转换具有随机性`，并不是说在状态 $s_i$ 的情况下选取动作 $a$ 就一定会转移到一个固定的状态 $s_{i+1}$，这个状态也是随机的，他可能是 $s_1,s_2,s_3.....$中的任意一个，即$\mathbb{P}[S^{\prime}=s^{\prime}\vert S=s,A=a]=p(s^{\prime}\vert s,a)$
 
 8. 轨迹 trajectory
 
-   我们把一轮游戏从开始到结束的动作、状态、奖励拼起来也就是(s1,a1,r1,s2,a2,r2,s3,a3,r3.....sn,an,rn)这就是个轨迹，称之为 trajectory，后面很多算法要用到轨迹
+   我们把一轮游戏从开始到结束的动作、状态、奖励拼起来也就是$(s_1,a_1,r_1,s_2,a_2,r_2,s_3,a_3,r_3, \dots, s_n,a_n,r_n)$这就是个轨迹，称之为 `trajectory,轨迹`，后面很多算法要用到`轨迹`
 
 9. AI 如何控制 agent 打游戏？
 
-   1. `学习 Q*`(st,at)=max_pi Q_pi(st,at)，根据状态 st 选择 at，at 满足条件：at 能够使得 Q\*最大
-   2. `学习策略 Pi(a|s)`，根据状态 st，根据 Pi(·|st)的概率随机采样
+   1. `学习 Q*`$(s_t,a_t)=max_\pi Q_{\pi}(s_t,a_t)$，根据状态 $s_t$ 选择 $a_t$，$a_t$ 满足条件：$a_t$ 能够使得 Q\*最大
+   2. `学习策略 Pi(a|s)`，根据状态 $s_t$，根据 $\pi(·|s_t)$的概率随机采样
+   3. 第一个就是ValueBased RL,第二种就是PolicyBased RL。
 
 10. 概率论相关的数学知识
 
@@ -91,26 +98,26 @@ where the \* mark means the algorithm is important and worth diving into it
 
     3. 期望
 
-       给定 X 为随机变量，求 f(X)的期望：
+       给定 X 为随机变量，求 $f(X)$的期望：
 
-       - 在离散情况下，就是 p(x)\*f(x)的加和
-       - 在连续情况下，就是 P(x)\*f(x)的积分
+       - 在离散情况下，就是 $p(x)f(x)$的加和
+       - 在连续情况下，就是 $P(x)f(x)$的积分即$\int_x P(x)f(x)$
 
     4. 随机抽样
 
-       `获得 X 的观测值 x 的操作叫做随机抽样`
+       获得 $X$ 的观测值 $x$ 的操作叫做随机抽样
 
     5. 蒙特卡洛 Monte Carlo 抽样的用法
 
-       - 计算 π
+       - 计算 $\pi$
 
-         假定(x,y)是在一个边长为 1 的正方形之内随机选一个点，那么这个点符合均匀分布的规律，那么这个点落在正方形内接圆的概率是多少呢？用面积可以算出来是 π/4,那我们抽样 n 个点，应该有 πn/4 个点落在圆里面，如果 n 非常大的话我们发现 m 个点在圆里面，那么 m≈πn/4。
+         假定$(x,y)$是在一个边长为 $1$ 的正方形之内随机选一个点，那么这个点符合均匀分布的规律，那么这个点落在正方形内接圆的概率是多少呢？用面积可以算出来是 $π/4$,那我们抽样 $n$ 个点，应该有 $πn/4$ 个点落在圆里面，如果 $n$ 非常大的话我们发现 $m$ 个点在圆里面，那么 $m≈πn/4$。
 
          `要保证抽样是均匀的`
 
        - Buffon's Needle Problem
 
-         投针问题也能够很好地近似估算 π
+         投针问题也能够很好地近似估算 $\pi$
 
        - 估计阴影部分的面积
 
@@ -122,11 +129,11 @@ where the \* mark means the algorithm is important and worth diving into it
 
        - **近似期望**
 
-         X 是一个 d 维的随机变量，p（x）是概率密度函数，平均分布的概率是 p(x)=1/t for x∈[0,t]
+         X 是一个 d 维的随机变量，p(x)是概率密度函数，平均分布的概率是 $p(x)=1/t  \ for \ x\in[0,t]$
 
-         高斯分布/正态分布：p(x)=1/(sigema (2π)^2)\*exp[-(x-mu)^2/2sigema^2]
+         高斯分布/正态分布：$p(x)=1/(\sigma (2π)^2)\exp[-(x-\mu)^2/2\sigma^2]$
 
-         直接求 F(x)关于 P(x)的定积分有时候很难，我们抽按照 p(x)的分布抽 n 个样本，计算 Qn=Σf(xi) /n，即 Qn 是 E x~p [f(x)]
+         直接求 $F(x)$关于 $P(x)$的定积分有时候很难，我们抽按照 $p(x)$的分布抽 $n$ 个样本，计算 $Q_n=\sum \frac {f(x_i)} {n}$，即 $Q_n$ 是 $ \mathbb{E}[f(x)]$
 
 ---
 
@@ -148,7 +155,7 @@ where the \* mark means the algorithm is important and worth diving into it
   - 计算 L 关于 w 的梯度，根据链式求导法则，我们可以得到 L 关于 w 的梯度=（q-y）\*（Q(w)关于 w 的偏导)
   - 进行梯度下降，w_t+1 = w_t - alpha \* 上一步的梯度，其中 alpha 是超参数，是步长。
   - 但是在玩游戏的过程中，我们因为某种原因，只玩到一半，得到价值，我们需要 Q(w)估计另外一半的代价，两者相加得到代价 y，这个 y 肯定比 Q(w)估计整个过程要靠谱，因为我们有一半的数值是真的。我们用这个 y 来代替上面的 y，也可以更新参数。
-  - 由上一步，`我们将Q(w)-y称为TD ERROR`
+  - 由上一步，`我们将Q(w)-y称为TD ERROR, Temporal Error`
   - 我们的优化目标就是让 TD error = 0
 
 ## 1. Qlearning - off_policy TD control
@@ -246,9 +253,9 @@ step
 
 - 就目前在网上看到的情况有以下几种 AC 架构
 
-  1. 使用 Actor 来学习策略，Critic 学习 V(s)，接受状态 s 作为输入
-  2. 使用 Actor 来学习策略，Critic 学习 Q_pi(a,s)，接受状态 s，a 的 concatenation 作为输入
-  3. 使用 Actor 来学习策略，Critic 学习 Q_pi(a,s)，接受状态 s，a 的 concatenation 作为输入，但是 s 是作为特征（features）从 actor 提取出来的，也就是说共享卷积层参数。
+  1. 使用 Actor 来学习策略，Critic 学习 $V(s)$，接受状态 s 作为输入(Policy Based)
+  2. 使用 Actor 来学习策略，Critic 学习 $Q_{\pi}(a,s)$，接受状态 s，a 的 concatenation 作为输入(Value Based)
+  3. 使用 Actor 来学习策略，Critic 学习 $Q_{\pi}(a,s)$，接受状态 s，a 的 concatenation 作为输入，但是 s 是作为特征（features）从 actor 提取出来的，也就是说共享前面层的参数。
 
 - 训练：
 
@@ -475,7 +482,7 @@ pipreqs ./ --encoding=utf8
 
 - [马尔科夫决策与平稳分布](https://blog.csdn.net/qq_34652535/article/details/85343518)
 
-- [深度强化学习基础](https://www.youtube.com/watch?v=vmkRMvhCW5c&list=PLvOO0btloRnsiqM72G4Uid0UWljikENlU)
+- [深度强化学习基础-王树森](https://www.youtube.com/watch?v=vmkRMvhCW5c&list=PLvOO0btloRnsiqM72G4Uid0UWljikENlU)
 
 - [深入浅出强化学习](https://daiwk.github.io/posts/rl.html)
 
@@ -489,13 +496,13 @@ pipreqs ./ --encoding=utf8
 
 - [OPENAI spinning up](https://spinningup.qiwihui.com/zh_CN/latest/user/introduction.html)
 
+- [OPENAI GYM](https://github.com/openai/gym)
+
 <br><br><br>
 
 # 7. TODO
 
-2. H-DQN
-3. OpenAI spinning up 好好看看
-4. 继续学习 D2L 书里面的 MLP
-5. 手写优化器
-6. 重写 Memory 类,改成统一接口
-7. 写几个 abstract 类，统一 Actor 和 Critic 的接口
+1. OpenAI spinning up 好好看看
+2. 重写 Memory 类,改成统一接口
+3. 写几个 abstract 类，统一 Actor 和 Critic 的接口
+4. 补充

@@ -5,7 +5,6 @@
 import torchvision
 import tensorboardX as tb
 import torch as t
-import os
 
 # args:logdir(where to store the files)
 writer = tb.SummaryWriter("./")
