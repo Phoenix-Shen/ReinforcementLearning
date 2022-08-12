@@ -6,7 +6,7 @@ Note that the algorithm code comes from some experts in the field of reinforceme
 
 此外，TRPO我似乎没有搞懂，代码并没有调试，请不要运行运行TRPO的代码。
 
-如果遇到bug，请给我提issue，O(∩_∩)O。
+有些公式无法显示不知道为什么，git clone 到本地使用VSCODE能够完整显示，如果遇到bug，请给我提issue，O(∩_∩)O。
 
 ## 进度
 
@@ -146,23 +146,27 @@ where the \* mark means the algorithm is important and worth diving into it
 <br>
 <br>
 
-# 2. 价值学习 Value Based Leaning --学习 Q\*(s,a)
+# 2. 价值学习 Value Based Leaning --学习 $Q^*(s,a)$
 
-- U_t 被定义为折扣回报或者是折扣奖励，那么我们关于策略 π 的动作-价值函数 Qpi(st,at)等于 U_t 的期望（因为 U_t 求不出来，所以要求期望），叫做期望回报。
+- $U_t$ 被定义为折扣回报或者是折扣奖励，那么我们关于策略 π 的动作-价值函数 $Q_{\pi}(s_t,a_t)$等于 $U_t$ 的期望（因为 $U_t$ 求不出来，所以要求期望），叫做期望回报。
 
-- 那么当前的 Qpi 只与当前的状态和动作 st 和 at 有关，它反映了当前这个状态下执行动作 at 的好坏
+- 那么当前的 $Q_{\pi}$ 只与当前的状态和动作 $s_t$ 和 $a_t$ 有关，它反映了当前这个状态下执行动作 $a_t$ 的好坏
 
-- Q*(s,a)为当策略最好的时候我们的动作状态值，也就是说，不管我们使用什么策略 pi，我们最后选取的动作，他的 Q 值都不会比 Q*好
+- $Q^*(s,a)$为当策略最好的时候我们的动作状态值(optimal action-value function)，也就是说，不管我们使用什么策略 $\pi$，我们最后选取的动作，他的 Q 值都不会比 Q*好,$Q^*$函数的意义是指示Agent在$s$状态下选取动作$a$时的好坏。
+
+- 难点在于我们不知道所谓的$Q^*(s,a)$，于是我们使用深度神经网络$Q(s,a;\mathbf{w})$去拟合$Q^*(s,a)$,对于不同的问题，神经网络的结构也可能不同。
 
 - 关于 TD 学习 temporal difference Learning：
-  - Q(w)负责估计代价，它的估计 q=Q(w)
-  - 在现实中，我们进行试验，比如说玩一整轮游戏，然后得到实际的代价 y
-  - 计算损失 L=0.5\*||(q-y)||,其中||(q-y)||为 q 和 y 的二次距离
-  - 计算 L 关于 w 的梯度，根据链式求导法则，我们可以得到 L 关于 w 的梯度=（q-y）\*（Q(w)关于 w 的偏导)
-  - 进行梯度下降，w_t+1 = w_t - alpha \* 上一步的梯度，其中 alpha 是超参数，是步长。
-  - 但是在玩游戏的过程中，我们因为某种原因，只玩到一半，得到价值，我们需要 Q(w)估计另外一半的代价，两者相加得到代价 y，这个 y 肯定比 Q(w)估计整个过程要靠谱，因为我们有一半的数值是真的。我们用这个 y 来代替上面的 y，也可以更新参数。
-  - 由上一步，`我们将Q(w)-y称为TD ERROR, Temporal Error`
-  - 我们的优化目标就是让 TD error = 0
+  - $Q(\mathbf{w})$负责估计代价，我们采样 $q=Q(\mathbf{w})$，假设采样值为1000
+  - 在现实中，我们进行试验，比如说玩一整轮游戏，然后得到实际的代价 $y=860$
+  - 计算损失$\mathcal{L}=\frac{(q-y)^2}{2}$
+  - 计算$\mathcal{L}$ 关于参数$\mathbf{w}$ 的梯度，根据链式求导法则，我们可以得到 $
+  \frac{\partial{\mathcal{L}}}{\partial \mathbf{w}}=\frac{\partial q}{\partial \mathbf{w}}\frac{\partial{\mathcal{L}}}{\partial q}=(q-y)\frac{\partial Q(\mathbf{w})}{\partial \mathbf{w}}$
+  - 进行梯度下降，$w_{t+1} = w_t - \alpha \frac{\partial{\mathcal{L}}}{\partial \mathbf{w}}|_{\mathbf{w}=\mathbf{w}_t}$，其中 alpha 是超参数，是步长。
+  - ![td learning](./DeepQLearningNetwork(DQN)/TDLearningNaive.png)
+  - 但是在玩游戏的过程中，我们因为某种原因，只玩到一半，得到价值，我们需要$ Q(w)$估计另外一半的代价，两者相加得到代价 $\hat y$，这个 $\hat y$称为`TD target`，它肯定比 $Q(w)$估计整个过程要靠谱，因为我们有一半的数值是真的。我们用这个 $\hat y$ 来代替上面的 $y$，也可以更新参数。
+  - 由上一步，我们将$Q(\mathbf{w})-\hat y$称为`TD ERROR, Temporal Difference Error`
+  - 我们的优化目标就是让 TD Error = 0
 
 ## 1. Qlearning - off_policy TD control
 
@@ -203,29 +207,35 @@ step
 
 ## 4. DQN Off-Policy
 
-- 神经网络 Q(s,a;w)近似 Q\*函数，Q\*能够告诉我们每个动作能够得到的平均回报。我们需要 agent 遵循这个 Q\*函数。
+- 神经网络 $Q(s,a;\mathbf{w})$近似 Q\*函数，Q\*能够告诉我们每个动作能够得到的平均回报。我们需要 agent 遵循这个 Q\*函数。
 
 - 用神经网络代替 Q 表的功能![](<./DeepQLearningNetwork(DQN)/dqn.jpg>)<br>
 
 - Q 表无法进行所有情况的枚举，在某些情况下是不可行的，比如下围棋。<br>
-  Features: `Expericence Replay and Fixed Q-targets`
 
-- Experience Replay : `将每一次实验得到的经验片段记录下来，然后作为经验，投入到经验池中，每次训练的时候随机取出一个 BATCH，可以复用数据。`
+- Features: `Expericence Replay and Fixed Q-targets`
 
-- Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以不能够进行分别更新操作，那么我们需要将网络参数复制一份，解决该问题。`
+  - Experience Replay : `将每一次实验得到的经验片段记录下来，然后作为经验，投入到经验池中，每次训练的时候随机取出一个 BATCH，可以复用数据。`
+
+  - Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以不能够进行分别更新操作，那么我们需要将网络参数复制一份，解决该问题。`
 
 - 为了解决 overestimate 的问题，引入 double DQN，算法上有一点点的改进，复制一份网络参数，两个网络的参数异步更新
 
 - TD 算法在 DQN 中的使用：
-  - 类似于我们在[2. 价值学习 Value Based Leaning --学习 Q\*(s,a)]中提出 TD 学习的概念，我们在 DQN 中也有：`Q(st,at;w)≈rt + gamma * Q(st+1,at+1;w)`
-  - 在上式中，gamma 为一个奖励的折扣因子
-  - 折扣回报：Ut= Rt + gamma ((Rt+1)+gamma\*(Rt+2)+...) [在前面消掉一个 gamma]
-  - 那么我们的折扣回报可以写成 Ut = Rt + gamma \* Ut+1
+  - 类似于我们在本章开头中提出 TD 学习的概念，我们在 DQN 中也有：$Q(s_t,a_t;\mathbf {w})≈r_t + \gamma Q(s_{t+1},a_{t+1};\mathbf {w})$
+  - 在上式中，$\gamma$ 为一个奖励的折扣因子
+  - 折扣回报：$U_t= R_t + \gamma ((R_{t+1})+\gamma(R_{t+2})+...)$ --(在前面消掉一个$\gamma$)
+  - 那么我们的折扣回报可以写成 $U_t = R_t + \gamma U_{t+1}$, 因为$ \gamma U_{t+1}=\gamma ((R_{t+1})+\gamma(R_{t+2})+...)$
   - 反映了两个相邻状态之间的折扣回报的关系
-  - 那么我们使用 DQN 来输出这个 Ut 的期望（说过很多次，在 t 时刻之后，动作 A 和状态 S 都是随机变量，所以求期望）
-  - `Q(st,at;w)≈rt + gamma * Q(st+1,at+1;w)` 我们已经获得观测值 rt 了，所以约等于号后面的那个值肯定要准确一些，我们称之为 TD target ， 前面是 prediction（预测值）
-  - 于是我们的 loss = 0.5\* ||[predict - target ]||，再进行梯度下降就可以了
-    <br>
+  - 那么我们使用 DQN 来输出这个 $U_t$ 的期望（说过很多次，在 $t$ 时刻之后，动作 $A$ 和状态 $S$ 都是随机变量，所以求期望）
+  - 我们有了$U_t = R_t + \gamma U_{t+1}$，而且$Q(s_t,a_t;\mathbf{w})$是$\mathbb{E}[U_t]$的估计， $Q(s_{t+1},a_{t+1};\mathbf{w})$是$\mathbb{E}[U_{t+1}]$的估计,所以我们有
+    $$
+    Q(s_t,a_t;\mathbf{w}) ≈ \mathbb{E}[R_t + \gamma Q(s_{t+1},a_{t+1};\mathbf{w})]
+    $$
+  - 到了$t$时刻，我们已经获得观测值 $r_t $了，所以有$Q(s_t,a_t;\mathbf{w}) ≈ r_t +\gamma Q(s_{t+1},a_{t+1};\mathbf{w})$,约等于号后面的那个值肯定要准确一些，我们称之为 TD target , 前面$Q(s_t,a_t;\mathbf{w})$是 prediction（预测值）
+  - 于是我们的 $loss = \frac{1}{2} ||predict - target ||_2$，再进行梯度下降就可以了
+
+<br>
 
 ## 5. Dueling DQN Off-Policy
 
@@ -234,24 +244,123 @@ step
 
 ## 6. DQN with Prioritized Experience Replay Off-Policy
 
-在 DQN 中，我们有 Experience Replay，但是这是经验是随机抽取的，我们需要让好的、成功的记忆多多被学习到，所以我们在抽取经验的时候，就需要把这些记忆优先给网络学习，于是就有了`Prioritized`Experience Replay
+在 DQN 中，我们有 Experience Replay，但是这是经验是随机抽取的，我们需要让好的、成功的记忆多多被学习到，所以我们在抽取经验的时候，就需要把这些记忆优先给网络学习，于是就有了`Prioritized` Experience Replay
 
 <br><br><br>
 
-# 3. 策略学习 Policy Based Learning --学习策略 π(a|s)
+# 3. 策略学习 Policy Based Learning --学习策略 $\pi(a|s)$
 
-- 在这个章节中，除了 Policy Gradient 算法没有用到 Critic，其余好像都用到了 critic 或者类似于 actor-critic 的架构，比如说 DDPG 是个 AC 架构，而 AC A2C A3C TRPO 等都用到了 Actor 和 Critic
-- PG 算法学习的就是策略，像[PG 中 readme](<https://github.com/Phoenix-Shen/ReinforcementLearning/tree/main/PolicyGradient(PG)#%E6%9B%B4%E6%96%B0%E7%BD%91%E7%BB%9C%E5%8F%82%E6%95%B0>)里面说的一样我们为什么不用神经网络来近似 Q_pi，就可以不用 Discounted Rewards 来代替 Q_pi。
+- Policy Function $\pi(a \vert s)$是一个概率密度函数(probability density function)，它以状态$s$为输入，输出的是每个动作对应的`概率值`。
+- Discounted Return, Action-value function, State-value function
+  $$
+  \begin{aligned}
+  U_t &= R_t + \gamma R_{t+1} + \gamma^2 R_{t+2} + \gamma^3 R_{t+3} + \dots
+   \\
+
+  Q_{\pi}(s_t,a_t) &= \mathbb{E}[U_t \vert S_t=s_t,A_t= a_t]\\
+
+  V_{\pi}(s_t)&=\mathbb{E}_A[Q_{\pi}(s_t,A)], A \sim \pi (\cdot \vert s_t)
+
+  \end{aligned}
+  $$
+  对于离散的动作我们有
+  $$
+  V_{\pi}(s_t) = \mathbb{E}[Q_{\pi}(s_t,A)] =\Sigma_a \pi(a \vert s_t)Q_{\pi}(s_t,a),A \sim \pi (\cdot \vert s_t)
+  $$
+- 在基于策略的方法里，我们需要使用神经网络$\pi (a\vert s_t;\mathbf{\theta})$来近似`策略函数`$\pi(a\vert s_t)$,使用$V(s_t;\mathbf{\theta})=\Sigma_a \pi(a \vert s_t;\mathbf{\theta})Q_{\pi}(s_t,a)$来`状态价值函数state-value function`
+- 在Policy-based methods里面，我们要尝试最大化$V(s;\mathbf{\theta})$的期望。
+  即$J(\mathbf{\theta})=\mathbb{E}_S[V(S;\mathbf{\theta})]$
+- 使用`梯度上升`方法来更新$\theta$
+
+  观测到状态$s$
+
+  Update Policy by: $\theta \gets \theta + \beta \cdot \frac{\partial V(s;\theta)}{\partial \theta}$
+
+  其中这个$\frac{\partial V(s;\theta)}{\partial \theta}$就叫做`策略的梯度Policy Gradient`,详细的推导请见下面的[Policy Gradient方法](#1-policy-gradient-on-policy)
+- 在这个章节中，除了 Policy Gradient 算法没有用到 Critic，其余好像都用到了 critic 或者类似于 actor-critic 的架构，比如说 DDPG 是个 AC 架构，而 AC A2C A3C TRPO 等都用到了 Actor 和 Critic，两者的区别就是Actor参数更新方式不同，AC架构仍然使用Q Value作为Actor的loss，而AC就是使用带权重的梯度更新。
+- PG 算法学习的就是策略，像[PG 中 readme](<https://github.com/Phoenix-Shen/ReinforcementLearning/tree/main/PolicyGradient(PG)#%E6%9B%B4%E6%96%B0%E7%BD%91%E7%BB%9C%E5%8F%82%E6%95%B0>)里面说的一样我们为什么不用神经网络来近似 $Q_{\pi}$，就可以不用 Discounted Rewards 来代替 $Q_{\pi}$。
 - 所以我们可以转为策略学习+值学习，他是 Value based methods 和 Policy based methods 的结合
-- 状态价值 V_pi(s)=Σa pi(a|s)\* Q_pi(s,a)，使用 Actor 来近似 pi，使用 Critic 来近似 Q_pi
+- 状态价值$ V_{\pi}(s)=\Sigma_a \pi(a|s) Q_{\pi}(s,a)$，使用 Actor 来近似 $\pi$，使用 Critic 来近似 $Q_{\pi}$.
 
 ## 1. Policy Gradient On-Policy
 
-核心思想：让好的行为多被选择，坏的行为少被选择。<br>
-采用一个参数 vt，让好的行为权重更大<br>
-![](<./PolicyGradient(PG)/5-1-1.png>)<br>
+核心思想：让好的行为多被选择，坏的行为少被选择。
+采用一个参数 vt，让好的行为权重更大
 
-<br>
+![PG](<./PolicyGradient(PG)/5-1-1.png>)
+
+具体推导
+$$V(s_t;\mathbf{\theta})=\Sigma_a \pi(a \vert s_t;\mathbf{\theta})Q_{\pi}(s_t,a)$$
+
+$$
+\begin{aligned}
+\frac{\partial V(s;\theta)}{\partial \theta} &= \frac{\partial \Sigma_a \pi(a \vert s;\theta) Q_{\pi}(s,a)}{\partial \theta}\\
+
+&= \Sigma_a\frac{\partial  \pi(a \vert s;\theta) Q_{\pi}(s,a)}{\partial \theta}\\
+
+&= \Sigma_a\frac{\partial  \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a) \text{ 假设Qpi不依赖于theta,但不严谨}\\
+
+\end{aligned}
+$$
+于是就有了
+$$
+\begin{aligned}
+
+\frac{\partial V(s;\theta)}{\partial \theta}&=\Sigma_a\frac{\partial  \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\\
+
+&= \Sigma_a\ \pi(a \vert s;\theta)\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\\
+
+&= \mathbb{E}_{A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\right]
+\end{aligned}
+$$
+
+- 对于离散的动作来说使用
+  $$
+  \frac{\partial V(s;\theta)}{\partial \theta}=\Sigma_a\frac{\partial  \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)
+  $$
+  对于每个动作都求一次，然后加起来就可以辣
+
+- 对于连续的动作来说使用
+  $$
+  \frac{\partial V(s;\theta)}{\partial \theta}=
+  \mathbb{E}_{A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\right]
+  $$
+  使用蒙特卡洛抽样来求梯度
+  1. 根据概率密度函数$\pi (\cdot \vert s;\theta)$采样出一个$\hat a$
+  2. 计算$\mathbf{g}(\hat a ,\theta) = \frac{\partial \log \pi(\hat a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,\hat a)$
+  3. 很显然，$\mathbb{E}_A [\mathbf{g}(A,\theta)]=\frac{\partial V(s;\theta)}{\partial \theta}$而且$\mathbf{g}(\hat a ,\theta)$是$\frac{\partial V(s;\theta)}{\partial \theta}$的一个无偏估计。
+
+这种方法对于上面的离散行为也适用
+
+Policy Gradient**算法细节**
+
+1. 观测到当前状态$s_t$
+
+2. 根据策略网络$\pi (\cdot \vert s; \theta_t)$来选取一个动作$a_t$,注意动作$a_t$是随机抽样得来的
+
+3. 计算$q_t \approx Q_{\pi}(s_t,a_t)$，在这一步需要做一些估计
+
+4. 求$J(\theta)$关于$\theta$的梯度$\mathbf{g}(a_t ,\theta_t) = q_t \frac{ \log \pi(a_t \vert s_t;\theta) }{\partial \theta} |_{\theta =\theta_t}$
+
+5. 梯度上升:$\theta_{t+1} = \theta_t + \beta \cdot \mathbf{g}(a_t,\theta_t)$
+
+在第三步中，我们如何计算$q_t \approx Q_{\pi}(s_t,a_t)$?有两种方法：
+
+1. REINFORCE
+
+    玩一局游戏得到这局游戏的轨迹Trajectory
+
+    $s_1,a_1,r_1,s_2,a_2,r_2,\dots,s_T,a_T,r_T$
+
+    对于所有的$t$计算discounted return
+    $
+    u_t = \sum_{k=t}^T \gamma^{k-t}r_k
+    $
+
+    由于$Q_{\pi}(s_t,a_t) = \mathbb{E}[U_t]$,我们可以使用$u_t$来去近似$Q_{\pi}(s_t,a_t)$，这种方法显而易见有一个缺点：玩完一局游戏才能进行更新，低效。
+2. 使用神经网络去近似$Q_{\pi}$
+
+    这就是下面的ActorCritic Methods
 
 ## 2. Actor Critic On-Policy
 
@@ -344,7 +453,7 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 3. soft update
 4. 使用 replay buffer
 
-## 9. DQN with Hindsight Experience Relpay && Diversity Is All You Need & DDPG with Hindsight Experience Relpay
+## 9. Diversity Is All You Need
 
 待完成
 
@@ -354,7 +463,7 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
 # 4. Requirements
 
-pipreqs ./ --encoding=utf8
+本仓库使用pipreqs ./ --encoding=utf8生成requirements.txt
 
 [requirements.txt there, run pip install -r requirements.txt](./requirements.txt)
 
@@ -379,20 +488,20 @@ pipreqs ./ --encoding=utf8
 - Tensor.to(device)操作要细心，有可能梯度为 None 因为.to(device)是一次操作，之后的 tensor 有一个 grad_fn=copy 什么的，此时的 tensor 不再是叶子结点。
 - nn.parameter()通常，我们的参数都是一些常见的结构（卷积、全连接等）里面的计算参数。而当我们的网络有一些其他的设计时，会需要一些额外的参数同样很着整个网络的训练进行学习更新，最后得到最优的值，经典的例子有注意力机制中的权重参数、Vision Transformer 中的 class token 和 positional embedding 等。
 - tensor.clone()=原来张量的拷贝，而且 require_grad=True
-- t.tensor.detach()： 返回 t.tensor 的数据而且 require\*grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。新的 tensor 和原来的 tensor 共享数据内存，但不涉及梯度计算，即 requires_grad=False。修改其中一个 tensor 的值，另一个也会改变，因为是共享同一块内存，但如果对其中一个 tensor 执行某些内置操作，则会报错，例如 resize*、resize*as*、set*、transpose\*。
+- t.tensor.detach()： 返回 t.tensor 的数据而且 require\*grad=False.torch.detach()和 torch.data 的区别是，在求导时，torch.detach()会检查张量的数据是否发生变化，而 torch.data 则不会去检查。新的 tensor 和原来的 tensor 共享数据内存，但不涉及梯度计算，即 requires_grad=False。修改其中一个 tensor 的值，另一个也会改变，因为是共享同一块内存，但如果对其中一个 tensor 执行某些内置操作，则会报错，例如 resize*、resize_as\*、set*、transpose\*。
 - 关于 tensor.detach()与 tensor.data:x.data 和 x.detach()新分离出来的 tensor 的 requires_grad=False，即不可求导时两者之间没有区别，但是当 requires_grad=True 的时候的两者之间的是有不同：x.data 不能被 autograd 追踪求微分，但是 x.detach 可以被 autograd()追踪求导。
 - with t.no_grad(): 在应用阶段，不需要使用梯度，那么可以使用这个去掉梯度
 - 如果在更新的时候不调用 optimizer.zero_grad，两次更新的梯度会叠加。
 - 使用 require_grad=False 可以冻结神经网络某一部分的参数，更新的时候就不能减 grad 了
 - tensor.item()，直接返回一个数据，但是只能适用于 tensor 里头只有一个元素的情况，否则要是用 tolist()或者 numpy()
 - 不建议使用 inplace 操作
-- hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。比如 theta_new = theta_old *0.95 + theta_new*0.05
+- hard replacement 每隔一定的步数才更新全部参数，也就是将估计网络的参数全部替换至目标网络而 soft replacement 每一步就更新，但是只更新一部分(数值上的一部分)参数。比如 theta_new = theta_old _0.95 + theta_new_0.05
 - pytorch 官网上有的 Qlearning 例子:<https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html>
 - nn.Module.eval()递归调用子模块，将 Module.train 改成 false
 - 类似于 tensor.pow, tensor.sum, tensor.mean, tensor.gather 这些操作都可以使用 torch.pow(tensor,\*args)等来代替，使用 t.pow 这种类型的函数可以直接知道它的参数（dim=？之类的），用 tensor.pow 的话可能会因为识别不出来这是个 tensor，导致这个方法出不来。（比如说 a=t.ones((1,1,1)),b=a+a，调用 b.sum 的时候按 TAB 就出不来)
 - 同上一条，在传参的时候尽量把参数的类型写清楚，不然在下面使用的时候按 tab 也出不来，十分难顶。例如
 
-  ```
+  ```python
   def forward(self, x:t.Tensor)->t.Tensor:
   return self.net(x).squeeze(1)
   ```
@@ -407,15 +516,15 @@ pipreqs ./ --encoding=utf8
 
   - 不管怎样还是推荐使用 model.train()和 model.eval()，因为你正在使用的模型可能在 eval 和 train 两种模式下表现不同，而你自己不知道。
 
-- TD 学习 temporal difference,与蒙特卡洛方法类似，时差(TD)学习是一个无模型方法，它从每轮的经验数据中学习。不同的是，TD 学习可以从不完整的一轮数据中学习，因此我们无需让代理一直执行到环境为终止态。
+- TD 学习 temporal difference,与蒙特卡洛方法类似，时差(TD)学习是一个无模型(model free)方法，它从每轮的经验数据中学习。不同的是，TD 学习可以从不完整的一轮数据中学习，因此我们无需让代理一直执行到环境为终止态。
 - `PG算法大家族`
   - DQN、Qlearning、Sarsa 等都在学习状态或者行为价值函数，然后再根据价值函数来选择未来的行为，而策略梯度直接学习策略本身
   - 策略梯度方法主要特点在于直接对策略进行建模，通常建模为由 theta 参数化的函数 PI_theta（a|s），回报函数的值收到该策略的直接影响，于是我们可以用多种方法来最大化回报函数
   - Actor-Critic：学习策略和价值函数
   - Asynchronous Advantage Actor Critic：侧重于并行训练
   - Advantage Actor Critic：引入协调器，收敛更快，性能比 A3C 更好
-  - Deterministic Policy Gradient：将环境建模为一个确定性的决策：a=mu(s)
-  - Deep Deterministic Policy Gradient:结合了 DPG 和 DQN 的 AC 架构，DDPG 算法在学习一个确定性策略的同时通过演员-评论家框架将其扩展到连续的动作空间中
+  - Deterministic Policy Gradient：将环境建模为一个确定性的决策：$a=\mu(s)$
+  - Deep Deterministic Policy Gradient:结合了 DPG 和 DQN 的 AC 架构，DDPG 算法在学习一个确定性策略的同时通过Actor Critic框架将其扩展到连续的动作空间中
   - Trust Region Policy Optimization：为了提升训练的稳定性，我们应该避免更新一步就使得策略发生剧烈变化的参数更新。置信区间策略优化通过在每次迭代时对策略更新的幅度强制施加 KL 散度约束来实现上述理念。
   - Proximal Policy Optimization：实现了 TRPO 的性能，通过使用一个截断的替代目标来简化算法
   - Actor Critic with Experience Replay:离线的 A3C 算法，使用了一系列操作来克服离线算法的不稳定性
@@ -502,8 +611,6 @@ pipreqs ./ --encoding=utf8
 
 - [OPENAI spinning up](https://spinningup.qiwihui.com/zh_CN/latest/user/introduction.html)
 
-- [OPENAI GYM](https://github.com/openai/gym)
-
 <br><br><br>
 
 # 7. TODO
@@ -511,4 +618,4 @@ pipreqs ./ --encoding=utf8
 1. OpenAI spinning up 好好看看
 2. 重写 Memory 类,改成统一接口
 3. 写几个 abstract 类，统一 Actor 和 Critic 的接口
-4. 补充
+4. 补充理论知识
