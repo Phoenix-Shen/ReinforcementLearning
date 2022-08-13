@@ -267,9 +267,13 @@ step
   $$
   V_{\pi}(s_t) = \mathbb{E}[Q_{\pi}(s_t,A)] =\Sigma_a \pi(a \vert s_t)Q_{\pi}(s_t,a),A \sim \pi (\cdot \vert s_t)
   $$
+  对于连续的动作，我们需要求个积分
+  $$
+  V_{\pi}(s_t) = \mathbb{E}[Q_{\pi}(s_t,A)] =\int \pi(a \vert s_t)Q_{\pi}(s_t,a),A \sim \pi (\cdot \vert s_t)
+  $$
 - 在基于策略的方法里，我们需要使用神经网络$\pi (a\vert s_t;\mathbf{\theta})$来近似`策略函数`$\pi(a\vert s_t)$,使用$V(s_t;\mathbf{\theta})=\Sigma_a \pi(a \vert s_t;\mathbf{\theta})Q_{\pi}(s_t,a)$来`状态价值函数state-value function`
 - 在Policy-based methods里面，我们要尝试最大化$V(s;\mathbf{\theta})$的期望。
-  即$J(\mathbf{\theta})=\mathbb{E}_S[V(S;\mathbf{\theta})]$
+  即$J(\mathbf{\theta})=\mathbb{E}_S[V(s;\mathbf{\theta})]$
 - 使用`梯度上升`方法来更新$\theta$
 
   观测到状态$s$
@@ -368,32 +372,32 @@ Policy Gradient**算法细节**
 
 - 就目前在网上看到的情况有以下几种 AC 架构
 
-  1. 使用 Actor 来学习策略，Critic 学习 $V(s)$，接受状态 s 作为输入(Policy Based)
-  2. 使用 Actor 来学习策略，Critic 学习 $Q_{\pi}(a,s)$，接受状态 s，a 的 concatenation 作为输入(Value Based)
-  3. 使用 Actor 来学习策略，Critic 学习 $Q_{\pi}(a,s)$，接受状态 s，a 的 concatenation 作为输入，但是 s 是作为特征（features）从 actor 提取出来的，也就是说共享前面层的参数。
+  1. 使用 Actor 来学习策略，Critic 学习 $Q_{\pi}(a,s)$，接受状态 s 作为输入(Policy Based),更新Actor使用`带权重的梯度上升`。
+  2. 使用 Actor 来学习策略，Critic 学习 $Q_{\pi}(a,s)$，接受状态 s，a 的 concatenation 作为输入(Value Based)，更新Actor直接使用Critic的输出的`Qvalue`
+  3. 与2相同，但是 s 是作为特征（features）从 actor 提取出来的，也就是说共享前面层的参数。
 
 - 训练：
 
-  - 定义：使用神经网络来近似状态-价值函数： V(s;theta，w) = Σa pi（a|s;theta）\*q（s,a;w)。
-  - 目标：使 pi 能够获取最大的回报，q 能够更精准的估计动作-状态价值函数
-  - 更新 theta 是为了让 V(s;theta，w)最大，监督完全来自于价值网络-Critic
-  - 更新 w 是为了让 q(s,a;w)更加精准，监督完全是来自于环境给的奖励
+  - 定义：使用神经网络来近似状态-价值函数： $V(s;\theta,\mathbf{w}) = \sum_a \pi(a\vert s;\theta) \cdot q(s,a;\mathbf{w})$.--使用Actor 来学习策略$\pi$ ，Critic 学习动作-状态价值函数$Q_{\pi}(s,a)$
+  - 目标：使 policy $\pi(a\vert s;\mathbf{\theta})$ 能够获取最大的回报，$q_{\pi}(s,a;\mathbf{w})$能够更精准的估计动作-状态价值函数
+  - 更新 $\theta$ 是为了让 $V(s;\theta,\mathbf{w})$最大，监督完全来自于价值网络-Critic
+  - 更新 $\mathbf{w}$ 是为了让 $q_{\pi}(s,a;\mathbf{w})$更加精准，监督完全是来自于环境给的奖励
 
 - 步骤：
 
-  1. 获取状态 st
-  2. 通过 pi(·|st;theta_t)的分布进行一个随机采样，得到下一步的动作 at
-  3. 执行动作，获取状态 st+1 和奖励 rt
-  4. 使用 td error 来更新 w
-      - 计算 q(st,at;w)和 q(st+1,at+1;w)
-      - 计算 td target ： yt = rt + gamma \* q(st+1,at+1;w) ，显然 yt 比 q(st,at;w)更加可靠
-      - 计算二次距离 ||predict - target||/2，
+  1. 获取状态 $s_t$
+  2. 通过 $\pi(\cdot \vert s_t;\mathbf{\theta}_t)$的分布进行一个随机采样，得到下一步的动作$ a_t$
+  3. 执行动作，获取状态 $s_{t+1} $和奖励 $r_t$
+  4. 使用 td error 来更新 $\mathbf{w}$
+      - 计算 $q(s_t,a_t;\mathbf{w})$和 $q(s_{t+1},a_{t+1};\mathbf{w})$
+      - 计算 `td target` : $y_t = r_t + \gamma \cdot q(s_{t+1},a_{t+1};\mathbf{w})$ ，显然 $y_t$ 比 $q(s_t,a_t;\mathbf{w})$更加可靠
+      - 计算二次距离(也就是`均方误差`):$||y_t - q(s_t,a_t;\mathbf{w})||_2$，
       - 进行梯度下降，让损失变得更小
-  5. 使用 policy gradient（策略梯度）来更新 theta
-      - 定义梯度 g（a，theta）=q(st,a;w)\*log pi( a|s;theta)关于 theta 的导数，那么我们 V(s;theta，w)关于 theta 的导数就是 E_A[g(A,theta)],就是一个期望
-      - 由于无法求 E_A[g(A,theta)]，我们只能够抽样进行蒙特卡洛近似，所以直接使用 g 来代替 E_A[g(A,theta)]作为期望的近似。
-      - 进行抽样，并计算 g（a，theta_t）并进行梯度上升，使期望越来越高
-      - 有的时候梯度是 q(st,a;w)\*log pi( a|s;theta)关于 theta 的导数，也有的时候是[q(st,a;w)-td target]\*log pi( a|s;theta)关于 theta 的导数(baseline)，后者方差小，收敛更快。
+  5. 使用 policy gradient（策略梯度）来更新 $\mathbf{\theta}$
+      - 定义梯度 $g(a,\mathbf{\theta})=\frac{\partial \log \pi(a\vert s;\mathbf{\theta}) }{\partial \mathbf{\theta}} q(s_t,a;\mathbf{w})$，而且上面PG算法中推导了：$\frac{\partial V(s;\mathbf{\theta},\mathbf{w}_t)}{\partial \mathbf{\theta}}=\mathbb{E}_A[\mathbf{g}(A,\mathbf{\theta})]$
+      - 由于无法求 $\mathbb{E}_A[\mathbf{g}(A,\mathbf{\theta})]$，我们只能够抽样进行`蒙特卡洛近似`，所以直接使用 $g$ 来代替 $\mathbb{E}_A[\mathbf{g}(A,\mathbf{\theta})]$作为期望的近似,因为$a \sim \pi(\cdot \vert s_t;\mathbf{\theta}_t)$，所以$g$是$\mathbb{E}_A[\mathbf{g}(A,\mathbf{\theta})]$的一个`无偏估计(unbaised estimation)`
+      - 进行抽样，并计算 $g(a,\mathbf{\theta}_t)$并进行梯度上升: $\mathbf{\theta}_{t+1} = \mathbf{\theta}_t + \beta \cdot \mathbf{g}(a,\mathbf{\theta}_t)$，使期望越来越高。
+      - `注意`：在实际代码中有的时候梯度是 $g(a,\mathbf{\theta})=\frac{\partial \log \pi(a\vert s;\mathbf{\theta}) }{\partial \mathbf{\theta}} q(s_t,a;\mathbf{w})$,有时候是 $g(a,\mathbf{\theta})=\frac{\partial \log \pi(a\vert s;\mathbf{\theta}) }{\partial \mathbf{\theta}} [tdtarget - q(s_t,a;\mathbf{w})]$，在本仓库中的代码就是后者，它的方差较小，收敛更快。
 
 - Critic 在训练完毕之后就没有用辣！
 
@@ -401,7 +405,7 @@ Policy Gradient**算法细节**
 
 ## 3. DDPG Off-Policy
 
-![](./DeepDeterministicPolicyGradient/principle.png)
+![](./DeepDeterministicPolicyGradient(DDPG)/principle.png)
 
 - Exploration noise
 - Actor-Critic Achetecture
