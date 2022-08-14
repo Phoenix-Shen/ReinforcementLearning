@@ -14,7 +14,7 @@ where the \* mark means the algorithm is important and worth diving into it
 
 |         method         | done |
 | :--------------------: | ---- |
-|      \*Qlearnling      | √    |
+|      \*Qlearning       | √    |
 |         Sarsa          | √    |
 |      SarsaLambda       | √    |
 |         \*DQN          | √    |
@@ -33,8 +33,6 @@ where the \* mark means the algorithm is important and worth diving into it
 |         DIAYN          | ×    |
 
 ---
-
-<br><br><br>
 
 ## 1. 关键概念 Key Concepts
 
@@ -143,10 +141,7 @@ where the \* mark means the algorithm is important and worth diving into it
 
 ---
 
-<br>
-<br>
-
-# 2. 价值学习 Value Based Leaning --学习 $Q^*(s,a)$
+## 2. 价值学习 Value Based Leaning --学习 $Q^*(s,a)$
 
 - $U_t$ 被定义为折扣回报或者是折扣奖励，那么我们关于策略 π 的动作-价值函数 $Q_{\pi}(s_t,a_t)$等于 $U_t$ 的期望（因为 $U_t$ 求不出来，所以要求期望），叫做期望回报。
 
@@ -168,12 +163,16 @@ where the \* mark means the algorithm is important and worth diving into it
   - 由上一步，我们将$Q(\mathbf{w})-\hat y$称为`TD ERROR, Temporal Difference Error`
   - 我们的优化目标就是让 TD Error = 0
 
-## 1. Qlearning - off_policy TD control
+### 1. Qlearning - off_policy TD control
 
-更新一个 Q 表，表中的每个元素代表每个状态下每个动作的潜在奖励<br>
+建议**对比下面的[Sarsa](#2-sarsa-state-action-reward-state-action---onpolicy-td-control)算法来看**
+
+QLearning 训练`最优的动作-价值函数` $ Q^*(s,a)$，TD Target是 $y_t=r_t + \gamma \ \underset{a}{max} Q^*(s_{t+1},a) $，DQN就是这个模式。
+
+维护一个 Q 表，表中的每个元素代表每个状态下每个动作的潜在奖励
 根据 Q 表选择动作，然后更新 Q 表
 
-```
+```text
 state 1 2 3 4 5
 left  0 0 0 0 0
 right 0 0 0 1 0
@@ -181,37 +180,114 @@ right 0 0 0 1 0
 
 更新策略：`现实值=现实值+lr*（估计值-现实值）`
 
-<br>
+#### **推导**
 
-## 2. Sarsa - on_policy TD control
+- 对于所有的策略 $\pi$ 有
+  $$
+  Q_{\pi}(s_t,a_t) = \mathbb{E}[R_t+\gamma \cdot Q_{\pi}(S_{t+1},A_{t+1})]
+  $$
+  对于最优的策略 $\pi^*$来说也有
+  $$
+  Q_{\pi^*}(s_t,a_t) = \mathbb{E}[R_t+\gamma \cdot Q_{\pi^*}(S_{t+1},A_{t+1})]
+  $$
 
-Qlearning 更新方法：`根据当前Q表选择动作->执行动作->更新Q表`<br>
-Sarsa 更新方法：`执行动作->根据当前估计值选择下一步动作->更新Q表`
+- 在QLearning中，我们使用
+  $$ A_{t+1} = \underset{a}{argmax} \ Q^*(S_{t+1},a)$$
+  来计算 $ A_{t+1} $，所以我们有
+  $$
+  Q_{\pi^*}(S_{t+1},A_{t+1}) = \underset{a}{max} \ Q^*(S_{t+1},a)
+  $$
 
-**Sarsa 是行动派，Qlearning 是保守派**
+- 消掉 $Q_{\pi^*}(S_{t+1},A_{t+1})$ ,于是我们消掉了 $A_{t+1}$，于是我们有
+  $$
+  Q_{\pi^*}(s_t,a_t) = \mathbb{E}[R_t+\gamma \cdot \underset{a}{max} \ Q^*(S_{t+1},a)]
+  $$
 
-<br>
+- 期望很难求，于是又要做蒙特卡洛近似，使用观测值$r_t$,$s_{t+1}$来近似$R_t$,$S_{t+1}$，于是有：
+  $$
+  Q_{\pi^*}(s_t,a_t) = \mathbb{E}[r_t+\gamma \cdot \underset{a}{max} \ Q^*(s_{t+1},a)]
+  $$
+  我们称为 $r_t+\gamma \cdot \underset{a}{max} \ Q^*(s_{t+1},a)$叫做TD Target $y_t$
 
-## 3. SarsaLambda
+#### **算法步骤(表格形式)**
 
-Sarsa 的升级版<br>
-Qlearning 和 Sarsa 都认为上一步对于成功是有关系的，但是上上一步就没有关系了，SarsaLambda 的思想是：`到达成功的每一步都是有关系的，他们的关系程度为：越靠近成功的步骤是越重要的`<br>
+1. 观测到状态 $(s_t,a_t,r_t,s_{t+1})$
+2. 计算TD Target : $r_t+\gamma \cdot \underset{a}{max} \ Q^*(s_{t+1},a)$
+3. 计算 TD Error : $ \delta_t = Q^*(s_t,a_t)-y_t$
+4. 更新$Q^*$ : $Q^*(s_t,a_t) \gets Q^*(s_t,a_t)  - \alpha \cdot \delta_t$
+5. 根据 $\underset{a}{max} \ Q^*(s_{t+1},a)$采样动作，然后采取该动作，转1
 
-```
+### 2. Sarsa (State-Action-Reward-State-Action) - on_policy TD control
+
+#### **与QLearning的区别**
+
+- Qlearning 更新方法：`根据当前Q表选择动作->执行动作->更新Q表`
+
+- Sarsa 更新方法：`执行动作->根据当前估计值选择下一步动作->更新Q表`
+
+- 总结：**Sarsa 是行动派，Qlearning 是保守派**
+- Sarsa 训练`动作-价值函数` $Q_{\pi}(s,a) $ ，它的 TD Target是 $y_t= r_t + \gamma \cdot Q_{\pi}(s_{t+1},a_{t+1})$, Sarsa是更新价值网络(Critic)
+
+- QLearning 训练`最优的动作-价值函数` $ Q^*(s,a)$，TD Target是 $y_t=r_t + \gamma \ \underset{a}{max} Q^*(s_{t+1},a) $，DQN就是这个模式。
+
+如果状态空间很大的话我们的表格就很大，如果是连续的动作或者连续的状态的话，就不能用表格来表示了，这时可以使用神经网络来近似状态-价值函数 $Q_{\pi}(s,a)$
+
+- 由前面的推导我们可以知道
+  $$
+  U_t = R_t + \gamma \cdot U_{t+1}
+  $$
+- 假设 $R_t$ 由 $(S_t,A_t,S_{t+1})$决定
+- 那么可以推导出
+  $$
+  \begin{aligned}
+  Q_{\pi}(s_t,a_t) &= \mathbb{E}[U_t \vert s_t,a_t]\\
+  &=\mathbb{E}[R_t + \gamma \cdot U_{t+1} \vert s_t,a_t]\\
+  &=\mathbb{E}[R_t\vert s_t,a_t] + \gamma \cdot \mathbb{E}[U_{t+1} \vert s_t,a_t]\\
+  &=\mathbb{E}[R_t\vert s_t,a_t]+ \gamma \cdot \mathbb{E}[Q_{\pi}(S_{t+1},A_{t+1}) \vert s_t,a_t]
+  \end{aligned}
+  $$
+- 期望很难算，所以又要做蒙特卡洛近似，使用 $r_t$和 $Q_{\pi}(s_{t+1},a_{t+1})$去近似 $R_t$ 和 $Q_{\pi}(S_{t+1},A_{t+1})$
+- 于是就有了
+  $$ Q_{\pi}(s_t,a_t) \approx r_t + \gamma \cdot Q_{\pi}(s_{t+1},a_{t+1})$$
+  我们把 $r_t + \gamma \cdot Q_{\pi}(s_{t+1},a_{t+1})$ 称为**TD Traget** $y_t$
+- TD Learning 的想法就是鼓励 $Q_{\pi}(s_t,a_t)$向 $y_t$逼近
+
+#### **算法步骤(表格形式的Sarsa)**
+
+1. 观测到状态 $(s_t,a_t,r_t,s_{t+1})$
+2. 采样动作 $ a_{t+1} \sim \pi(\cdot \vert s_{t+1})$ 其中 $\pi$是策略函数
+3. 计算TD Target $y_t = r_t + \gamma \cdot Q_{\pi}(s_{t+1},a_{t+1})$
+4. 计算TD Errorr $\delta_t = Q_{\pi}(s_{t},a_{t}) - y_t $
+5. 更新 $Q_{\pi}(s_{t},a_{t})$:  $Q_{\pi}(s_{t},a_{t}) \gets Q_{\pi}(s_{t},a_{t}) - \alpha\cdot\delta_t$ 其中$\alpha$是学习率，在神经网络中，我们采用**梯度下降的方式**来更新$Q_{\pi}(s_{t},a_{t})$
+6. 执行$a_{t+1}$转步骤1
+
+#### **使用多步TD Target 来减少偏差**
+
+  之前说到$ U_t = R_t + \gamma U_{t+1}$,我们可以进一步展开：
+  $$
+  U_t = R_t + \gamma (R_{t+1}+\gamma U_{t+2})
+  $$
+  这样就可以使用2步甚至更多步的数据来更新我们的神经网络，来提升稳定性。
+
+### 3. SarsaLambda
+
+是*Sarsa 的升级版*
+
+Qlearning 和 Sarsa 都认为上一步对于成功是有关系的，但是上上一步就没有关系了，SarsaLambda 的思想是：`到达成功的每一步都是有关系的，他们的关系程度为：越靠近成功的步骤是越重要的`
+
+```text
 step
 1-2-3-4-5-success
 重要性1<2<3<4<5
 ```
 
-<br>
-
-## 4. DQN Off-Policy
+### 4. DQN Off-Policy
 
 - 神经网络 $Q(s,a;\mathbf{w})$近似 Q\*函数，Q\*能够告诉我们每个动作能够得到的平均回报。我们需要 agent 遵循这个 Q\*函数。
 
-- 用神经网络代替 Q 表的功能![](<./DeepQLearningNetwork(DQN)/dqn.jpg>)<br>
+- 用神经网络代替 Q 表的功能![dqb algo](<./DeepQLearningNetwork(DQN)/dqn.jpg>)
 
-- Q 表无法进行所有情况的枚举，在某些情况下是不可行的，比如下围棋。<br>
+- Q 表无法进行所有情况的枚举，在某些情况下是不可行的，比如下围棋。
 
 - Features: `Expericence Replay and Fixed Q-targets`
 
@@ -235,20 +311,15 @@ step
   - 到了$t$时刻，我们已经获得观测值 $r_t $了，所以有$Q(s_t,a_t;\mathbf{w}) ≈ r_t +\gamma Q(s_{t+1},a_{t+1};\mathbf{w})$,约等于号后面的那个值肯定要准确一些，我们称之为 TD target , 前面$Q(s_t,a_t;\mathbf{w})$是 prediction（预测值）
   - 于是我们的 $loss = \frac{1}{2} ||predict - target ||_2$，再进行梯度下降就可以了
 
-<br>
-
-## 5. Dueling DQN Off-Policy
+### 5. Dueling DQN Off-Policy
 
 将 Q 值的计算分成状态值 state_value 和每个动作的值 advantage，可以获得更好的性能
-<br><br><br>
 
-## 6. DQN with Prioritized Experience Replay Off-Policy
+### 6. DQN with Prioritized Experience Replay Off-Policy
 
 在 DQN 中，我们有 Experience Replay，但是这是经验是随机抽取的，我们需要让好的、成功的记忆多多被学习到，所以我们在抽取经验的时候，就需要把这些记忆优先给网络学习，于是就有了`Prioritized` Experience Replay
 
-<br><br><br>
-
-# 3. 策略学习 Policy Based Learning --学习策略 $\pi(a|s)$
+## 3. 策略学习 Policy Based Learning --学习策略 $\pi(a|s)$
 
 - Policy Function $\pi(a \vert s)$是一个概率密度函数(probability density function)，它以状态$s$为输入，输出的是每个动作对应的`概率值`。
 - Discounted Return, Action-value function, State-value function
@@ -259,7 +330,7 @@ step
 
   Q_{\pi}(s_t,a_t) &= \mathbb{E}[U_t \vert S_t=s_t,A_t= a_t]\\
 
-  V_{\pi}(s_t)&=\mathbb{E}_A[Q_{\pi}(s_t,A)], A \sim \pi (\cdot \vert s_t)
+  V_{\pi}(s_t)&=\mathbb{E}*A[Q*{\pi}(s_t,A)], A \sim \pi (\cdot \vert s_t)
 
   \end{aligned}
   $$
@@ -286,7 +357,7 @@ step
 - 所以我们可以转为策略学习+值学习，他是 Value based methods 和 Policy based methods 的结合
 - 状态价值$ V_{\pi}(s)=\Sigma_a \pi(a|s) Q_{\pi}(s,a)$，使用 Actor 来近似 $\pi$，使用 Critic 来近似 $Q_{\pi}$.
 
-## 1. Policy Gradient On-Policy
+### 1. Policy Gradient On-Policy
 
 核心思想：让好的行为多被选择，坏的行为少被选择。
 采用一个参数 vt，让好的行为权重更大
@@ -314,7 +385,7 @@ $$
 
 &= \Sigma_a\ \pi(a \vert s;\theta)\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\\
 
-&= \mathbb{E}_{A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\right]
+&= \mathbb{E}*{A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q*{\pi}(s,a)\right]
 \end{aligned}
 $$
 
@@ -366,7 +437,7 @@ Policy Gradient**算法细节**
 
     这就是下面的ActorCritic Methods
 
-## 2. Actor Critic On-Policy
+### 2. Actor Critic On-Policy
 
 直观的来说：使用神经网络来近似价值函数 V，瞎子背着瘸子
 
@@ -401,11 +472,9 @@ Policy Gradient**算法细节**
 
 - Critic 在训练完毕之后就没有用辣！
 
-<br>
+### 3. DDPG Off-Policy
 
-## 3. DDPG Off-Policy
-
-![](./DeepDeterministicPolicyGradient(DDPG)/principle.png)
+![ddpg algo](./DeepDeterministicPolicyGradient(DDPG)/principle.png)
 
 - Exploration noise
 - Actor-Critic Achetecture
@@ -413,31 +482,26 @@ Policy Gradient**算法细节**
 - Policy Gradient
 - Experience Replay (OFF-POLICY)
 
-<br>
-
-## 4. A3C On-Policy
+### 4. A3C On-Policy
 
 - A3C 里面有多个 agent 对网络进行异步更新，相关性较低
 - 不需要积累经验，占用内存少
 - on-policy 训练
 - 多线程异步,速度快
 
-<br>
-
-## 5. PPO On-Policy
+### 5. PPO On-Policy
 
 - 使用 importance sampling 来使用过去的经验
 - PPO 是积累部分经验(一个 trajectory)，然后进行多轮的梯度下降
 - 对 importance weight 进行裁剪从而控制更新步长
-  <br>
 
-## 6. TRPO On-Policy
+### 6. TRPO On-Policy
 
 - 使用 L(theta|theta_old)来近似目标函数 J(theta)
 - 使用 KL 散度或者是二次距离来约束 theta 与 theta_old 之间的差距
 - 因此，相比于普通的 PG 算法，它更稳定，因为他对于学习率不敏感
 
-## 7. Soft Actor Critic Off-Policy (实现了 PER)
+### 7. Soft Actor Critic Off-Policy (实现了 PER)
 
 CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
@@ -450,22 +514,20 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 5. reparameterize 使 log standard deviation 可微
 6. 一次采样多次进行梯度下降
 
-## 8. TwinDelayedDeepDeterministicPolicyGradient(TD3) Off-Policy
+### 8. TwinDelayedDeepDeterministicPolicyGradient(TD3) Off-Policy
 
 1. 双 Critic
 2. 延迟更新 Actor
 3. soft update
 4. 使用 replay buffer
 
-## 9. Diversity Is All You Need
+### 9. Diversity Is All You Need
 
 待完成
 
 ---
 
-<br><br><br>
-
-# 4. Requirements
+## 4. Requirements
 
 本仓库使用pipreqs ./ --encoding=utf8生成requirements.txt
 
@@ -485,9 +547,7 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
 ---
 
-<br><br><br>
-
-# 5. 杂谈&经验
+## 5. 杂谈&经验
 
 - Tensor.to(device)操作要细心，有可能梯度为 None 因为.to(device)是一次操作，之后的 tensor 有一个 grad_fn=copy 什么的，此时的 tensor 不再是叶子结点。
 - nn.parameter()通常，我们的参数都是一些常见的结构（卷积、全连接等）里面的计算参数。而当我们的网络有一些其他的设计时，会需要一些额外的参数同样很着整个网络的训练进行学习更新，最后得到最优的值，经典的例子有注意力机制中的权重参数、Vision Transformer 中的 class token 和 positional embedding 等。
@@ -563,7 +623,7 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
   - 所谓的 AC 架构算法有，DDPG TD3 SAC DQN with PER DQN with HER 等等，他们不是采用带权重的梯度上升，所以是 AC 架构
   - 超参数一般有
 
-    ```
+    ```python
     mem_size
     batch_size
     tau
@@ -577,9 +637,7 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
 ---
 
-<br><br><br>
-
-# 6. 参考资料
+## 6. 参考资料
 
 - [莫烦 python](https://mofanpy.com/)
 
@@ -615,9 +673,9 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
 - [OPENAI spinning up](https://spinningup.qiwihui.com/zh_CN/latest/user/introduction.html)
 
-<br><br><br>
+---
 
-# 7. TODO
+## 7. TODO
 
 1. OpenAI spinning up 好好看看
 2. 重写 Memory 类,改成统一接口
