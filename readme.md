@@ -291,7 +291,7 @@ step
 
 - Features: `Expericence Replay and Fixed Q-targets`
 
-  - Experience Replay : `将每一次实验得到的经验片段记录下来，然后作为经验，投入到经验池中，每次训练的时候随机取出一个 BATCH，可以复用数据。`
+  - Experience Replay : `将每一次实验得到的经验片段记录下来，然后作为经验，投入到经验池中，每次训练的时候随机取出一个 BATCH，可以复用数据。并且可以在经验池上面做一些文章，增加收敛性比如HER、PER、ERE等等。`
 
   - Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以不能够进行分别更新操作，那么我们需要将网络参数复制一份，解决该问题。`
 
@@ -311,13 +311,36 @@ step
   - 到了$t$时刻，我们已经获得观测值 $r_t $了，所以有$Q(s_t,a_t;\mathbf{w}) ≈ r_t +\gamma Q(s_{t+1},a_{t+1};\mathbf{w})$,约等于号后面的那个值肯定要准确一些，我们称之为 TD target , 前面$Q(s_t,a_t;\mathbf{w})$是 prediction（预测值）
   - 于是我们的 $loss = \frac{1}{2} ||predict - target ||_2$，再进行梯度下降就可以了
 
+- 使用Experience Replay的动机
+  
+  - 一个Transition $(s_t,a_t,r_t,s_{t+1})$使用完之后就把它丢弃掉了，不再使用，这是一种浪费，经验可以被重复使用。
+  - $s_t$和$s_{t+1}$是高度相关的，这样不利于我们模型的收敛，所以需要把$s_t,s_{t+1},\dots,s_T$这个序列打散。
+  - 于是我们将最近$n$个transitions放到一个`经验池中`,$n$是一个超参数，他一般是十万或者百万级别的。
+  - 在ER里面，可以做mini-batch SGD，随机均匀抽取一小部分样本，取梯度的平均值进行梯度下降。
+  - 除了均匀抽样以外，我们还有非均匀抽样，这也就是下面的[PrioritizedExperienceReplay](#6-dqn-with-prioritized-experience-replay-off-policy)
+
 ### 5. Dueling DQN Off-Policy
 
 将 Q 值的计算分成状态值 state_value 和每个动作的值 advantage，可以获得更好的性能
 
 ### 6. DQN with Prioritized Experience Replay Off-Policy
 
-在 DQN 中，我们有 Experience Replay，但是这是经验是随机抽取的，我们需要让好的、成功的记忆多多被学习到，所以我们在抽取经验的时候，就需要把这些记忆优先给网络学习，于是就有了`Prioritized` Experience Replay
+在 DQN 中，我们有 Experience Replay，但是这是经验是随机抽取的，我们需要让好的、成功的记忆多多被学习到，所以我们在抽取经验的时候，就需要把这些记忆优先给网络学习，于是就有了`Prioritized` Experience Replay。
+
+`PER只在经验池这个地方做了改进，具体部分可以查看代码。`
+
+- 使用TD Error来判断Transitions的重要性，如果DQN不熟悉这个transition，我们就让这个transition多多的出现，就能够让DQN熟悉。
+
+- 使用重要性采样(importance sampling)来替代均匀抽样(uniform sampling):
+  $ p_t \propto \vert \delta_t \vert +\epsilon$或者是 $ p_t \propto \frac{1}{rank(t)}$，其中$rank(t)$是td error第t大的transition。
+- 两种方法的原理是一样的，就是让$\delta_t$越大的transition更多地被采样到。
+
+- 不均匀抽样会导致偏差，我们需要对学习率进行缩放
+
+  - 将lr缩放至 $ \gamma \gets \gamma \cdot (n p_t)^{-\beta}$，其中$\beta \in (0,1)$
+  - 拥有较高优先级（较高的$p_t$）的transitions有较低的学习率；开始的时候$\beta$很小，之后随着训练的进程提升到1。
+
+- 如果新经验没有被学习，我们将它的$\delta_t$设置为$ \delta_{max}$，之后随着训练的进程，当这个经验被学习到的时候，我们更新这个$\delta_t$
 
 ## 3. 策略学习 Policy Based Learning --学习策略 $\pi(a|s)$
 
