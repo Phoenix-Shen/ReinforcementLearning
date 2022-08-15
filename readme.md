@@ -295,7 +295,72 @@ step
 
   - Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以不能够进行分别更新操作，那么我们需要将网络参数复制一份，解决该问题。`
 
-- 为了解决 overestimate 的问题，引入 double DQN，算法上有一点点的改进，复制一份网络参数，两个网络的参数异步更新
+- 为了解决 `overestimate` 的问题，引入 `double DQN`，算法上有一点点的改进，复制一份网络参数，两个网络的参数`异步`更新
+  - 在强化学习中，我们使用于Bootstrapping来更新网络参数，因为TD target和$Q(s_t,a_t;\mathbf{w})$都有估计的成分，我们更新网络参数$\mathbf{w}$的时候是用一个估计值来更新它本身，类似于自己把自己举起来。
+  - TDLearning会使DQN高估动作价值(overestimate),原因在于：
+    - 1.Qlearning中TD target中有最大化操作：
+    $ y_t = r_t + \gamma \cdot \underset{a}{max} \ Q(s_{t+1},a;\mathbf{w})$这个操作会导致overestimating
+
+      设$x(a_1),\dots,x(a_n)$为真实的动作价值，$a_1,\dots,a_n$是$a \in \mathcal{A}$中的所有动作。
+
+      我们使用DQN来对上面的动作价值做有噪声的估计：$Q(s,a_1;\mathbf{w}),\dots,Q(s,a_n;\mathbf{w})$
+
+      假设这个估计是无偏差的(unbiased estimation)：$\underset{a}{mean}(x(a)) = \underset{a}{mean}(Q(s,a;\mathbf{w}))$
+
+      而$q = \underset{a}{max}Q(s,a,\mathbf{w})$,所以我们有 $q \ge \underset{a}{max}(x(a))$(因为Q的估计有偏差，所以它的最大值应该是大于或等于真实值的最大值)
+
+      ***总结 ： 求最大化使估计值大于实际值，导致overestimate的问题。***
+    - 2.Bootstrapping使用估计值更新自己的话，会传播这个高估的值。
+
+      我们首先回顾TD target需要用到下一时刻的估计：$ q_{t+1} = \underset{a}{max}Q(s_{t+1},a;\mathbf{w}) $,然后我们使用TD target 来更新我们的$ Q(s_t,a_t;\mathbf{w}) $
+
+      假设DQN已经因为最大化高估了动作价值(action-value)，由于$Q(s_{t+1},a;\mathbf{w})$已经高估了，然后还要使用$ q_{t+1} = \underset{a}{max} \ Q(s_{t+1},a;\mathbf{w}) $中的max操作，这就导致了更严重的高估，然后使用$r_t + \gamma q_{t+1}$来更新，传播了这个高估，变得更严重了。
+
+      ***总结：TD target本身有max操作，产生更严重的高估，用TD target更新DQN又进一步加剧了高估***
+  - 为什么Overestimating会带来不好的影响？
+
+    如果DQN将每个动作的价值都高估了一个一样的值的话，我们通过max操作得出一样的结果：
+
+    假设$Q(s,a^i;\mathbf{w})= Q^*(s,a^i) + 100$，我们使用max操作还是能够得到一样的结果
+
+    但是如果高估是`非均匀`的话，那么就会影响最后的max操作的结果了，这样我们就会基于`错误的价值`进行决策。
+
+    很不幸，在ReplayBuffer里面，我们这种高估是`非均匀`的：状态$(s_t,a_t)$这个二元组每一次被抽样到就会让DQN高估$(s_t,a_t)$的值，越被频繁抽样到就会产生越严重的高估。而$s$和$a$在经验池中的频率是不均匀的，最终会导致不均匀的高估，他是非常有害的。
+  - 如何缓解高估问题？
+    1. 使用`Fixed Q-targets`避免bootstrapping。
+
+        - 我们使用两个神经网络$Q(s,a;\mathbf{w}^-)，Q(s,a;\mathbf{w})$来近似动作价值函数，这两个神经网络有一样的结构，但是它们的参数是不同的。
+
+        - 使用$Q(s,a;\mathbf{w})$来控制agent来收集经验$\{(s_t,a_t,r_t,s_{t+1}\}$
+
+        - 使用target networtk $Q(s,a;\mathbf{w}^-)$来计算TD Target，从而避免了bootstrapping，缓解了高估问题。
+
+        - 具体的来说，我们计算TD target用的是Target Network: $y_t = r_t + \gamma \cdot \underset{a}{max} Q(s_{t+1},a;\mathbf{w}^-)$,然后计算TD Error $\delta_t = Q(s_t,a_t;\mathbf{w}) - y_t$,再执行梯度下降更新原来网络的参数$\mathbf{w}$的权重，不更新$\mathbf{w}^-$这样就避免了自举。
+
+        - 更新Target Network的方式有两种：一种是直接复制$\mathbf{w}$到$\mathbf{w}^-$上，另外一种是soft_update，将两个参数进行加权平均：$\mathbf{w}^- \gets \tau \mathbf{w}^- + (1-\tau)\mathbf{w} $,其中$\tau$一般取比较保守的值0.95,0.9这些。
+
+        - 总结：使用Fixed Q-targets来计算TD Target 避免bootstrapping，但是Target Network无法脱离原来的网络，上面看到了，Target Network的更新是与原来的Network有关的，所以它无法完全避免自举。
+
+    2. 使用`Double DQN`来缓解最大化造成的高估。
+
+        - 与Fixed Q-targets的区别是计算TD Target的时候使用的网络不一样，前者使用：
+          $$
+          \begin{aligned}
+          a^*&= \underset{a}{argmax} Q(s_{t+1},a;\mathbf{w}^-)\\
+          y_t &= r_t +\gamma \cdot Q(s_{t+1},a^*;\mathbf{w}^-)
+          \end{aligned}
+          $$
+          来计算TD Target，后者使用
+          $$
+          \begin{aligned}
+          a^*&= \underset{a}{argmax} Q(s_{t+1},a;\mathbf{w})\\
+          y_t &= r_t +\gamma \cdot Q(s_{t+1},a^*;\mathbf{w}^-)
+          \end{aligned}
+          $$
+          double dqn做出的改动很小，但是性能提升很大，然而它还是没有彻底解决高估的问题。
+        - 为什么它比前面的Fixed Q-targets要好？
+
+          因为$ Q(s_{t+1},a^*;\mathbf{w}^-) \le \underset{a}{max} \ Q(s_{t+1},a;\mathbf{w}^-)$
 
 - TD 算法在 DQN 中的使用：
   - 类似于我们在本章开头中提出 TD 学习的概念，我们在 DQN 中也有：$Q(s_t,a_t;\mathbf {w})≈r_t + \gamma Q(s_{t+1},a_{t+1};\mathbf {w})$
@@ -318,6 +383,13 @@ step
   - 于是我们将最近$n$个transitions放到一个`经验池中`,$n$是一个超参数，他一般是十万或者百万级别的。
   - 在ER里面，可以做mini-batch SGD，随机均匀抽取一小部分样本，取梯度的平均值进行梯度下降。
   - 除了均匀抽样以外，我们还有非均匀抽样，这也就是下面的[PrioritizedExperienceReplay](#6-dqn-with-prioritized-experience-replay-off-policy)
+
+---
+|         method         | selection |evaluation|
+| :--------------------: | ---- |--|
+|Naive DQN|$\mathbf{w}$|$\mathbf{w}$|
+|Fixed Q-targets|target network $\mathbf{w}^-$|target network $\mathbf{w}^-$|
+|double DQN|$\mathbf{w}$|target network $\mathbf{w}^-$|
 
 ### 5. Dueling DQN Off-Policy
 
@@ -408,7 +480,7 @@ $$
 
 &= \Sigma_a\ \pi(a \vert s;\theta)\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\\
 
-&= \mathbb{E}*{A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q*{\pi}(s,a)\right]
+&= \mathbb{E}*{A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\right]
 \end{aligned}
 $$
 
