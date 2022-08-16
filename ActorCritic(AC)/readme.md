@@ -1,11 +1,12 @@
-Actor-Critic 算法
-结合了 policy gradient 和 function approximation 的方法<br>
+# Actor-Critic 算法
+
+结合了 policy gradient 和 function approximation 的方法
 
 ---
 
 ## **简单来说，就是将 vt 从固定值换成神经网络生成的结果**
 
-```
+```python
 action=Actior(observation)
 score=Critic(action)
 
@@ -21,7 +22,7 @@ Actor-Critic 涉及到了两个神经网络, 而且每次都是在连续状态�
 
 1. 使用状态价值 state value
 2. 使用动作-状态价值 state-action value
-3. 基于 TD error（本代码中的方法） tderror=r*t+1+ gamma\*Vs_t+1 * Vs_t
+3. 基于 TD error（本代码中的方法） tderror=r*t+1+ gamma\*Vs_t+1* Vs_t
 4. 基于优势函数 Advantage = state-action value-state value
 5. 基于 TD(λ)误差
 

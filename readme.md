@@ -679,7 +679,53 @@ Policy Gradient**算法细节**
     由于$Q_{\pi}(s_t,a_t) = \mathbb{E}[U_t]$,我们可以使用$u_t$来去近似$Q_{\pi}(s_t,a_t)$，这种方法显而易见有一个缺点：玩完一局游戏才能进行更新，低效。
 2. 使用神经网络去近似$Q_{\pi}$
 
-    这就是下面的ActorCritic Methods
+    这就是下面的[ActorCritic Methods](#2-actor-critic-on-policy)
+
+REINFORCE with Baseline
+
+- 关于baseline可以在[策略学习](#3-策略学习-policy-based-learning---学习策略-pias)这里看到
+
+- 我们有随机策略梯度：
+    $$
+    \mathbf{g}(a_t) = \frac{\partial \ln \pi(a_t \vert s_t;\theta) }{\partial \theta} \cdot \left(Q_\pi (s_t,a_t)-V_\pi(s_t) \right)
+    $$
+
+- 由于 $Q_\pi(s_t,a_t) = \mathbb{E}[U_t \vert s_t,a_t]$,我们可以进行蒙特卡洛近似$Q_\pi(s_t,a_t) \approx u_t$，最后我们需要求$u_t$
+
+- 如何求$u_t$？我们玩一局游戏观测到轨迹$(s_t,a_t,r_t,s_{t+1},a_{t+1},r_{t+1},\dots,s_n,a_n,r_n$，然后计算return:$u_t = \sum_{i=t}^{n}r^{i-t} \cdot r_t$，而且$u_t$是对$Q_\pi(s_t,a_t)$的无偏估计
+
+- 我们还差个$V_{\pi}(s_t)$，我们用神经网络来$V_{\pi}(s_t;\mathbf{w})$近似，于是策略梯度可以近似为：
+  $$
+  \frac{\partial V_{\pi}(s_t)}{\partial \theta} \approx \mathbf{g}(a_t) \approx \frac{\partial \ln \pi(a_t \vert s_t;\theta) }{\partial \theta} \cdot \left(u_t - v(s_t;\mathbf{w}) \right)
+  $$
+
+- 总结下来我们用了三个蒙特卡洛近似：
+  $$
+  \frac{\partial V_{\pi}(s_t)}{\partial \theta} = \mathbf{g}(A_t) = \mathbb{E}_ {A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \ln \pi(A \vert s_t;\theta) }{\partial \theta} \ \left(Q_{\pi}(s_t,a_t) -V_\pi(s_t)\right)\right]
+  $$
+  用$a \sim \pi(\cdot \vert s_t)$去采样动作，这是第一次近似。
+  $$
+  \mathbf{g}(a_t) = \left[\frac{\partial  \ln \pi(a_t \vert s_t;\theta) }{\partial \theta} \ \left(Q_{\pi}(s_t,a_t) -V_\pi(s_t)\right)\right]
+  $$
+  然后用$u_t$和$v(s_t;\mathbf{w})$去近似$Q_{\pi}(s_t,a_t) $和$V_\pi(s_t)$，这是第二三次近似：
+  $$
+  \mathbf{g}(a_t) \approx \frac{\partial \ln \pi(a_t \vert s_t;\theta) }{\partial \theta} \cdot \left(u_t - v(s_t;\mathbf{w}) \right)
+  $$
+
+- 这么一来我们就有两个网络了：策略网络$ \pi(a \vert s)$和价值网络：$V(s;\mathbf{w})$，同样地也可以共享feature层的参数。
+
+- 算法步骤
+
+  1. 我们玩一局游戏观测到轨迹$(s_t,a_t,r_t,s_{t+1},a_{t+1},r_{t+1},\dots,s_n,a_n,r_n$
+  2. 计算return:$u_t = \sum_{i=t}^{n}r^{i-t} \cdot r_t$ 和 $\delta_t = v(s_t;\mathbf{w}) - u_t$
+  3. 更新参数$\theta$和$\mathbf{w}$：
+      $$
+      \begin{aligned}
+      \theta &\gets \theta - \beta \cdot \delta_t \cdot \frac{\partial \ln \pi(a_t \vert s_t;\theta) }{\partial \theta}\\
+
+      \mathbf{w} &\gets \mathbf{w} - \alpha \cdot \delta_t \cdot \frac{\partial v(s_t;\mathbf{w})}{\partial \mathbf{w}}
+      \end{aligned}
+      $$
 
 ### 2. Actor Critic On-Policy
 

@@ -5,7 +5,6 @@
 ---
 
 - 不同于 Qlearning，它直接输出的是动作而不是动作对应的 value，但是他也要接受环境信息 observation
-  <br>
 
 - Policy π 是一个网络，他的参数是 θ，输入是环境的 state，输出动作的几率分布(distribution of probability)
 
@@ -31,7 +30,7 @@
 
 ---
 
-```
+```python
 class PolicyGradient(nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -65,7 +64,7 @@ pytorch 写出来了一个，但是梯度下降不下去，不知道为什么，
 
 ## 关于 Log probability
 
-![](./log.png)
+![log_prob](./log.png)
 
 ## 更新网络参数
 
