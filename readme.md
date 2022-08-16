@@ -384,7 +384,6 @@ step
   - 在ER里面，可以做mini-batch SGD，随机均匀抽取一小部分样本，取梯度的平均值进行梯度下降。
   - 除了均匀抽样以外，我们还有非均匀抽样，这也就是下面的[PrioritizedExperienceReplay](#6-dqn-with-prioritized-experience-replay-off-policy)
 
----
 |         method         | selection |evaluation|
 | :--------------------: | ---- |--|
 |Naive DQN|$\mathbf{w}$|$\mathbf{w}$|
@@ -393,7 +392,75 @@ step
 
 ### 5. Dueling DQN Off-Policy
 
-将 Q 值的计算分成状态值 state_value 和每个动作的值 advantage，可以获得更好的性能
+将 Q 值的计算分成状态值 state_value 和每个动作的值 advantage，可以获得更好的性能，这是网络架构上面的改进，这个思想也可以用在其它地方。
+
+- Advantage Function 优势函数
+
+  $$
+  \begin{aligned}
+  Q^* (s,a) &= \underset{a}{max} \  Q_{\pi}(s,a)\\
+  V^* (s) &= \underset{\pi}{max} \  V_{\pi}(s)\\
+  A^* (s,a) &= Q^*(s,a) -V^*(s)
+  \end{aligned}
+  $$
+  $A^*(s,a)$的意思是动作$a$相对于baseline $V^*(s)$的优势，动作$a$越好，$A^*(s,a)$越大。
+
+  由于$ V^*(s) = \underset{a}{max} \ Q ^*(s,a)$，我们对左右两边取最大值，有：
+  $$
+  \underset{a}{max} \ A^*(s,a) = \underset{a}{max} \ Q_{\pi}(s,a) - V^*(s) =0
+  $$
+
+  我们将公式变换一下：
+  $$
+  Q^*(s,a) = V^*(s) + A^* (s,a)
+  $$
+
+  再减去一个0 ： $\underset{a}{max} \ A^*(s,a)$得到：
+  $$
+  Q^*(s,a) = V^*(s) + A^* (s,a) - \underset{a}{max} \ A^*(s,a)
+  $$
+
+- Dueling DQN的设计
+
+  我们使用神经网络$A(s,a;\mathbf{w}^A)$去近似$A^* (s,a)$
+
+  再使用$V(s;\mathbf{w}^V)$来近似$V^*(s)$
+
+  然后，我们的$Q^*(s,a)便可以用两个神经网络来表示：
+  $$
+  Q(s,a;\mathbf{w}^A,\mathbf{w}^V) = V(s;\mathbf{w}^V)+ A(s,a;\mathbf{w}^A) - \underset{a}{max} \ A(s,a;\mathbf{w}^A)
+  $$
+
+  它相比Naive DQN多了一个参数，训练过程是一样的，因为两者都需要采取状态$s$作为输入，我们一般共享feature层。
+
+- 为什么上面的公式需要减上$\ \underset{a}{max} \ A(s,a;\mathbf{w}^A)$
+  
+  因为$ Q^*(s,a) = V^*(s) + A^*(s,a)$中满足这个条件的$V^*(s) + A^* (s,a)$有很多组，比如$ 1+9=10, 2+8=10$这样会使训练不稳定
+
+  所以加上后面的最大化，防止这种不唯一性，防止上下波动导致的训练不稳定。
+  $$
+  Q^*(s,a) = V^*(s) + A^*(s,a) - \underset{a}{max} \ A^*(s,a)
+  $$
+
+  在实践中，我们会把max换成mean:
+  $$
+  Q^*(s,a) = V^*(s) + A^*(s,a) - \underset{a}{mean} \ A^*(s,a)
+  $$
+
+在[DuelingDQN的模型代码中](DuelingDQN\models.py)我们可以看到：
+
+```python
+def forward(self, x: t.Tensor) -> t.Tensor:
+        feature1 = F.relu(self.feature_layer(x))
+        feature2 = F.relu(self.feature_layer(x))
+        # value
+        value = self.value_layer(feature1)
+        # advantage
+        advantage = self.advantage_layer(feature2)
+        # 其实在这里写advantage.mean(dim=1).expand_as(advantage)也是可以的
+        # advantage满足 sum(advantage)=0
+        return value+advantage-advantage.mean(dim=1, keepdim=True)
+```
 
 ### 6. DQN with Prioritized Experience Replay Off-Policy
 
