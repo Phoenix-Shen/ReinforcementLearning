@@ -519,6 +519,87 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 - 所以我们可以转为策略学习+值学习，他是 Value based methods 和 Policy based methods 的结合
 - 状态价值$ V_{\pi}(s)=\Sigma_a \pi(a|s) Q_{\pi}(s,a)$，使用 Actor 来近似 $\pi$，使用 Critic 来近似 $Q_{\pi}$.
 
+- 减少方差--策略梯度方法中的`baseline`
+  
+  1. baseline $b$可以是任何独立于动作$A$的函数
+
+  2. 证明baseline的理论性质
+      $$
+      \begin{aligned}
+      \mathbb{E}
+      _
+      {A \sim \pi(\cdot \vert s; \theta)}\left[b \cdot \frac{\partial  \ln \pi(A \vert s;\theta) }{\partial \theta} \right] &= b \cdot \mathbb{E}_ {A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \ln \pi(A \vert s;\theta) }{\partial \theta} \right]\\
+
+      &= b \cdot \sum_a \pi(a \vert s; \theta) \cdot \frac{\partial  \ln \pi(a \vert s;\theta) }{\partial \theta}\\
+
+      &= b \cdot \sum_a \pi(a \vert s; \theta) \cdot \frac {1}{\pi(a \vert s; \theta)}\frac{\partial   \pi(a \vert s;\theta) }{\partial \theta}\\
+
+      &= b \cdot \sum_a \frac{\partial   \pi(a \vert s;\theta) }{\partial \theta}\\
+
+      &= b \cdot  \frac{\sum_a \partial   \pi(a \vert s;\theta) }{\partial \theta}\\
+
+      &= b\cdot \frac{\partial 1 }{\partial \theta}\\
+
+      &= 0
+      \end{aligned}
+      $$
+
+      于是有策略梯度公式：
+      $$
+      \begin{aligned}
+      \frac{\partial V(s;\theta)}{\partial \theta}&=
+        \mathbb{E}_
+        {A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \ln \pi(A \vert s;\theta) }{\partial \theta} Q_{\pi}(s,A)\right]\\
+      &= \mathbb{E}_
+        {A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \ln \pi(A \vert s;\theta) }{\partial \theta} Q_{\pi}(s,A)\right] - \mathbb{E}_ {A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \ln \pi(A \vert s;\theta) }{\partial \theta} \right]\\
+
+      &=\mathbb{E}_
+        {A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \ln \pi(A \vert s;\theta) }{\partial \theta} \left(Q_{\pi}(s,A)-b\right)\right]
+      \end{aligned}
+      $$
+
+      所以我们有：如果$b$与$A_t$是独立的，那么策略梯度可以表示为：
+      $$
+      \mathbb{E}_
+        {A_t \sim \pi(\cdot \vert s_t; \theta)}\left[\frac{\partial  \ln \pi(A_t \vert s_t;\theta) }{\partial \theta} \left(Q_{\pi}(s_t,A_t)-b\right)\right]
+      $$
+      baseline $b$不会影响上面的结果，在我们对这个梯度进行蒙特卡洛近似的时候，一个好的$b$会让后面的$\left(Q_{\pi}(s_t,A_t)-b\right)$会让方差降低，算法收敛更快
+
+  3. 蒙特卡洛近似
+
+      现在我们知道了策略梯度：
+      $$
+      \frac{\partial V(s;\theta)}{\partial \theta}=\mathbb{E}_
+        {A_t \sim \pi(\cdot \vert s_t; \theta)}\left[\frac{\partial  \ln \pi(A_t \vert s_t;\theta) }{\partial \theta} \left(Q_{\pi}(s_t,A_t)-b\right)\right]
+      $$
+      令
+      $$
+      \left[\frac{\partial  \ln \pi(A_t \vert s_t;\theta) }{\partial \theta} \left(Q_{\pi}(s_t,A_t)-b\right)\right] = \mathbf{g}(A_t)
+      $$
+
+      我们随机抽样动作$a_t$ : $a_t \sim \pi(\cdot \vert s_t; \theta)$然后计算梯度$\mathbf{g}(a_t)$，而且$\mathbf{g}(a_t)$是对原来梯度的一个无偏估计:
+      $$
+      \mathbb{E}_
+        {A_t \sim \pi(\cdot \vert s_t; \theta)}[\mathbf{g}(A_t)]= \frac{\partial V_\pi(s_t;\theta)}{\partial \theta}
+      $$
+
+      然后执行梯度上升
+      $$
+      \theta \gets \theta + \beta\cdot \mathbf{g}(a_t)
+      $$
+
+      前面证明了只要$b$跟$A_t$无关，我们的$\mathbf{g}(a_t)$的期望$\mathbb{E}_{A_t \sim \pi(\cdot \vert s_t; \theta)}[\mathbf{g}(A_t)]$就不会变，但是$b$会影响抽样结果$\mathbf{g}(a_t)$，所以一个好的$b$会使方差减少，增加算法收敛
+
+  4. baseline的选取
+
+      - $b=0$
+
+        这就是最基本的policy gradient方法
+
+      - $b = V_{\pi}(s_t)$
+
+        状态$s_t$先被观测到，与$A_t$无关，由于$V_{\pi}(s_t) = E_{A_t}[Q_\pi(s_t,A_t)]$，所以用$V_{\pi}(s_t)$是很合适的
+
 ### 1. Policy Gradient On-Policy
 
 核心思想：让好的行为多被选择，坏的行为少被选择。
@@ -526,43 +607,44 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
 ![PG](<./PolicyGradient(PG)/5-1-1.png>)
 
-具体推导
-$$V(s_t;\mathbf{\theta})=\Sigma_a \pi(a \vert s_t;\mathbf{\theta})Q_{\pi}(s_t,a)$$
+1. 具体推导
+  $$V(s_t;\mathbf{\theta})=\Sigma_a \pi(a \vert s_t;\mathbf{\theta})Q_{\pi}(s_t,a)$$
 
-$$
-\begin{aligned}
-\frac{\partial V(s;\theta)}{\partial \theta} &= \frac{\partial \Sigma_a \pi(a \vert s;\theta) Q_{\pi}(s,a)}{\partial \theta}\\
+  $$
+  \begin{aligned}
+  \frac{\partial V(s;\theta)}{\partial \theta} &= \frac{\partial \Sigma_a \pi(a \vert s;\theta) Q_{\pi}(s,a)}{\partial \theta}\\
 
-&= \Sigma_a\frac{\partial  \pi(a \vert s;\theta) Q_{\pi}(s,a)}{\partial \theta}\\
+  &= \Sigma_a\frac{\partial  \pi(a \vert s;\theta) Q_{\pi}(s,a)}{\partial \theta}\\
 
-&= \Sigma_a\frac{\partial  \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a) \text{ 假设Qpi不依赖于theta,但不严谨}\\
+  &= \Sigma_a\frac{\partial  \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a) \text{ 假设Qpi不依赖于theta,但不严谨}\\
 
-\end{aligned}
-$$
-于是就有了
-$$
-\begin{aligned}
+  \end{aligned}
+  $$
+  于是就有了
+  $$
+  \begin{aligned}
 
-\frac{\partial V(s;\theta)}{\partial \theta}&=\Sigma_a\frac{\partial  \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\\
+  \frac{\partial V(s;\theta)}{\partial \theta}&=\Sigma_a\frac{\partial  \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\\
 
-&= \Sigma_a\ \pi(a \vert s;\theta)\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\\
-
-&= \mathbb{E}*{A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\right]
-\end{aligned}
-$$
+  &= \Sigma_a\ \pi(a \vert s;\theta)\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\\
+  
+  &= \mathbb{E}_ {A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(A \vert s;\theta) }{\partial \theta} \ Q_{\pi}(s,A)\right]
+  \end{aligned}
+  $$
 
 - 对于离散的动作来说使用
-  $$
-  \frac{\partial V(s;\theta)}{\partial \theta}=\Sigma_a\frac{\partial  \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)
-  $$
-  对于每个动作都求一次，然后加起来就可以辣
+        $$
+        \frac{\partial V(s;\theta)}{\partial \theta}=\Sigma_a\frac{\partial  \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)
+        $$
+        对于每个动作都求一次，然后加起来就可以辣
 
 - 对于连续的动作来说使用
-  $$
-  \frac{\partial V(s;\theta)}{\partial \theta}=
-  \mathbb{E}_{A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,a)\right]
-  $$
+        $$
+        \frac{\partial V(s;\theta)}{\partial \theta}=
+        \mathbb{E}_{A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(A \vert s;\theta) }{\partial \theta} Q_{\pi}(s,A)\right]
+        $$
   使用蒙特卡洛抽样来求梯度
+
   1. 根据概率密度函数$\pi (\cdot \vert s;\theta)$采样出一个$\hat a$
   2. 计算$\mathbf{g}(\hat a ,\theta) = \frac{\partial \log \pi(\hat a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,\hat a)$
   3. 很显然，$\mathbb{E}_A [\mathbf{g}(A,\theta)]=\frac{\partial V(s;\theta)}{\partial \theta}$而且$\mathbf{g}(\hat a ,\theta)$是$\frac{\partial V(s;\theta)}{\partial \theta}$的一个无偏估计。
@@ -581,7 +663,7 @@ Policy Gradient**算法细节**
 
 5. 梯度上升:$\theta_{t+1} = \theta_t + \beta \cdot \mathbf{g}(a_t,\theta_t)$
 
-在第三步中，我们如何计算$q_t \approx Q_{\pi}(s_t,a_t)$?有两种方法：
+在第三步中，我们如何计算$q_t \approx Q_{\pi}(s_t,a_t)$? 有两种方法：
 
 1. REINFORCE
 
