@@ -692,7 +692,7 @@ REINFORCE with Baseline
 
 - 由于 $Q_\pi(s_t,a_t) = \mathbb{E}[U_t \vert s_t,a_t]$,我们可以进行蒙特卡洛近似$Q_\pi(s_t,a_t) \approx u_t$，最后我们需要求$u_t$
 
-- 如何求$u_t$？我们玩一局游戏观测到轨迹$(s_t,a_t,r_t,s_{t+1},a_{t+1},r_{t+1},\dots,s_n,a_n,r_n$，然后计算return:$u_t = \sum_{i=t}^{n}r^{i-t} \cdot r_t$，而且$u_t$是对$Q_\pi(s_t,a_t)$的无偏估计
+- 如何求$u_t$？我们玩一局游戏观测到轨迹$(s_t,a_t,r_t,s_{t+1},a_{t+1},r_{t+1},\dots,s_n,a_n,r_n)$，然后计算return:$u_t = \sum_{i=t}^{n}r^{i-t} \cdot r_t$，而且$u_t$是对$Q_\pi(s_t,a_t)$的无偏估计
 
 - 我们还差个$V_{\pi}(s_t)$，我们用神经网络来$V_{\pi}(s_t;\mathbf{w})$近似，于是策略梯度可以近似为：
   $$
@@ -727,7 +727,7 @@ REINFORCE with Baseline
       \end{aligned}
       $$
 
-### 2. Actor Critic On-Policy
+### 2. Actor Critic On-Policy and Advantage Actor Critic On-policy
 
 直观的来说：使用神经网络来近似价值函数 V，瞎子背着瘸子
 
@@ -761,6 +761,92 @@ REINFORCE with Baseline
       - `注意`：在实际代码中有的时候梯度是 $g(a,\mathbf{\theta})=\frac{\partial \log \pi(a\vert s;\mathbf{\theta}) }{\partial \mathbf{\theta}} q(s_t,a;\mathbf{w})$,有时候是 $g(a,\mathbf{\theta})=\frac{\partial \log \pi(a\vert s;\mathbf{\theta}) }{\partial \mathbf{\theta}} [tdtarget - q(s_t,a;\mathbf{w})]$，在本仓库中的代码就是后者，它的方差较小，收敛更快。
 
 - Critic 在训练完毕之后就没有用辣！
+
+#### **Actor Critic With Baseline (A2C)**
+
+- 它也是由两个网络组成：
+  
+  策略网络(policy network)
+  $ \pi(a\vert s;\theta)$和
+
+  状态价值网络(state value function)
+  $ v(s;\mathbf{w})$，
+  
+  状态价值网络是对状态价值函数的近似，它只依赖于状态$s_t$而并不向上面policy gradient算法中$Q_{\pi}(s_t,a_t)$依赖$s_t$和$a_t$，所以它更好训练。
+
+- 训练流程
+
+  - 观测到transition $(s_t,a_t,r_t,s_{t+1})$
+  - 计算TD Target $y_t = r_t + \gamma \cdot v(s_{t+1};\mathbf{w})$
+  - 计算 TD Error $ \delta_t = v(s_t;\mathbf{w})- y_t$
+  - 执行梯度上升更新策略网络$ \pi(a\vert s;\theta)$： $\theta \gets \theta - \beta \cdot \delta_t \cdot \frac{\partial \ln \pi(a_t \vert s_t;\theta)}{\partial \theta}$
+  - 执行梯度下降来更新状态价值网络$ v(s;\mathbf{w})$:
+  $ \mathbf{w} \gets \mathbf{w} - \alpha \cdot \delta_t \cdot \frac{\partial v(s_t;\mathbf{w})}{\partial \mathbf{w}}$ (使用均方误差作为损失函数)
+
+- 数学推导
+  
+  - $Q_{\pi}(s_t,a_t) = \mathbb{E}_
+  {S_{t+1},A_{t+1}}[R_t+ \gamma \cdot Q_{\pi}(S_{t+1},A_{t+1})]$
+
+  - 于是可以推导出来
+    $$
+    \begin{aligned}
+    Q_{\pi}(s_t,a_t) &= \mathbb{E}_
+    {S_{t+1},A_{t+1}}[R_t+ \gamma \cdot Q_{\pi}(S_{t+1},A_{t+1})]\\
+    &= \mathbb{E}_
+    {S_{t+1}}\left[R_t + \gamma \cdot \mathbb{E}_
+    {A_{t+1}}[Q_{\pi}(S_{t+1},A_{t+1})]\right]\\
+
+    &= \mathbb{E}_
+    {S_{t+1}}[R_t + \gamma \cdot V_{\pi}(S_{t+1})]
+    \end{aligned}
+    $$
+
+  - 因为$V_{\pi}(s_t)$的定义为$V_{\pi}(s_t) = \mathbb{E}_{A_{t}}[Q_{\pi}(s_{t},A_{t})]$，把$Q_{\pi}(s_{t},A_{t})$换进去得到
+    $$
+    \begin{aligned}
+    V_{\pi}(s_t) &= \mathbb{E}_{A_{t}}[Q_{\pi}(s_{t},A_{t})]\\
+    &= \mathbb{E}_{A_{t}}\left [ \mathbb{E}_
+    {S_{t+1}}[R_t + \gamma \cdot V_{\pi}(S_{t+1})]
+    \right]\\
+    &= \mathbb{E}_{A_{t},S_{t+1}}\left [R_t + \gamma \cdot V_{\pi}(S_{t+1})
+    \right]
+    \end{aligned}
+    $$
+  
+  - 对$Q_{\pi}(s_t,a_t)=\mathbb{E}_
+    {S_{t+1}}[R_t + \gamma \cdot V_{\pi}(S_{t+1})]$做蒙特卡洛近似：
+
+    我们知道了$(s_t,a_t,r_t,s_{t+1})$,那么可以近似$Q_{\pi}(s_t,a_t)$:
+
+    $Q_{\pi}(s_t,a_t)\approx r_t + \gamma \cdot V_{\pi}(s_{t+1})$ (`这是关键公式`)
+
+  - 对$V_{\pi}(s_t)= \mathbb{E}_
+  {A_{t},S_{t+1}}\left [R_t + \gamma \cdot V_{\pi}(S_{t+1})
+    \right]$做近似
+
+    $V_{\pi}(s_t) \approx r_t + \gamma \cdot V_{\pi}(s_{t+1})$ , TD target就是这么得来的。
+
+  - 所以有两个近似:
+  
+    $Q_{\pi}(s_t,a_t)\approx r_t + \gamma \cdot V_{\pi}(s_{t+1})$
+
+    $V_{\pi}(s_t) \approx r_t + \gamma \cdot V_{\pi}(s_{t+1})$
+  
+  - 我们在策略梯度里面推导出了
+
+    $$
+    \mathbf{g}(a_t) = \left[\frac{\partial  \ln \pi(a_t \vert s_t;\theta) }{\partial \theta} \ \left(Q_{\pi}(s_t,a_t) -V_\pi(s_t)\right)\right]
+    $$
+
+    我们称$(Q_{\pi}(s_t,a_t) -V_\pi(s_t))$为`优势函数 Advantage function`这就是A2C比AC多一个A的原因，于是我们有上面的东西做近似：
+
+    $$
+    \begin{aligned}
+    Q_{\pi}(s_t,a_t) -V_\pi(s_t) &\approx  r_t + \gamma \cdot V_{\pi}(s_{t+1}) - V_\pi(s_t)\\
+    &\approx r_t + \gamma \cdot v(s_{t+1};\mathbf{w}) - v(s_t;\mathbf{w})
+    \end{aligned}
+    $$
 
 ### 3. DDPG Off-Policy
 
