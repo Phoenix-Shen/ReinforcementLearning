@@ -729,7 +729,7 @@ REINFORCE with Baseline
 
 ### 2. Actor Critic On-Policy and Advantage Actor Critic On-policy
 
-直观的来说：使用神经网络来近似价值函数 V，瞎子背着瘸子
+直观的来说：使用神经网络来近似价值函数 V，瞎子背着瘸子,仓库中我们实现的是`A2C算法`
 
 - 就目前在网上看到的情况有以下几种 AC 架构
 
@@ -839,14 +839,47 @@ REINFORCE with Baseline
     \mathbf{g}(a_t) = \left[\frac{\partial  \ln \pi(a_t \vert s_t;\theta) }{\partial \theta} \ \left(Q_{\pi}(s_t,a_t) -V_\pi(s_t)\right)\right]
     $$
 
-    我们称$(Q_{\pi}(s_t,a_t) -V_\pi(s_t))$为`优势函数 Advantage function`这就是A2C比AC多一个A的原因，于是我们有上面的东西做近似：
+    我们称$(Q_{\pi}(s_t,a_t) -V_\pi(s_t))$为`优势函数 Advantage function`这就是A2C比AC多一个A的原因，于是我们用上面的东西做近似：
 
     $$
     \begin{aligned}
     Q_{\pi}(s_t,a_t) -V_\pi(s_t) &\approx  r_t + \gamma \cdot V_{\pi}(s_{t+1}) - V_\pi(s_t)\\
-    &\approx r_t + \gamma \cdot v(s_{t+1};\mathbf{w}) - v(s_t;\mathbf{w})
+    &\approx r_t + \gamma \cdot v(s_{t+1};\mathbf{w}) - v(s_t;\mathbf{w}) \  \text{使用神经网络进行近似}
     \end{aligned}
     $$
+
+    把$ r_t + \gamma \cdot v(s_{t+1};\mathbf{w})$ 称为$y_t$
+
+  - 使用近似的策略梯度进行梯度上升，来更新策略网络：
+    $$
+    \theta \gets \theta + \beta \cdot  \frac{\partial \ln \pi(a_t \vert s_t;\theta)}{\partial \theta}\left(y_t - v(s_t;\mathbf{w})\right)
+    $$
+
+  - 使用TD 算法更新价值网络
+    $V_{\pi}(s_t) \approx r_t + \gamma \cdot V_{\pi}(s_{t+1})$，用神经网络进行近似得到：
+    $v(s_t;\mathbf{w}) \approx r_t + \gamma \cdot v(s_{t+1};\mathbf{w}) $
+
+    TD target $y_t = r_t + \gamma \cdot v(s_{t+1};\mathbf{w})$
+
+    TD算法鼓励$v(s_t;\mathbf{w})$去接近TD target，于是我们将它们相减得到$\delta_t = v(s_t;\mathbf{w}) - y_t$
+
+    执行梯度下降：
+    $$ \mathbf{w} \gets \mathbf{w} - \alpha \cdot \delta_t \cdot \frac{\partial v(s_t;\mathbf{w})}{\partial \mathbf{w}}$$
+
+- 对A2C的直观解释
+  
+  - 我们有近似梯度：
+    $$
+    \mathbf{g}(a_t)=\frac{\partial \ln \pi(a_t\vert s_t;\theta)}{\partial \theta} \cdot \underbrace{(r_t + \gamma \cdot v(s_{t+1};\mathbf{w})- v(s_t;\mathbf{w}))}_{\text{critic做出的评估}}
+    $$
+
+  - $(r_t + \gamma \cdot v(s_{t+1};\mathbf{w})- v(s_t;\mathbf{w}))$如何评价动作的好坏？
+
+    $v(s_t;\mathbf{w})$是$\mathbb{E}[U_t\vert s_t]$的近似，能够评价$s_t$的好坏
+
+    $r_t + \gamma \cdot v(s_{t+1};\mathbf{w})$是在$t+1$时刻对$\mathbb{E}[U_t \vert s_t,s_{t+1}]$的近似，这还是预测，因为$t+1$时刻游戏没有结束，所以$U_t$就是未知的。
+
+    它们都是对$U_t$的预测，但是后者$v(s_t;\mathbf{w})$是在执行$a_t$之前作出来的预测，前者$r_t + \gamma \cdot v(s_{t+1};\mathbf{w})$是在$a_t$执行之后做出的预测，如果$a_t$是好的，那么这个$(r_t + \gamma \cdot v(s_{t+1};\mathbf{w})- v(s_t;\mathbf{w}))$差值就是正的，否则就是负的，所以我们就叫它为`advantage`，意思就是动作$a_t$比平均情况$V_{\pi}(s_t)$好多少呢？
 
 ### 3. DDPG Off-Policy
 
