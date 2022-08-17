@@ -758,7 +758,7 @@ REINFORCE with Baseline
       - 定义梯度 $g(a,\mathbf{\theta})=\frac{\partial \log \pi(a\vert s;\mathbf{\theta}) }{\partial \mathbf{\theta}} q(s_t,a;\mathbf{w})$，而且上面PG算法中推导了：$\frac{\partial V(s;\mathbf{\theta},\mathbf{w}_t)}{\partial \mathbf{\theta}}=\mathbb{E}_A[\mathbf{g}(A,\mathbf{\theta})]$
       - 由于无法求 $\mathbb{E}_A[\mathbf{g}(A,\mathbf{\theta})]$，我们只能够抽样进行`蒙特卡洛近似`，所以直接使用 $g$ 来代替 $\mathbb{E}_A[\mathbf{g}(A,\mathbf{\theta})]$作为期望的近似,因为$a \sim \pi(\cdot \vert s_t;\mathbf{\theta}_t)$，所以$g$是$\mathbb{E}_A[\mathbf{g}(A,\mathbf{\theta})]$的一个`无偏估计(unbaised estimation)`
       - 进行抽样，并计算 $g(a,\mathbf{\theta}_t)$并进行梯度上升: $\mathbf{\theta}_{t+1} = \mathbf{\theta}_t + \beta \cdot \mathbf{g}(a,\mathbf{\theta}_t)$，使期望越来越高。
-      - `注意`：在实际代码中有的时候梯度是 $g(a,\mathbf{\theta})=\frac{\partial \log \pi(a\vert s;\mathbf{\theta}) }{\partial \mathbf{\theta}} q(s_t,a;\mathbf{w})$,有时候是 $g(a,\mathbf{\theta})=\frac{\partial \log \pi(a\vert s;\mathbf{\theta}) }{\partial \mathbf{\theta}} [tdtarget - q(s_t,a;\mathbf{w})]$，在本仓库中的代码就是后者，它的方差较小，收敛更快。
+      - `注意`：在实际代码中有的时候梯度是 $g(a,\mathbf{\theta})=\frac{\partial \log \pi(a\vert s;\mathbf{\theta}) }{\partial \mathbf{\theta}} q(s_t,a;\mathbf{w})$,有时候是 $g(a,\mathbf{\theta})=\frac{\partial \log \pi(a\vert s;\mathbf{\theta}) }{\partial \mathbf{\theta}} [\underbrace{r_t + \gamma \cdot v(s_{t+1};\mathbf{w})}_{td \ target} - v(s_t;\mathbf{w})]$，前者是不带baseline 后者带baseline，在本仓库中的代码就是后者，它的方差较小，收敛更快，后者的思路可以在下面看到。
 
 - Critic 在训练完毕之后就没有用辣！
 
@@ -825,7 +825,7 @@ REINFORCE with Baseline
   {A_{t},S_{t+1}}\left [R_t + \gamma \cdot V_{\pi}(S_{t+1})
     \right]$做近似
 
-    $V_{\pi}(s_t) \approx r_t + \gamma \cdot V_{\pi}(s_{t+1})$ , TD target就是这么得来的。
+    $V_{\pi}(s_t) \approx r_t + \gamma \cdot V_{\pi}(s_{t+1})$ , `TD target就是这么得来的`。
 
   - 所以有两个近似:
   
@@ -880,6 +880,25 @@ REINFORCE with Baseline
     $r_t + \gamma \cdot v(s_{t+1};\mathbf{w})$是在$t+1$时刻对$\mathbb{E}[U_t \vert s_t,s_{t+1}]$的近似，这还是预测，因为$t+1$时刻游戏没有结束，所以$U_t$就是未知的。
 
     它们都是对$U_t$的预测，但是后者$v(s_t;\mathbf{w})$是在执行$a_t$之前作出来的预测，前者$r_t + \gamma \cdot v(s_{t+1};\mathbf{w})$是在$a_t$执行之后做出的预测，如果$a_t$是好的，那么这个$(r_t + \gamma \cdot v(s_{t+1};\mathbf{w})- v(s_t;\mathbf{w}))$差值就是正的，否则就是负的，所以我们就叫它为`advantage`，意思就是动作$a_t$比平均情况$V_{\pi}(s_t)$好多少呢？
+
+- 与REINFORCE with baseline的异同
+
+  它们都需要策略网络和价值网络，而且`结构没啥区别`。
+
+  但是它们的价值网络的功能是不一样的，A2C的价值网络叫critic，用来评价`动作的好坏`，而REINFORCE 的价值网络就是`仅仅作为baseline`
+
+  两个算法中仅仅就是这个地方不一样：
+  $$
+  \begin{aligned}
+    \mathbf{g}(a_t) &\approx \frac{\partial \ln \pi(a_t\vert s_t;\theta)}{\partial \theta} \cdot \underbrace{(r_t + \gamma \cdot v(s_{t+1};\mathbf{w})- v(s_t;\mathbf{w}))}_{\text{critic做出的评估,这里是单步的TD target}}\\
+
+  \mathbf{g}(a_t) &\approx \frac{\partial \ln \pi(a_t \vert s_t;\theta) }{\partial \theta} \cdot \underbrace{\left(u_t - v(s_t;\mathbf{w}) \right)}_{\text{这里使用的就是极端情况，不使用bootstrapping}}
+
+  \end{aligned}
+  $$
+- 同样地，我们也可以使用`multi-step TD target` 来提升效果。
+  
+  从这个角度来看`REINFORCE 是特殊的multi-step A2C`，它用了所有的奖励，不做bootstrapping。
 
 ### 3. DDPG Off-Policy
 
