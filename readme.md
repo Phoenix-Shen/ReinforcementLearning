@@ -1,12 +1,14 @@
 # 强化学习
 
-Note that the algorithm code comes from some experts in the field of reinforcement learning or I refactored the algorithms myself.
+## 写在前面
 
-本仓库中的强化学习算法来自于Medium、YouTube、CSDN等等网站，详细的信息请见该readme下面的“参考资料”这一小节，或许会对您有些帮助
+- Note that the algorithm code comes from some experts in the field of reinforcement learning or I refactored the algorithms myself.
 
-此外，TRPO我似乎没有搞懂，代码并没有调试，请不要运行运行TRPO的代码。
+- 本仓库中的强化学习算法来自于Medium、YouTube、CSDN等等网站，详细的信息请见该readme下面的“参考资料”这一小节，或许会对您有些帮助
 
-有些公式无法显示不知道为什么，git clone 到本地使用VSCODE能够完整显示，如果遇到bug，请给我提issue，O(∩_∩)O。
+- 此外，`TRPO`我似乎没有搞懂，代码并没有调试，请不要运行TRPO的代码。
+
+- 有些公式无法显示不知道为什么，`git clone 到本地使用VSCODE能够完整显示`，如果遇到bug，请给我提issue，O(∩_∩)O。
 
 ## 进度
 
@@ -27,12 +29,32 @@ where the \* mark means the algorithm is important and worth diving into it
 |  \*SAC (PER optional)  | √    |
 |         \*DDPG         | √    |
 | TD3 (PER,HER optional) | √    |
-|          TRPO          | √    |
+|          \*TRPO        | √    |
 |         \*PPO          | √    |
 |          DPPO          | √    |
 |         DIAYN          | ×    |
 
 ---
+
+## 术语表
+
+仿造[这个博客](https://lilianweng.github.io/posts/2018-04-08-policy-gradient/)也造了个术语表,这些术语都会在下面看到。
+
+| 符号| 意义|
+|:--:|----|
+|$s \in \mathcal{S}$| 状态|
+|$a \in \mathcal{A}$| 动作|
+|$r \in \mathcal{R}$| 奖励|
+|$S_t,A_t,R_t$|一个轨迹中时间$t$时候的状态、动作和奖励，其中大写的是随机变量，小写的是观测值|
+|$U_t$ | 被称为Return或者是未来的折扣奖励(discounted rewards),有的文章也叫 $G_t$ ，总之意义一样，$U_t=\gamma^0 R_t+\gamma^1R_{t+1}+\gamma^2R_{t+2}+...$，其中 $\gamma$ 为discount factor折扣因子|
+| $P(s',r\vert s,a)$|从当前状态 $s$ 采取动作 $a$，转移到 $s_{t+1}$ 状态并获取奖励$r$的概率|
+|$\pi(a\vert s)$|随机策略,$\pi(a \vert s; \theta)$ 表示由 $\theta$ 作为参数初始化的策略网络|
+|$\mu(s)$|确定性的策略，在DDPG中可以见到，也可以表示为$\pi(s)$，一般用前者|
+|$V(s)$| 状态价值函数，它预测状态$s$下的期望折扣奖励，其中$V(s;\mathbf{w})是由参数$\mathbf{w}$初始化的价值网络|
+| $V_\pi(s)$| 当我们遵循策略$\pi$的时候，状态$s$的价值，其中$ V_\pi(s) = \mathbb{E}_{a \sim \pi(\cdot \vert s)} [U_t \vert S_t =s]$ |
+|$Q(s,a)$|在状态$s$时采取动作$a$的时候能够的到的期望折扣奖励(return)，其中$Q(s,a;\mathbf{w})$代表以参数$\mathbf{w}$初始化的动作价值函数|
+|$Q_\pi(s,a)$|遵循策略$\pi$的时候，在状态$s$时采取动作$a$的时候能够的到的期望折扣奖励(return)，$Q(s,a;\mathbf{w}) = \mathbb{E}_{a \sim \pi(\cdot \vert s)} [U_t \vert S_t =s,A_t=a]$|
+| $A(s,a)$| 优势函数(advantage)，$A(s,a) = Q(s,a) - V(s)$ 它是另外一种Q-value，加入 $V(s)$ 作为baseline，具有更低的方差|
 
 ## 1. 关键概念 Key Concepts
 
@@ -147,9 +169,9 @@ where the \* mark means the algorithm is important and worth diving into it
 
 - 那么当前的 $Q_{\pi}$ 只与当前的状态和动作 $s_t$ 和 $a_t$ 有关，它反映了当前这个状态下执行动作 $a_t$ 的好坏
 
-- $Q^*(s,a)$为当策略最好的时候我们的动作状态值(optimal action-value function)，也就是说，不管我们使用什么策略 $\pi$，我们最后选取的动作，他的 Q 值都不会比 Q*好,$Q^*$函数的意义是指示Agent在$s$状态下选取动作$a$时的好坏。
+- $Q^*(s,a)$ 为当策略最好的时候我们的动作状态值(optimal action-value function)，也就是说，不管我们使用什么策略 $\pi$，我们最后选取的动作，他的 Q 值都不会比 Q*好, $Q^*$ 函数的意义是指示Agent在 $s$ 状态下选取动作 $a$ 时的好坏。
 
-- 难点在于我们不知道所谓的$Q^*(s,a)$，于是我们使用深度神经网络$Q(s,a;\mathbf{w})$去拟合$Q^*(s,a)$,对于不同的问题，神经网络的结构也可能不同。
+- 难点在于我们不知道所谓的 $Q^*(s,a)$ ，于是我们使用深度神经网络 $Q(s,a;\mathbf{w})$ 去拟合 $Q^*(s,a)$ ,对于不同的问题，神经网络的结构也可能不同。
 
 - 关于 TD 学习 temporal difference Learning：
   - $Q(\mathbf{w})$负责估计代价，我们采样 $q=Q(\mathbf{w})$，假设采样值为1000
@@ -167,20 +189,20 @@ where the \* mark means the algorithm is important and worth diving into it
 
 建议**对比下面的[Sarsa](#2-sarsa-state-action-reward-state-action---onpolicy-td-control)算法来看**
 
-QLearning 训练`最优的动作-价值函数` $ Q^*(s,a)$，TD Target是 $y_t=r_t + \gamma \ \underset{a}{max} Q^*(s_{t+1},a) $，DQN就是这个模式。
+- QLearning 训练`最优的动作-价值函数` $ Q^*(s,a)$，TD Target是 $y_t=r_t + \gamma \ \underset{a}{max} Q^*(s_{t+1},a) $，DQN就是这个模式。
 
-维护一个 Q 表，表中的每个元素代表每个状态下每个动作的潜在奖励
+- 维护一个 Q 表，表中的每个元素代表每个状态下每个动作的潜在奖励
 根据 Q 表选择动作，然后更新 Q 表
 
-```text
-state 1 2 3 4 5
-left  0 0 0 0 0
-right 0 0 0 1 0
-```
+  ```text
+  state 1 2 3 4 5
+  left  0 0 0 0 0
+  right 0 0 0 1 0
+  ```
 
-更新策略：`现实值=现实值+lr*（估计值-现实值）`
+- 更新策略：`现实值=现实值+lr*（估计值-现实值）`
 
-#### **推导**
+#### 1. **推导**
 
 - 对于所有的策略 $\pi$ 有
   $$
@@ -209,7 +231,7 @@ right 0 0 0 1 0
   $$
   我们称为 $r_t+\gamma \cdot \underset{a}{max} \ Q^*(s_{t+1},a)$叫做TD Target $y_t$
 
-#### **算法步骤(表格形式)**
+#### 2. **算法步骤(表格形式)**
 
 1. 观测到状态 $(s_t,a_t,r_t,s_{t+1})$
 2. 计算TD Target : $r_t+\gamma \cdot \underset{a}{max} \ Q^*(s_{t+1},a)$
@@ -219,7 +241,7 @@ right 0 0 0 1 0
 
 ### 2. Sarsa (State-Action-Reward-State-Action) - on_policy TD control
 
-#### **与QLearning的区别**
+#### 1. **与QLearning的区别**
 
 - Qlearning 更新方法：`根据当前Q表选择动作->执行动作->更新Q表`
 
@@ -252,7 +274,7 @@ right 0 0 0 1 0
   我们把 $r_t + \gamma \cdot Q_{\pi}(s_{t+1},a_{t+1})$ 称为**TD Traget** $y_t$
 - TD Learning 的想法就是鼓励 $Q_{\pi}(s_t,a_t)$向 $y_t$逼近
 
-#### **算法步骤(表格形式的Sarsa)**
+#### 2. **算法步骤(表格形式的Sarsa)**
 
 1. 观测到状态 $(s_t,a_t,r_t,s_{t+1})$
 2. 采样动作 $ a_{t+1} \sim \pi(\cdot \vert s_{t+1})$ 其中 $\pi$是策略函数
@@ -261,7 +283,7 @@ right 0 0 0 1 0
 5. 更新 $Q_{\pi}(s_{t},a_{t})$:  $Q_{\pi}(s_{t},a_{t}) \gets Q_{\pi}(s_{t},a_{t}) - \alpha\cdot\delta_t$ 其中$\alpha$是学习率，在神经网络中，我们采用**梯度下降的方式**来更新$Q_{\pi}(s_{t},a_{t})$
 6. 执行$a_{t+1}$转步骤1
 
-#### **使用多步TD Target 来减少偏差**
+#### 3. **使用多步TD Target 来减少偏差**
 
   之前说到$ U_t = R_t + \gamma U_{t+1}$,我们可以进一步展开：
   $$
@@ -273,13 +295,13 @@ right 0 0 0 1 0
 
 是*Sarsa 的升级版*
 
-Qlearning 和 Sarsa 都认为上一步对于成功是有关系的，但是上上一步就没有关系了，SarsaLambda 的思想是：`到达成功的每一步都是有关系的，他们的关系程度为：越靠近成功的步骤是越重要的`
+- Qlearning 和 Sarsa 都认为上一步对于成功是有关系的，但是上上一步就没有关系了，SarsaLambda 的思想是：`到达成功的每一步都是有关系的，他们的关系程度为：越靠近成功的步骤是越重要的`
 
-```text
-step
-1-2-3-4-5-success
-重要性1<2<3<4<5
-```
+  ```text
+  step
+  1-2-3-4-5-success
+  重要性1<2<3<4<5
+  ```
 
 ### 4. DQN Off-Policy
 
@@ -289,11 +311,11 @@ step
 
 - Q 表无法进行所有情况的枚举，在某些情况下是不可行的，比如下围棋。
 
-- Features: `Expericence Replay and Fixed Q-targets`
+#### 1.  Features: `Expericence Replay and Fixed Q-targets`
 
-  - Experience Replay : `将每一次实验得到的经验片段记录下来，然后作为经验，投入到经验池中，每次训练的时候随机取出一个 BATCH，可以复用数据。并且可以在经验池上面做一些文章，增加收敛性比如HER、PER、ERE等等。`
+- Experience Replay : `将每一次实验得到的经验片段记录下来，然后作为经验，投入到经验池中，每次训练的时候随机取出一个 BATCH，可以复用数据。并且可以在经验池上面做一些文章，增加收敛性比如HER、PER、ERE等等。`
 
-  - Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以不能够进行分别更新操作，那么我们需要将网络参数复制一份，解决该问题。`
+- Fixed Q-target: `在神经网络中，Q 的值并不是互相独立的，所以不能够进行分别更新操作，那么我们需要将网络参数复制一份，解决该问题。`
 
 - 为了解决 `overestimate` 的问题，引入 `double DQN`，算法上有一点点的改进，复制一份网络参数，两个网络的参数`异步`更新
   - 在强化学习中，我们使用于Bootstrapping来更新网络参数，因为TD target和$Q(s_t,a_t;\mathbf{w})$都有估计的成分，我们更新网络参数$\mathbf{w}$的时候是用一个估计值来更新它本身，类似于自己把自己举起来。
@@ -362,19 +384,20 @@ step
 
           因为$ Q(s_{t+1},a^*;\mathbf{w}^-) \le \underset{a}{max} \ Q(s_{t+1},a;\mathbf{w}^-)$
 
-- TD 算法在 DQN 中的使用：
-  - 类似于我们在本章开头中提出 TD 学习的概念，我们在 DQN 中也有：$Q(s_t,a_t;\mathbf {w})≈r_t + \gamma Q(s_{t+1},a_{t+1};\mathbf {w})$
-  - 在上式中，$\gamma$ 为一个奖励的折扣因子
-  - 折扣回报：$U_t= R_t + \gamma ((R_{t+1})+\gamma(R_{t+2})+...)$ --(在前面消掉一个$\gamma$)
-  - 那么我们的折扣回报可以写成 $U_t = R_t + \gamma U_{t+1}$, 因为$ \gamma U_{t+1}=\gamma ((R_{t+1})+\gamma(R_{t+2})+...)$
-  - 反映了两个相邻状态之间的折扣回报的关系
-  - 那么我们使用 DQN 来输出这个 $U_t$ 的期望（说过很多次，在 $t$ 时刻之后，动作 $A$ 和状态 $S$ 都是随机变量，所以求期望）
-  - 我们有了$U_t = R_t + \gamma U_{t+1}$，而且$Q(s_t,a_t;\mathbf{w})$是$\mathbb{E}[U_t]$的估计， $Q(s_{t+1},a_{t+1};\mathbf{w})$是$\mathbb{E}[U_{t+1}]$的估计,所以我们有
+#### 2. TD 算法在 DQN 中的使用
+
+- 类似于我们在本章开头中提出 TD 学习的概念，我们在 DQN 中也有：$Q(s_t,a_t;\mathbf {w})≈r_t + \gamma Q(s_{t+1},a_{t+1};\mathbf {w})$
+- 在上式中，$\gamma$ 为一个奖励的折扣因子
+- 折扣回报：$U_t= R_t + \gamma ((R_{t+1})+\gamma(R_{t+2})+...)$ --(在前面消掉一个$\gamma$)
+- 那么我们的折扣回报可以写成 $U_t = R_t + \gamma U_{t+1}$, 因为$ \gamma U_{t+1}=\gamma ((R_{t+1})+\gamma(R_{t+2})+...)$
+- 反映了两个相邻状态之间的折扣回报的关系
+- 那么我们使用 DQN 来输出这个 $U_t$ 的期望（说过很多次，在 $t$ 时刻之后，动作 $A$ 和状态 $S$ 都是随机变量，所以求期望）
+- 我们有了$U_t = R_t + \gamma U_{t+1}$，而且$Q(s_t,a_t;\mathbf{w})$是$\mathbb{E}[U_t]$的估计， $Q(s_{t+1},a_{t+1};\mathbf{w})$是$\mathbb{E}[U_{t+1}]$的估计,所以我们有
     $$
     Q(s_t,a_t;\mathbf{w}) ≈ \mathbb{E}[R_t + \gamma Q(s_{t+1},a_{t+1};\mathbf{w})]
     $$
-  - 到了$t$时刻，我们已经获得观测值 $r_t $了，所以有$Q(s_t,a_t;\mathbf{w}) ≈ r_t +\gamma Q(s_{t+1},a_{t+1};\mathbf{w})$,约等于号后面的那个值肯定要准确一些，我们称之为 TD target , 前面$Q(s_t,a_t;\mathbf{w})$是 prediction（预测值）
-  - 于是我们的 $loss = \frac{1}{2} ||predict - target ||_2$，再进行梯度下降就可以了
+- 到了$t$时刻，我们已经获得观测值 $r_t $了，所以有$Q(s_t,a_t;\mathbf{w}) ≈ r_t +\gamma Q(s_{t+1},a_{t+1};\mathbf{w})$,约等于号后面的那个值肯定要准确一些，我们称之为 TD target , 前面$Q(s_t,a_t;\mathbf{w})$是 prediction（预测值）
+- 于是我们的 $loss = \frac{1}{2} ||predict - target ||_2$，再进行梯度下降就可以了
 
 - 使用Experience Replay的动机
   
@@ -383,6 +406,8 @@ step
   - 于是我们将最近$n$个transitions放到一个`经验池中`,$n$是一个超参数，他一般是十万或者百万级别的。
   - 在ER里面，可以做mini-batch SGD，随机均匀抽取一小部分样本，取梯度的平均值进行梯度下降。
   - 除了均匀抽样以外，我们还有非均匀抽样，这也就是下面的[PrioritizedExperienceReplay](#6-dqn-with-prioritized-experience-replay-off-policy)
+
+#### 3.三种方法的价值网络的更新方式比较
 
 |         method         | selection |evaluation|
 | :--------------------: | ---- |--|
@@ -394,7 +419,7 @@ step
 
 将 Q 值的计算分成状态值 state_value 和每个动作的值 advantage，可以获得更好的性能，这是网络架构上面的改进，这个思想也可以用在其它地方。
 
-- Advantage Function 优势函数
+#### 1. Advantage Function 优势函数
 
   $$
   \begin{aligned}
@@ -420,13 +445,13 @@ step
   Q^*(s,a) = V^*(s) + A^* (s,a) - \underset{a}{max} \ A^*(s,a)
   $$
 
-- Dueling DQN的设计
+#### 2. Dueling DQN的设计
 
-  我们使用神经网络$A(s,a;\mathbf{w}^A)$去近似$A^* (s,a)$
+- 我们使用神经网络$A(s,a;\mathbf{w}^A)$去近似$A^* (s,a)$
 
-  再使用$V(s;\mathbf{w}^V)$来近似$V^*(s)$
+- 再使用$V(s;\mathbf{w}^V)$来近似$V^*(s)$
 
-  然后，我们的$Q^*(s,a)便可以用两个神经网络来表示：
+- 然后，我们的$Q^*(s,a)便可以用两个神经网络来表示：
   $$
   Q(s,a;\mathbf{w}^A,\mathbf{w}^V) = V(s;\mathbf{w}^V)+ A(s,a;\mathbf{w}^A) - \underset{a}{max} \ A(s,a;\mathbf{w}^A)
   $$
@@ -476,14 +501,18 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
 - 不均匀抽样会导致偏差，我们需要对学习率进行缩放
 
-  - 将lr缩放至 $ \gamma \gets \gamma \cdot (n p_t)^{-\beta}$，其中$\beta \in (0,1)$
-  - 拥有较高优先级（较高的$p_t$）的transitions有较低的学习率；开始的时候$\beta$很小，之后随着训练的进程提升到1。
+  - 将lr缩放至 $ \gamma \gets \gamma \cdot (n p_t)^{-\beta}$ ，其中 $\beta \in (0,1)$
+  - 拥有较高优先级（较高的 $p_t$ ）的transitions有较低的学习率；开始的时候 $\beta$ 很小，之后随着训练的进程提升到1。
 
 - 如果新经验没有被学习，我们将它的$\delta_t$设置为$ \delta_{max}$，之后随着训练的进程，当这个经验被学习到的时候，我们更新这个$\delta_t$
 
 ## 3. 策略学习 Policy Based Learning --学习策略 $\pi(a|s)$
 
+- 在连续空间下，State是无限的，使用基于Qlearning的方法需要求 $ max_{a \in \mathcal{A}} Q_{\pi}(s,a)$ 的计算代价很大，我们期望基于策略的方法在连续空间中的表现会比策略迭代法有用。
+
 - Policy Function $\pi(a \vert s)$是一个概率密度函数(probability density function)，它以状态$s$为输入，输出的是每个动作对应的`概率值`。
+在DDPG等算法中，我们的Policy是确定的，也就是它输出一个动作，而不是概率值，我们称之为 $ a = \mu(s)$
+
 - Discounted Return, Action-value function, State-value function
   $$
   \begin{aligned}
@@ -504,9 +533,12 @@ def forward(self, x: t.Tensor) -> t.Tensor:
   $$
   V_{\pi}(s_t) = \mathbb{E}[Q_{\pi}(s_t,A)] =\int \pi(a \vert s_t)Q_{\pi}(s_t,a),A \sim \pi (\cdot \vert s_t)
   $$
+
 - 在基于策略的方法里，我们需要使用神经网络$\pi (a\vert s_t;\mathbf{\theta})$来近似`策略函数`$\pi(a\vert s_t)$,使用$V(s_t;\mathbf{\theta})=\Sigma_a \pi(a \vert s_t;\mathbf{\theta})Q_{\pi}(s_t,a)$来`状态价值函数state-value function`
+
 - 在Policy-based methods里面，我们要尝试最大化$V(s;\mathbf{\theta})$的期望。
   即$J(\mathbf{\theta})=\mathbb{E}_S[V(s;\mathbf{\theta})]$
+
 - 使用`梯度上升`方法来更新$\theta$
 
   观测到状态$s$
@@ -514,9 +546,13 @@ def forward(self, x: t.Tensor) -> t.Tensor:
   Update Policy by: $\theta \gets \theta + \beta \cdot \frac{\partial V(s;\theta)}{\partial \theta}$
 
   其中这个$\frac{\partial V(s;\theta)}{\partial \theta}$就叫做`策略的梯度Policy Gradient`,详细的推导请见下面的[Policy Gradient方法](#1-policy-gradient-on-policy)
+
 - 在这个章节中，除了 Policy Gradient 算法没有用到 Critic，其余好像都用到了 critic 或者类似于 actor-critic 的架构，比如说 DDPG 是个 AC 架构，而 AC A2C A3C TRPO 等都用到了 Actor 和 Critic，两者的区别就是Actor参数更新方式不同，AC架构仍然使用Q Value作为Actor的loss，而AC就是使用带权重的梯度更新。
+
 - PG 算法学习的就是策略，像[PG 中 readme](<https://github.com/Phoenix-Shen/ReinforcementLearning/tree/main/PolicyGradient(PG)#%E6%9B%B4%E6%96%B0%E7%BD%91%E7%BB%9C%E5%8F%82%E6%95%B0>)里面说的一样我们为什么不用神经网络来近似 $Q_{\pi}$，就可以不用 Discounted Rewards 来代替 $Q_{\pi}$。
+
 - 所以我们可以转为策略学习+值学习，他是 Value based methods 和 Policy based methods 的结合
+
 - 状态价值$ V_{\pi}(s)=\Sigma_a \pi(a|s) Q_{\pi}(s,a)$，使用 Actor 来近似 $\pi$，使用 Critic 来近似 $Q_{\pi}$.
 
 - 减少方差--策略梯度方法中的`baseline`
@@ -580,7 +616,7 @@ def forward(self, x: t.Tensor) -> t.Tensor:
       我们随机抽样动作$a_t$ : $a_t \sim \pi(\cdot \vert s_t; \theta)$然后计算梯度$\mathbf{g}(a_t)$，而且$\mathbf{g}(a_t)$是对原来梯度的一个无偏估计:
       $$
       \mathbb{E}_
-        {A_t \sim \pi(\cdot \vert s_t; \theta)}[\mathbf{g}(A_t)]= \frac{\partial V_\pi(s_t;\theta)}{\partial \theta}
+        {A_t \sim \pi(\cdot \vert s_t; \theta)}[\mathbf{g}(a_t)] \approx \frac{\partial V_\pi(s_t;\theta)}{\partial \theta}
       $$
 
       然后执行梯度上升
@@ -603,11 +639,13 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 ### 1. Policy Gradient On-Policy
 
 核心思想：让好的行为多被选择，坏的行为少被选择。
-采用一个参数 vt，让好的行为权重更大
 
 ![PG](<./PolicyGradient(PG)/5-1-1.png>)
 
-1. 具体推导
+#### 1. 具体推导（简单版本）
+
+  这里是不严谨的推导，便于直观地上手，我们假设 $Q_\pi$ 不依赖于 $\theta$，要查看详细的推导，请移步至[本文的这里](#4-policy-gradient-算法的详细推导),具体的过程以及一系列讲解请查看[这个网站](https://paperexplained.cn/articles/article/detail/31/)
+
   $$V(s_t;\mathbf{\theta})=\Sigma_a \pi(a \vert s_t;\mathbf{\theta})Q_{\pi}(s_t,a)$$
 
   $$
@@ -643,45 +681,46 @@ def forward(self, x: t.Tensor) -> t.Tensor:
         \frac{\partial V(s;\theta)}{\partial \theta}=
         \mathbb{E}_{A \sim \pi(\cdot \vert s; \theta)}\left[\frac{\partial  \log \pi(A \vert s;\theta) }{\partial \theta} Q_{\pi}(s,A)\right]
         $$
-  使用蒙特卡洛抽样来求梯度
+
+- 使用蒙特卡洛抽样来求梯度
 
   1. 根据概率密度函数$\pi (\cdot \vert s;\theta)$采样出一个$\hat a$
   2. 计算$\mathbf{g}(\hat a ,\theta) = \frac{\partial \log \pi(\hat a \vert s;\theta) }{\partial \theta} Q_{\pi}(s,\hat a)$
   3. 很显然，$\mathbb{E}_A [\mathbf{g}(A,\theta)]=\frac{\partial V(s;\theta)}{\partial \theta}$而且$\mathbf{g}(\hat a ,\theta)$是$\frac{\partial V(s;\theta)}{\partial \theta}$的一个无偏估计。
 
-这种方法对于上面的离散行为也适用
+  这种方法对于上面的离散行为也适用
 
-Policy Gradient**算法细节**
+#### 2. Policy Gradient**算法细节**
 
-1. 观测到当前状态$s_t$
+  1. 观测到当前状态$s_t$
 
-2. 根据策略网络$\pi (\cdot \vert s; \theta_t)$来选取一个动作$a_t$,注意动作$a_t$是随机抽样得来的
+  2. 根据策略网络$\pi (\cdot \vert s; \theta_t)$来选取一个动作$a_t$,注意动作$a_t$是随机抽样得来的
 
-3. 计算$q_t \approx Q_{\pi}(s_t,a_t)$，在这一步需要做一些估计
+  3. 计算$q_t \approx Q_{\pi}(s_t,a_t)$，在这一步需要做一些估计
 
-4. 求$J(\theta)$关于$\theta$的梯度$\mathbf{g}(a_t ,\theta_t) = q_t \frac{ \log \pi(a_t \vert s_t;\theta) }{\partial \theta} |_{\theta =\theta_t}$
+  4. 求$J(\theta)$关于$\theta$的梯度$\mathbf{g}(a_t ,\theta_t) = q_t \frac{ \log \pi(a_t \vert s_t;\theta) }{\partial \theta} |_{\theta =\theta_t}$
 
-5. 梯度上升:$\theta_{t+1} = \theta_t + \beta \cdot \mathbf{g}(a_t,\theta_t)$
+  5. 梯度上升:$\theta_{t+1} = \theta_t + \beta \cdot \mathbf{g}(a_t,\theta_t)$
 
-在第三步中，我们如何计算$q_t \approx Q_{\pi}(s_t,a_t)$? 有两种方法：
+  在第三步中，我们如何计算 $q_t \approx Q_{\pi}(s_t,a_t)$ ? 有两种方法：
 
-1. REINFORCE
+  1. REINFORCE
 
-    玩一局游戏得到这局游戏的轨迹Trajectory
+      玩一局游戏得到这局游戏的轨迹Trajectory
 
-    $s_1,a_1,r_1,s_2,a_2,r_2,\dots,s_T,a_T,r_T$
+      $s_1,a_1,r_1,s_2,a_2,r_2,\dots,s_T,a_T,r_T$
 
-    对于所有的$t$计算discounted return
-    $
-    u_t = \sum_{k=t}^T \gamma^{k-t}r_k
-    $
+      对于所有的$t$计算discounted return
+      $
+      u_t = \sum_{k=t}^T \gamma^{k-t}r_k
+      $
 
-    由于$Q_{\pi}(s_t,a_t) = \mathbb{E}[U_t]$,我们可以使用$u_t$来去近似$Q_{\pi}(s_t,a_t)$，这种方法显而易见有一个缺点：玩完一局游戏才能进行更新，低效。
-2. 使用神经网络去近似$Q_{\pi}$
+      由于$Q_{\pi}(s_t,a_t) = \mathbb{E}[U_t]$,我们可以使用$u_t$来去近似$Q_{\pi}(s_t,a_t)$，这种方法显而易见有一个缺点：玩完一局游戏才能进行更新，低效。
+  2. 使用神经网络去近似$Q_{\pi}$
 
-    这就是下面的[ActorCritic Methods](#2-actor-critic-on-policy)
+      这就是下面的[ActorCritic Methods](#2-actor-critic-on-policy)
 
-REINFORCE with Baseline
+#### 3. REINFORCE with Baseline
 
 - 关于baseline可以在[策略学习](#3-策略学习-policy-based-learning---学习策略-pias)这里看到
 
@@ -727,6 +766,54 @@ REINFORCE with Baseline
       \end{aligned}
       $$
 
+#### 4. Policy Gradient 算法的`详细推导`
+
+在[上面的推导中](#1-具体推导简单版本)，我们说了**假设$Q_\pi$不依赖于$\theta$,但不严谨**，在这里我们写一个完整的推导版本，上面不严谨的推导便于我们快速了解算法，这里是它的真面目。
+
+注意在下面的公式里面 $Q^\pi$和之前出现的$Q_\pi$是一个意义，同样地，$ \pi_\theta(s\vert a)$和 $\pi(s\vert a;\theta)$是一样的意义。
+
+1. 首先我们的目标函数定义为:
+
+    $$
+    J(\theta) = \sum_{s\in \mathcal{S}} d^\pi(s) V^\pi(s) = \sum_{s\in \mathcal{S}} d^\pi(s)\sum_{a \in \mathcal{A}} \pi(a\vert s;\theta) Q^{\pi}(s,a)
+    $$
+
+    其中 $d^\pi(s)$为策略$\pi(\theta)$决定的马尔科夫平稳分布，其余的符号可以在[术语表中](#术语表)看到。
+
+    马尔科夫链的平稳性：如果我们可以持续永久遍历马尔科夫链中的所有状态，那么随着时间的推移，最终停留在某个状态的概率是一定的，这就是策略 $\pi(\theta)$的平稳性。
+
+    我们定义 $d^\pi(s)$为:
+
+    $d^\pi(s)= \lim_{t \to \infty}P(s_t = s \vert s_0,\pi_\theta)$
+
+    意思是在初始状态 $s_0$开始，遵循策略$\pi$的时候，执行$t$步之后，状态停留在$s$的概率。
+
+    根据目标函数$J(\theta)$的梯度 $\nabla_\theta J(\theta)$，我们可以提升策略梯度算法，最终可以最大化最终收益。
+  
+2. 策略梯度定理
+
+    由于梯度 $ \nabla_\theta J(\theta)$的计算是非常棘手的，但是我们有策略梯度定理：
+
+    $$
+    \begin {aligned}
+    \nabla_\theta J(\theta) &= \nabla_\theta \sum_{s\in \mathcal{S}} d^\pi(s) \sum_{a \in \mathcal{A}} Q^{\pi}(s,a) \pi(a \vert s;\theta)\\
+    & \propto \sum_{s\in \mathcal{S}} d^\pi(s) \sum_{a \in \mathcal{A}} Q^{\pi}(s,a) \nabla_\theta \pi(a \vert s;\theta)
+    \end{aligned}
+    $$
+3. 策略梯度定理的证明
+
+    首先对状态价值函数求导：
+
+    $$
+    \begin {aligned}
+    \nabla_\theta V^\pi(s)
+    &=\nabla_\theta \left(\sum_{a\in \mathcal{A}} \pi(a\vert s;\theta) Q^\pi(s,a)\right)\\
+
+    &=
+
+    \end{aligned}  
+    $$
+
 ### 2. Actor Critic On-Policy and Advantage Actor Critic On-policy
 
 直观的来说：使用神经网络来近似价值函数 V，瞎子背着瘸子,仓库中我们实现的是`A2C算法`
@@ -736,6 +823,8 @@ REINFORCE with Baseline
   1. 使用 Actor 来学习策略，Critic 学习 $Q_{\pi}(a,s)$，接受状态 s 作为输入(Policy Based),更新Actor使用`带权重的梯度上升`。
   2. 使用 Actor 来学习策略，Critic 学习 $Q_{\pi}(a,s)$，接受状态 s，a 的 concatenation 作为输入(Value Based)，更新Actor直接使用Critic的输出的`Qvalue`
   3. 与2相同，但是 s 是作为特征（features）从 actor 提取出来的，也就是说共享前面层的参数。
+
+#### 1. AC算法的训练流程
 
 - 训练：
 
@@ -762,7 +851,7 @@ REINFORCE with Baseline
 
 - Critic 在训练完毕之后就没有用辣！
 
-#### **Actor Critic With Baseline (A2C)**
+#### 2. 使用`baseline`:**Actor Critic With Baseline (A2C)**
 
 - 它也是由两个网络组成：
   
@@ -901,6 +990,8 @@ REINFORCE with Baseline
   从这个角度来看`REINFORCE 是特殊的multi-step A2C`，它用了所有的奖励，不做bootstrapping。
 
 ### 3. DDPG Off-Policy
+
+全称是**Deep Deterministic Policy Gradient**，意思就是它的策略是`确定性`的。
 
 ![ddpg algo](./DeepDeterministicPolicyGradient(DDPG)/principle.png)
 
