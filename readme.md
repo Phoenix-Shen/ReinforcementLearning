@@ -1069,7 +1069,7 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
 - [莫烦 python](https://mofanpy.com/)
 
-- [《动手学深度学习》](https://zh-v2.d2l.ai/)
+- [《动手学深度学习》](https://zh-v2.d2l.ai/) 这个书里头包含了一些深度学习基础知识和一些热门知识。
 
 - [pytorch 教程](https://www.youtube.com/watch?v=exaWOE8jvy8&list=PLqnslRFeH2UrcDBWF5mfPGpqQDSta6VK4)
 
@@ -1087,19 +1087,23 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
 - [马尔科夫决策与平稳分布](https://blog.csdn.net/qq_34652535/article/details/85343518)
 
-- [深度强化学习基础-王树森](https://www.youtube.com/watch?v=vmkRMvhCW5c&list=PLvOO0btloRnsiqM72G4Uid0UWljikENlU)
+- [深度强化学习基础-王树森](https://www.youtube.com/watch?v=vmkRMvhCW5c&list=PLvOO0btloRnsiqM72G4Uid0UWljikENlU) 这个是讲理论的
 
 - [深入浅出强化学习](https://daiwk.github.io/posts/rl.html)
 
-- [Machine Learning with Phil](https://www.youtube.com/channel/UC58v9cLitc8VaCjrcKyAbrw)
+- [Machine Learning with Phil](https://www.youtube.com/channel/UC58v9cLitc8VaCjrcKyAbrw) 这个是教你跟他敲代码的
 
 - [Maziar Raissi YouTube](https://www.youtube.com/channel/UCxEiGqJ2e-Mg9oQMjVv6poQ)
 
-- [Tianhong Dai 的 GitHub](https://github.com/TianhongDai)
+- [Tianhong Dai 的 GitHub](https://github.com/TianhongDai) 里面有多种强化学习的Pytorch实现
 
 - [DPPO](https://github.com/ZYunfeii/DRL_algorithm_library)
 
-- [OPENAI spinning up](https://spinningup.qiwihui.com/zh_CN/latest/user/introduction.html)
+- [OPENAI spinning up](https://spinningup.qiwihui.com/zh_CN/latest/user/introduction.html) OPAI代码库，支持TF Pytorch
+
+- [lilianweng的博客 - Policy Gradient Methods](https://lilianweng.github.io/posts/2018-04-08-policy-gradient/) , 建议有时间可以看看他的主页，里头也有一些东西，比如Transformer，课程学习等等
+
+- [上面博客的中文版](https://tomaxent.com/2019/04/14/%E7%AD%96%E7%95%A5%E6%A2%AF%E5%BA%A6%E6%96%B9%E6%B3%95/) 有人翻译过来了
 
 ---
 
