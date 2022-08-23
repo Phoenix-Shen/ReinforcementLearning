@@ -55,6 +55,8 @@ where the \* mark means the algorithm is important and worth diving into it
 |$Q(s,a)$|在状态$s$时采取动作$a$的时候能够的到的期望折扣奖励(return)，其中$Q(s,a;\mathbf{w})$代表以参数$\mathbf{w}$初始化的动作价值函数|
 |$Q_\pi(s,a)$|遵循策略$\pi$的时候，在状态$s$时采取动作$a$的时候能够的到的期望折扣奖励(return)，$Q(s,a;\mathbf{w}) = \mathbb{E}_{a \sim \pi(\cdot \vert s)} [U_t \vert S_t =s,A_t=a]$|
 | $A(s,a)$| 优势函数(advantage)，$A(s,a) = Q(s,a) - V(s)$ 它是另外一种Q-value，加入 $V(s)$ 作为baseline，具有更低的方差|
+|$r(\pi)$|根据策略$\pi$选取动作，能够得到的**平均回报**|
+|$d^\pi(s)$|策略$\pi$所决定的马尔科夫链的平稳分布|
 
 ## 1. 关键概念 Key Concepts
 
@@ -636,6 +638,9 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
         状态$s_t$先被观测到，与$A_t$无关，由于$V_{\pi}(s_t) = E_{A_t}[Q_\pi(s_t,A_t)]$，所以用$V_{\pi}(s_t)$是很合适的
 
+- `策略梯度算法的一般形式`
+  ![genaral advantage estimate](./PolicyGradient(PG)/gae.png)
+
 ### 1. Policy Gradient On-Policy
 
 核心思想：让好的行为多被选择，坏的行为少被选择。
@@ -766,7 +771,7 @@ def forward(self, x: t.Tensor) -> t.Tensor:
       \end{aligned}
       $$
 
-#### 4. Policy Gradient 算法的`详细推导`
+#### 4. Policy Gradient 算法的`详细推导`,有点难
 
 在[上面的推导中](#1-具体推导简单版本)，我们说了**假设$Q_\pi$不依赖于$\theta$,但不严谨**，在这里我们写一个完整的推导版本，上面不严谨的推导便于我们快速了解算法，这里是它的真面目。
 
@@ -790,7 +795,7 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
     根据目标函数$J(\theta)$的梯度 $\nabla_\theta J(\theta)$，我们可以提升策略梯度算法，最终可以最大化最终收益。
 
-    上面的$J(\theta)$是在连续环境（没有固定的终止状态）下面的目标函数(被称为平均值)，连续环境下还有一种性质更好的目标函数，叫做**平均回报**：
+    上面的$J(\theta)$是在连续环境（没有固定的终止状态）下的目标函数(被称为**平均值**)，连续环境下还有一种性质更好的目标函数，叫做**平均回报**：
       $$
       \begin{aligned}
       J(\theta) &\approx r(\pi)\\
@@ -802,7 +807,53 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
       \end{aligned}
       $$
-  
+
+      我们还定义：
+      $$
+      \begin{aligned}
+      G_t &= R_{t+1} - r(\pi)+R_{t+2} - r(\pi)+R_{t+3} - r(\pi)+\dots\\
+      V^\pi(s) &= \sum_a \pi_\theta(a \vert s) \sum_{r,s^\prime} p(s^\prime,r \vert s,a) [r-r(\pi) + V^\pi(s^\prime)]\\
+
+      Q^\pi(s,a)&= \sum_{r,s^\prime} p(s^\prime,r \vert s,a) [r-r(\pi) +\sum_{a^\prime} \pi_\theta(a^\prime \vert s^\prime)Q^\pi({s^\prime,a^\prime})]\\
+      \end{aligned}
+      $$
+
+      分别为**差分累计回报定义——回报与平均回报差值的累加值、差分状态-价值函数和差分动作状态-价值函数**。
+
+      平均值目标函数是 $J(\theta)$的**另外一种形式**：
+
+      $$
+      \begin{aligned}
+       J(\theta) &=  \sum_{s\in \mathcal{S}} d^\pi(s) V^\pi(s)\\
+
+      &= \sum_{s\in \mathcal{S}} d^\pi(s)\underbrace {\sum_a \pi_\theta(a \vert s) \sum_{r,s^\prime} p(s^\prime,r \vert s,a) [r +\gamma V^\pi(s^\prime)]}_{V^\pi(s)}\\
+
+      &= r(\pi) + \sum_{s\in \mathcal{S}} d^\pi(s) {\sum_a \pi_\theta(a \vert s) \sum_{r,s^\prime} p(s^\prime,r \vert s,a) [V^\pi(s^\prime)]},根据定义把r(\pi)提出来\\
+
+      &= r(\pi) + \gamma \sum_{s^\prime}V^\pi(s^\prime) \sum_s d^\pi(s) \sum_a \pi_\theta(a \vert s) p(s^\prime \vert s,a)\\
+
+      &= r(\pi) + \gamma \sum_{s^\prime}V^\pi(s^\prime)d^\pi(s^\prime)\\
+
+      &= r(\pi) + \gamma J(\theta)\\
+
+      &= r(\pi) + \gamma (r(\pi) + \gamma J(\theta))\\
+
+      &= \dots\\
+
+      &= \frac{1}{1-\gamma} r(\pi)
+      \end{aligned}
+      $$
+
+      ***因此在下面的推导中，只考虑平均回报形式的目标函数$r(\pi)$***
+
+      综上所述，目标函数有`3种形式`:
+      $$
+      \begin{aligned}
+      J(\theta) &\overset{\text{def}}{=} \sum_{s\in \mathcal{S}} d^\pi(s)\sum_{a \in \mathcal{A}} Q^{\pi}(s,a) \pi_\theta(a \vert s) \text{连续环境下的平均值形式目标函数,无固定终结状态}\\
+      & \overset{\text{def}}{=} \sum_s \mu(s) \sum_a \pi_\theta(a \vert s) \sum_{s^{\prime},r} p(s^{\prime},r \vert s,a)r\text{连续环境下的平均回报形式目标函数,无固定终结状态}\\
+      &\overset{\text{def}}{=} V^\pi(s_0) =\mathbb{E}\left[\sum_{t=1}^{+\infty}\gamma^t r_t \vert s_0,\pi\right]\text{周期环境下的目标函数,有固定的起始状态和终结状态}
+      \end{aligned}
+      $$
 2. 策略梯度定理
 
     由于梯度 $ \nabla_\theta J(\theta)$的计算是非常棘手的，但是我们有策略梯度定理：
@@ -875,7 +926,7 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
     &= \phi(s) +  \sum_{s^{\prime}} \rho^\pi(s \to s^\prime, 1 )\phi(s^\prime) + \sum_{s^{\prime\prime}}\rho^\pi(s \to s^{\prime\prime},2)\phi(s^{\prime\prime}) + \sum_{s^{\prime\prime\prime}}\rho^\pi(s \to s^{\prime\prime\prime},2)\nabla_\theta V^\pi(s^{\prime\prime\prime})\\
 
-    &= \dots\\
+    &= \dots \\
 
     &= \sum_{x\in \mathcal{S}}\sum_{k=0}^{\infty} \rho^\pi(s \to x,k)\phi(x)
     \end{aligned}
@@ -883,17 +934,87 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
     到此为止我们可以避免计算所谓的 $Q^\pi(s,a)$，然后我们将刚刚推导的式子代入到这里：
 
-    - 在连续环境下的情况
+    - 在周期环境下的情况
 
       $$
       \begin{aligned}
-      \nabla_\theta V^\pi(s)&=\nabla_\theta\left (\sum_{a\in \mathcal{A}} \pi_\theta(a \vert s) Q^\pi(s,a)\right)\\
-      &= \phi(s)  + \sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\nabla_\theta Q^\pi(s,a)\right)\\
+      \nabla_\theta J(\theta) &= \nabla_\theta V^\pi(s_0)\\
+      &= \sum_s \underbrace{\sum_{k=0}^{\infty} \rho^\pi(s_0 \to s,k)}_{\eta(s)}\phi(s)\\
 
-      &= \phi(s)  +\sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\nabla_\theta\right)
+      &= \sum_s {\eta(s)}\phi(s)\\
+
+      &= (\sum_s \eta(s)) \sum_s \frac{\eta(s)}{\sum_s \eta(s)}\phi(s) \ \text{正则化} \eta(s)\text{使其成为一个概率分布}\\
+
+      &\propto \sum_s \frac{\eta(s)}{\sum_s \eta(s)}\phi(s)\\
+
+      &= \sum_s d^\pi(s) \sum_a \nabla_\theta \pi_\theta(a \vert s) Q^\pi (s,a) \ 因为\sum_s \eta(s)是常数,d^\pi(s)=\frac{\eta(s)}{\sum_s \eta(s)}是平稳分布
 
       \end{aligned}
       $$
+
+    - 在连续环境下的证明情况，`要用到上面所谓的差分状态-价值函数`
+
+      $$
+      \begin{aligned}
+      \nabla_\theta V^\pi(s) \\
+      &= \nabla_\theta(\sum_{a\in \mathcal{A}} \pi_\theta(a \vert s)Q^\pi(s,a))\\
+
+      &= \phi(s) + \sum_{a\in \mathcal{A}}\pi_\theta(a \vert s)\nabla_\theta Q^\pi(s,a)\\
+
+      &= \phi(s) + \sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\nabla_\theta \sum_{s^\prime,r} P(s^\prime,r \vert s, a)(r -r(\pi) + V^\pi(s^\prime))\right),展开Q^\pi\\
+
+      &= \phi(s)+ \sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\left[-\nabla_\theta r(\pi) + \sum_{s^\prime,r} P(s^\prime,r \vert s, a)\nabla_\theta V^\pi(s^\prime) \right]\right),r(\pi)与s^\prime和r无关，可以提出来 \\
+
+      &= \phi(s)+ \sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\left[-\nabla_\theta r(\pi) + \sum_{s^\prime} P(s^\prime \vert s, a)\nabla_\theta V^\pi(s^\prime) \right]\right) ,消掉一个r，因为P(s^\prime \vert s,a) =\sum_rP(s^\prime,r \vert s, a) \\
+
+      &=-\nabla_\theta r(\pi)+\phi(s) +\sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\sum_{s^\prime} P(s^\prime \vert s, a)\nabla_\theta V^\pi(s^\prime) \right) \\
+
+      &\Rightarrow  \nabla_\theta r(\pi)= \phi(s)+\sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\sum_{s^\prime} P(s^\prime \vert s, a)\nabla_\theta V^\pi(s^\prime) \right)-\nabla_\theta V^\pi(s)
+      \end{aligned}
+      $$
+
+      于是我们平均回报形式的目标函数的梯度有：
+      $$
+      \begin{aligned}
+      \nabla_\theta J(\theta) &= \nabla_\theta r(\pi)\\
+      &= \sum_s d^\pi(s) \left[\phi(s)+\sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\sum_{s^\prime} P(s^\prime \vert s, a)\nabla_\theta V^\pi(s^\prime) \right)-\nabla_\theta V^\pi(s)\right]\\
+
+      &= \sum_s d^\pi(s)\phi(s) + \sum_s d^\pi(s)\sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\sum_{s^\prime} P(s^\prime \vert s, a)\nabla_\theta V^\pi(s^\prime) \right)- \sum_s d^\pi(s)\nabla_\theta V^\pi(s),因为\sum_s d^\pi(s)=1，所以可以放在前面\\
+
+      &=  \sum_s d^\pi(s)\phi(s) + \sum_{s^\prime}\underbrace{\sum_s d^\pi(s)\sum_{a\in \mathcal{A}}\pi_\theta(a \vert s) P(s^\prime \vert s, a)}_
+      {d^\pi(s^\prime)}\nabla_\theta V^\pi(s^\prime) - \sum_s d^\pi(s)\nabla_\theta V^\pi(s)\\
+
+      &= \sum_s d^\pi(s)\phi(s) + \sum_{s^\prime}d^\pi(s^\prime)\nabla_\theta V^\pi(s^\prime)- \sum_s d^\pi(s)\nabla_\theta V^\pi(s)\\
+
+      &= \sum_s d^\pi(s)\phi(s)\\
+
+      &= \sum_s d^\pi(s) \sum_a \nabla_\theta \pi_\theta(a \vert s) Q^\pi (s,a)
+
+      &\propto \sum_s d^\pi(s) \sum_a \nabla_\theta \pi_\theta(a \vert s) Q^\pi (s,a)
+      \end{aligned}
+      $$
+      对于平均值形式的目标函数有：
+      $$
+      \begin{aligned}
+      \nabla_\theta J(\theta) &= \frac{1}{1-\gamma} \nabla_\theta r(\pi)\\
+      &= \frac{1}{1-\gamma}\sum_s d^\pi(s) \sum_a \nabla_\theta \pi_\theta(a \vert s) Q^\pi (s,a)\\
+      &\propto \sum_s d^\pi(s) \sum_a \nabla_\theta \pi_\theta(a \vert s) Q^\pi (s,a)
+      \end{aligned}
+      $$
+  
+    至此，我们有：
+      $$
+      \begin{aligned}
+      \nabla_\theta J(\theta) &\propto \sum_s d^\pi(s) \sum_a \nabla_\theta \pi_\theta(a \vert s) Q^\pi (s,a)\\
+      &= \sum_s d^\pi(s) \sum_a \pi_\theta(a \vert s) \frac{\nabla_\theta  \pi_\theta(a \vert s)}{\pi_\theta(a \vert s)} Q^\pi (s,a)\\
+
+      &= \mathbb{E}
+      _\pi[Q^\pi (s,a)\nabla
+      _\theta \ln\pi
+      _\theta(a \vert s) ]
+      \end{aligned}
+      $$
+    也就是上面[简单推导](#1-具体推导简单版本)中的形式了
 
 ### 2. Actor Critic On-Policy and Advantage Actor Critic On-policy
 
