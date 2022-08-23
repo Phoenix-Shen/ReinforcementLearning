@@ -789,6 +789,19 @@ def forward(self, x: t.Tensor) -> t.Tensor:
     意思是在初始状态 $s_0$开始，遵循策略$\pi$的时候，执行$t$步之后，状态停留在$s$的概率。
 
     根据目标函数$J(\theta)$的梯度 $\nabla_\theta J(\theta)$，我们可以提升策略梯度算法，最终可以最大化最终收益。
+
+    上面的$J(\theta)$是在连续环境（没有固定的终止状态）下面的目标函数(被称为平均值)，连续环境下还有一种性质更好的目标函数，叫做**平均回报**：
+      $$
+      \begin{aligned}
+      J(\theta) &\approx r(\pi)\\
+      & \approx \lim_{h \to \infty} \frac{1}{h} \sum_{t=1}^h \mathbb{E} [R_t \vert S_0, A_{0:t-1} \sim \pi]\\
+
+      &= \lim_{t \to \infty} \mathbb{E} [R_t \vert S_0, A_{0:t-1}]\\
+
+      &= \sum_s \mu(s) \sum_a \pi_\theta(a \vert s) \sum_{s^{\prime},r} p(s^{\prime},r \vert s,a)r\\
+
+      \end{aligned}
+      $$
   
 2. 策略梯度定理
 
@@ -809,10 +822,78 @@ def forward(self, x: t.Tensor) -> t.Tensor:
     \nabla_\theta V^\pi(s)
     &=\nabla_\theta \left(\sum_{a\in \mathcal{A}} \pi(a\vert s;\theta) Q^\pi(s,a)\right)\\
 
-    &=
+    &=\sum_{a\in \mathcal{A}} \left(\nabla_\theta \pi_\theta(a\vert s)Q^\pi(s,a) + \pi_\theta(a \vert s) \nabla_\theta Q^\pi(s,a) \right)\\
+
+    &=\sum_{a\in \mathcal{A}}\left(\nabla_\theta \pi_\theta(a\vert s)Q^\pi(s,a) + \pi_\theta(a \vert s) \nabla_\theta \underbrace{\sum_{s^{\prime},r} P(s^\prime,r \vert s,a)(r + V^\pi(s^\prime))}_{Q^\pi(s,a)} \right)\\
+
+    &=\sum_{a\in \mathcal{A}}\left(\nabla_\theta \pi_\theta(a\vert s)Q^\pi(s,a) + \pi_\theta(a \vert s) \sum_{s^{\prime},r} P(s^\prime,r \vert s,a) \nabla_\theta V^\pi(s^\prime) \right) \text{r和状态转移概率与theta无关}\\
+
+    &=\sum_{a\in \mathcal{A}}\left(\nabla_\theta \pi_\theta(a\vert s)Q^\pi(s,a) + \pi_\theta(a \vert s) \sum_{s^{\prime}} \underbrace{P(s^\prime \vert s,a)}_{P(s^\prime \vert s,a) = \sum_{r}P(s^\prime,r \vert s,a)} \nabla_\theta V^\pi(s^\prime) \right)
 
     \end{aligned}  
     $$
+
+    我们有了：
+    $$
+    \nabla_\theta V^\pi(s) =\sum_{a\in \mathcal{A}}\left(\nabla_\theta \pi_\theta(a\vert s)Q^\pi(s,a) + \pi_\theta(a \vert s) \sum_{s^{\prime}} P(s^\prime \vert s,a) \nabla_\theta V^\pi(s^\prime) \right)
+    $$
+
+    因为上面的等式中同时有 $V^\pi(s)$和 $V^\pi(s^\prime)$,我们可以考虑展开一下。先来做一些准备工作：
+
+    我们定义从状态 $s$ 开始在策略 $\pi_\theta$ 下经过 $k$ 个时间步到达状态 $x$ 的概率记为 $\rho^\pi(s \to x, k)$
+
+      - k=0时，$\rho^\pi(s \to s, 0) = 1 $
+      - k=1时，我们遍历在状态$s$时所有可能的动作然后进行一个累加： $ \rho^\pi(s \to s^\prime, k =1 ) = \sum_a \pi_\theta(a \vert s) P(s^\prime \vert s,a)$
+      - 如果目标是从状态$s $按照策略$\pi_\theta$经过$k+1$个时间步最终达到了$x$状态，我们可以看做从$s$状态经过$k$个时间步到了 $s^\prime \in \mathcal{S}$ 状态，然后再经过最后一个时间步到达了$x$状态那么我们可以这么计算：
+
+        $\rho^\pi(s \to x,k+1) = \sum_{s^\prime} \rho^\pi(s \to s^\prime,k)\rho^\pi(s^\prime \to x,1)$
+
+    **递归展开$\nabla_\theta V^\pi(s)$**
+
+    为了简洁，我们使用 $\phi(s)$ 来替代 $ \sum_{a \in \mathcal{A}} \nabla_\theta \pi_\theta(a\vert s)Q^\pi(s,a)$
+
+    于是有：
+    $$
+    \begin{aligned}
+    \nabla_\theta V^\pi(s) &=\sum_{a\in \mathcal{A}}\left(\nabla_\theta \pi_\theta(a\vert s)Q^\pi(s,a) + \pi_\theta(a \vert s) \sum_{s^{\prime}} P(s^\prime \vert s,a) \nabla_\theta V^\pi(s^\prime) \right)\\
+
+    &= \phi(s) + \sum_a \pi_\theta(a \vert s)\sum_{s^{\prime}} P(s^\prime \vert s,a) \nabla_\theta V^\pi(s^\prime)\\
+
+    &= \phi(s) + \sum_a\sum_{s^{\prime}} \pi_\theta(a \vert s) P(s^\prime \vert s,a) \nabla_\theta V^\pi(s^\prime)\\
+
+    &= \phi(s)+ \sum_a \underbrace{\rho^\pi(s \to s^\prime, 1 )}
+    _
+    {
+      \sum_{s^{\prime}} \pi_\theta(a \vert s) P(s^\prime \vert s,a)
+    } \nabla_\theta V^\pi(s^\prime)\\
+
+    &= \phi(s) + \sum_{s^{\prime}}\rho^\pi(s \to s^\prime, 1 )\left[\phi(s^\prime) + \sum_{s^{\prime\prime}}\rho^\pi(s^\prime \to s^{\prime\prime},1) \nabla_\theta V^\pi(s^{\prime\prime})  \right]\\
+
+    &= \phi(s) + \sum_{s^{\prime}} \rho^\pi(s \to s^\prime, 1 )\phi(s^\prime) + \sum_{s^{\prime}} \rho^\pi(s \to s^\prime, 1 )\sum_{s^{\prime\prime}}\rho^\pi(s^\prime \to s^{\prime\prime},1) \nabla_\theta V^\pi(s^{\prime\prime}) \\
+
+    &= \phi(s) +  \sum_{s^{\prime}} \rho^\pi(s \to s^\prime, 1 )\phi(s^\prime) + \sum_{s^{\prime\prime}}\rho^\pi(s \to s^{\prime\prime},2) \nabla_\theta V^\pi(s^{\prime\prime}) \text{将s撇作为中间状态}\\
+
+    &= \phi(s) +  \sum_{s^{\prime}} \rho^\pi(s \to s^\prime, 1 )\phi(s^\prime) + \sum_{s^{\prime\prime}}\rho^\pi(s \to s^{\prime\prime},2)\phi(s^{\prime\prime}) + \sum_{s^{\prime\prime\prime}}\rho^\pi(s \to s^{\prime\prime\prime},2)\nabla_\theta V^\pi(s^{\prime\prime\prime})\\
+
+    &= \dots\\
+
+    &= \sum_{x\in \mathcal{S}}\sum_{k=0}^{\infty} \rho^\pi(s \to x,k)\phi(x)
+    \end{aligned}
+    $$
+
+    到此为止我们可以避免计算所谓的 $Q^\pi(s,a)$，然后我们将刚刚推导的式子代入到这里：
+
+    - 在连续环境下的情况
+
+      $$
+      \begin{aligned}
+      \nabla_\theta V^\pi(s)&=\nabla_\theta\left (\sum_{a\in \mathcal{A}} \pi_\theta(a \vert s) Q^\pi(s,a)\right)\\
+      &= \phi(s)  + \sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\nabla_\theta Q^\pi(s,a)\right)\\
+
+      &= \phi(s)  +\sum_{a\in \mathcal{A}}\left(\pi_\theta(a \vert s)\nabla_\theta\right)
+
+      \end{aligned}
+      $$
 
 ### 2. Actor Critic On-Policy and Advantage Actor Critic On-policy
 
