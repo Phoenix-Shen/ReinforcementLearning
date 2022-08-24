@@ -50,7 +50,7 @@ where the \* mark means the algorithm is important and worth diving into it
 | $P(s',r\vert s,a)$|从当前状态 $s$ 采取动作 $a$，转移到 $s_{t+1}$ 状态并获取奖励$r$的概率|
 |$\pi(a\vert s)$|随机策略,$\pi(a \vert s; \theta)$ 表示由 $\theta$ 作为参数初始化的策略网络|
 |$\mu(s)$|确定性的策略，在DDPG中可以见到，也可以表示为$\pi(s)$，一般用前者|
-|$V(s)$| 状态价值函数，它预测状态$s$下的期望折扣奖励，其中$V(s;\mathbf{w})是由参数$\mathbf{w}$初始化的价值网络|
+|$V(s)$| 状态价值函数，它预测状态$s$下的期望折扣奖励，其中$V(s;\mathbf{w})$是由参数$\mathbf{w}$初始化的价值网络|
 | $V_\pi(s)$| 当我们遵循策略$\pi$的时候，状态$s$的价值，其中$ V_\pi(s) = \mathbb{E}_{a \sim \pi(\cdot \vert s)} [U_t \vert S_t =s]$ |
 |$Q(s,a)$|在状态$s$时采取动作$a$的时候能够的到的期望折扣奖励(return)，其中$Q(s,a;\mathbf{w})$代表以参数$\mathbf{w}$初始化的动作价值函数|
 |$Q_\pi(s,a)$|遵循策略$\pi$的时候，在状态$s$时采取动作$a$的时候能够的到的期望折扣奖励(return)，$Q(s,a;\mathbf{w}) = \mathbb{E}_{a \sim \pi(\cdot \vert s)} [U_t \vert S_t =s,A_t=a]$|
@@ -1195,20 +1195,71 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
 全称是**Deep Deterministic Policy Gradient**，意思就是它的策略是`确定性`的。
 
+#### 1. DDPG的特征
+
 ![ddpg algo](./DeepDeterministicPolicyGradient(DDPG)/principle.png)
 
-- Exploration noise
+- Exploration noise ($\mu^\prime(s) = \mu_\theta(s) + \mathcal{N}$)
 - Actor-Critic Achetecture
 - Fixed Q-Target
 - Policy Gradient
 - Experience Replay (OFF-POLICY)
+- Soft Update (Conservative strategy iteration)
+
+#### 2.确定性策略梯度的推导
+
+上面的方法中我们策略函数$\pi(\cdot \vert s)$总是描述成给定状态$s$下载动作空间$ \mathcal{A}$上的概率分布，所以策略是`随机的`，在确定性策略梯度(Deterministic Policy Gradient)中，我们将环境建模为一个`确定性的决策`：$ a = \mu(s)$
+
+之前我们有：
+
+- $\rho_0(s)$ 初始状态分布
+- $\rho^\mu(s \to s^\prime ,k) $ 从状态$s$开始，遵循策略$\mu$经过$k$个时间步到达状态$ s^\prime$的访问概率密度
+
+- $\rho^\mu(s^\prime)$，折扣状态分布，定义为$\rho^\mu(s^\prime)= \int_{\mathcal{S}} \sum_{k=1}^{\infty} \gamma^{k-1}\rho_0(s) \rho^\mu(s \to s^\prime,k) ds$
+
+于是平均值形式的目标函数定义为：
+$$
+J(\theta) = \int_{\mathcal{S}} \rho^\mu(s)Q(s,\mu_\theta(s))ds
+$$
+
+个人理解为对于所有的状态$s$我们计算它出现的概率，然后乘以一个根据策略$\mu(s)$做出来的策略的$Q$值，然后我们对$s$求个积分，也就是求平均值。
+
+确定性策略梯度：
+$$
+\begin{aligned}
+\nabla_\theta J(\theta) &= \int_\mathcal{S} \rho^\mu(s) \nabla_a Q^\mu(s,a) \nabla_\theta \mu_\theta(s) \vert_{a=\mu_\theta(s)} ds\\
+&= \mathbb{E}_{s \sim \rho^\mu}[\nabla_a Q^\mu(s,a) \nabla_\theta \mu_\theta(s) \vert_{a=\mu_\theta(s)}]
+\end{aligned}
+$$
+
+问题在于，我们如果遵循确定性的策略，除非环境有很多噪声，我们很难进行充分的探索，所以我们可以在确定策略中添加噪声或者遵循不同的随机行为策略来进行样本的收集，以便离线学习。
+
+在离线方法中，训练的样本是通过一个随机行为策略$\beta(a \vert s)$产生的，因此状态分布服从于对应的折扣状态密度$\rho^\beta$：
+
+$$
+\begin{aligned}
+J_\beta(\theta) &= \int_{\mathcal{S}} \rho^\beta Q^\mu(s,\mu_\theta(s))ds\\
+
+\nabla_\theta J_\beta(\theta) &= \mathbb{E}_{s \sim \rho^\beta}[\nabla_a Q^\mu(s,a) \nabla_\theta \mu_\theta(s) \vert_{a=\mu_\theta(s)}]
+
+\end{aligned}
+$$
+
+直观地来说，使用$\mu(s)$策略来进行经验收集可能会导致环境探索不充分，进而导致 $Q$ value收敛不充分，我们的策略就不完美。所以一般可以用另外的随机策略进行经验收集。
+
+注意：*在本仓库的DDPG算法中，以上两个手段都用到了，具体的可以看代码*
 
 ### 4. A3C On-Policy
+
+AC的`多线程`版本
+
+#### 1. A3C的特征
 
 - A3C 里面有多个 agent 对网络进行异步更新，相关性较低
 - 不需要积累经验，占用内存少
 - on-policy 训练
 - 多线程异步,速度快
+- 注意：A3C与MARL多智能体强化学习不同 A3C着重与并行训练，梯度累积可以认为是minibatch SGD
 
 ### 5. PPO On-Policy
 
@@ -1218,9 +1269,65 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
 ### 6. TRPO On-Policy
 
-- 使用 L(theta|theta_old)来近似目标函数 J(theta)
-- 使用 KL 散度或者是二次距离来约束 theta 与 theta_old 之间的差距
+#### 1. TRPO的特征
+
+- 使用 $\mathcal{L}(\theta|\theta_{old})$来近似目标函数 $J(\theta)$
+- 使用 KL 散度或者是二次距离来约束 $\theta$ 与 $\theta_{old}$ 之间的差距
 - 因此，相比于普通的 PG 算法，它更稳定，因为他对于学习率不敏感
+
+#### 2. 离线策略梯度的一些证明
+
+注意：这个证明是给使用`带权重的梯度上升`算法的`离线学习`用的，DDPG不是，因为它还是使用Qvalue作为损失函数。
+
+离线方法有以下优势：
+
+  1. 离线算法不需要完整的轨迹样本，并且可以复用任何历史轨迹的样本(Experience Replay 经验回放)从而实现了Sample Efficiency，样本有效性。
+  2. 训练样本根据行为策略而不是目标策略收集的，给算法带来了更好的探索性。
+
+有以下定义：
+
+  1. $\beta(a \vert s)$ 行为策略，用来收集训练样本
+  2. $\pi_\theta(a \vert s)$ 目标策略，我们要训练的策略
+  3. $d^\beta (s)$ 根据行为策略$\beta$导出的平稳分布，$d^\beta (s)= \lim_{t \to \infty} P(S_t=s\vert S_0,\beta)$
+  4. $Q^\pi$ 根据目标策略$\pi$估计的action-value function
+
+我们的平均值形式的目标函数有：
+
+$$
+J(\theta) = \sum_{s\in \mathcal{S}} d^\beta (s) \sum_{a\in \mathcal{A}} Q^\pi(s,a)\pi_\theta(a \vert s) = \mathbb{E}_{s \sim d^\beta}\left[\sum_{a \in \mathcal{A}} Q^\pi(s,a)\pi_\theta(a\vert s)\right]
+$$
+
+于是我们可以改写成以下形式：
+$$
+\begin{aligned}
+\nabla_\theta J(\theta) &= \nabla_\theta \mathbb{E}
+_
+{s \sim d^\beta} \left[\sum_{a \in \mathcal{A}} Q^\pi(s,a)\pi_\theta(a\vert s)\right]\\
+
+&= \mathbb{E} _
+{s \sim d^\beta}\left[\sum
+_ {a \in \mathcal{A}} (Q^\pi(s,a)
+\nabla_\theta\pi
+_ \theta(a \vert s) +
+\nabla_\theta Q^\pi(s,a)\pi
+_\theta(a \vert s))\right]\\
+
+& \approx \mathbb{E} _
+{s \sim d^\beta}\left[\sum
+_ {a \in \mathcal{A}} Q^\pi(s,a)
+\nabla_\theta\pi
+_ \theta(a \vert s) \right](忽略掉后面一项，进行一下近似)\\
+
+&= \mathbb{E}
+_
+{s \sim d^\beta}\left[\sum
+_ {a \in \mathcal{A}} \beta(a\vert s) \frac{\pi_\theta(a\vert s)}{\beta(a\vert s)}Q^\pi(s,a)
+\frac{\nabla_\theta\pi
+_
+\theta(a \vert s)}{\pi_\theta(a\vert s)} \right]
+
+\end{aligned}
+$$
 
 ### 7. Soft Actor Critic Off-Policy (实现了 PER)
 
@@ -1288,7 +1395,7 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
   ```python
   def forward(self, x:t.Tensor)->t.Tensor:
-  return self.net(x).squeeze(1)
+      return self.net(x).squeeze(1)
   ```
 
 - 关于 nn.Module.eval()
@@ -1302,9 +1409,10 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
   - 不管怎样还是推荐使用 model.train()和 model.eval()，因为你正在使用的模型可能在 eval 和 train 两种模式下表现不同，而你自己不知道。
 
 - TD 学习 temporal difference,与蒙特卡洛方法类似，时差(TD)学习是一个无模型(model free)方法，它从每轮的经验数据中学习。不同的是，TD 学习可以从不完整的一轮数据中学习，因此我们无需让代理一直执行到环境为终止态。
+
 - `PG算法大家族`
   - DQN、Qlearning、Sarsa 等都在学习状态或者行为价值函数，然后再根据价值函数来选择未来的行为，而策略梯度直接学习策略本身
-  - 策略梯度方法主要特点在于直接对策略进行建模，通常建模为由 theta 参数化的函数 PI_theta（a|s），回报函数的值收到该策略的直接影响，于是我们可以用多种方法来最大化回报函数
+  - 策略梯度方法主要特点在于直接对策略进行建模，通常建模为由 theta 参数化的函数 $\pi_\theta(a \vert s)$，回报函数的值收到该策略的直接影响，于是我们可以用多种方法来最大化回报函数
   - Actor-Critic：学习策略和价值函数
   - Asynchronous Advantage Actor Critic：侧重于并行训练
   - Advantage Actor Critic：引入协调器，收敛更快，性能比 A3C 更好
@@ -1403,6 +1511,4 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 ## 7. TODO
 
 1. OpenAI spinning up 好好看看
-2. 重写 Memory 类,改成统一接口
-3. 写几个 abstract 类，统一 Actor 和 Critic 的接口
-4. 补充理论知识
+2. 补充理论知识
