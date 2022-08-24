@@ -1263,9 +1263,15 @@ AC的`多线程`版本
 
 ### 5. PPO On-Policy
 
+#### 1.PPO的特征
+
 - 使用 importance sampling 来使用过去的经验
 - PPO 是积累部分经验(一个 trajectory)，然后进行多轮的梯度下降
 - 对 importance weight 进行裁剪从而控制更新步长
+
+#### 2. PPO的细节
+
+鉴于TRPO很复杂但是我们仍然想模仿一下TRPO的思想，近端策略优化(proximal policy optimization)就是通过使用一个截断的替代目标函数来简化TRPO。
 
 ### 6. TRPO On-Policy
 
@@ -1324,9 +1330,60 @@ _
 _ {a \in \mathcal{A}} \beta(a\vert s) \frac{\pi_\theta(a\vert s)}{\beta(a\vert s)}Q^\pi(s,a)
 \frac{\nabla_\theta\pi
 _
-\theta(a \vert s)}{\pi_\theta(a\vert s)} \right]
+\theta(a \vert s)}{\pi_\theta(a\vert s)} \right]\\
+&= \mathbb{E}_
+\beta\left[\frac{\pi
+_
+\theta(a\vert s)}{\beta(a\vert s)}Q^\pi(s,a)
+\nabla \ln \pi_\theta(a\vert s)\right]
 
 \end{aligned}
+$$
+我们称$\frac{\pi_\theta(a\vert s)}{\beta(a\vert s)}$为重要性权重(importance weight)
+
+在这里我们忽略掉了$\nabla_\theta Q^\pi(s,a)$，使用近似的策略梯度，这样依旧能够保证使用梯度上升算法能够使得的略性能提升并收敛到一个真实的局部最优解。
+
+#### 3.TRPO的具体细节
+
+为了提升训练的稳定性，我们应该避免更新一步就使得策略发生剧烈变化的参数更新，为此我们标出一个置信区间，参数在这个区间更新就是安全的，所以这个方法叫做 Trust Region Policy Optimization，它是通过在每次迭代的时候对策略更新的幅度强制施加KL_divergence约束来实现上述理念。
+
+对于离线情况，目标函数的衡量是遵循一个不同的行为策略$\beta(a \vert s)$来进行采样的同时，在状态访问分布以及动作空间上的所有优势：
+$$
+\begin{aligned}
+J(\theta) &= \sum_{s\in \mathcal{S}} \rho^{\pi_{old}} \sum_{a \in \mathcal{A}} \left (\pi_\theta(a \vert s) \hat A_{\pi_{old}}(s,a) \right)\\
+
+&= \sum_{s\in \mathcal{S}} \rho^{\pi_{old}} \sum_{a \in \mathcal{A}} \left (\beta(a\vert s)\frac{\pi
+_
+\theta(a\vert s)}{\beta(a\vert s)} \hat A_{\pi_{old}}(s,a) \right)\\
+
+&= \mathbb{E}_
+{s \sim \rho^{\pi
+_
+{\theta_
+{old}}},a\sim \beta} \left[\frac{\pi
+_
+\theta(a\vert s)}{\beta(a\vert s)} \hat A_{\pi_{old}}(s,a)\right]
+\end{aligned}
+$$
+
+其中$\pi_{old}$是我们已知的，是更新之前的策略参数，$\beta(a\vert s)$是用来采样轨迹的行为策略，我们使用的$\hat A(\cdot)$是对于真实优势函数$A(\cdot)$的一个蒙特卡洛估计。上面的公式是我从那个 [桃子网站](https://lilianweng.github.io/posts/2018-04-08-policy-gradient/) 抄下来的，个人觉得如果是使用$\beta$来进行采样的话，那么第一个$\sum$符号下标应该就是$\rho^\beta$，这应该是**有错误的**。
+
+对于在线情况，我们的行为策略是$\pi_{\theta_{old}}(a \vert s)$:
+
+$$
+J(\theta) = \mathbb{E}_
+{s \sim \rho^{\pi
+_
+{\theta_
+{old}}},a\sim \pi_{\theta_{old}}} \left[\frac{\pi
+_
+\theta(a\vert s)}{\pi_{\theta_{old}}(a\vert s)} \hat A_{\pi_{old}}(s,a)\right]
+$$
+
+TRPO算法旨在`满足置信区间的约束下`最大化目标函数$J(\theta)$,该约束强制就策略与新策略之间的KL散度小于某个参数$\delta$：
+
+$$
+\mathbb{E}_{s \sim \rho^{\pi_{\theta_{old}}}}[D_{KL}(\pi_{\theta_{old}}(\cdot \vert s) \vert \pi_\theta(\cdot \vert s))] \le \delta
 $$
 
 ### 7. Soft Actor Critic Off-Policy (实现了 PER)
