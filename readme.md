@@ -1273,6 +1273,36 @@ AC的`多线程`版本
 
 鉴于TRPO很复杂但是我们仍然想模仿一下TRPO的思想，近端策略优化(proximal policy optimization)就是通过使用一个截断的替代目标函数来简化TRPO。
 
+我们令TRPO中的importance sampling weight 为:
+$$
+r(\theta) = \frac{\pi_\theta(a \vert s)}{\pi_{\theta_{old}}(a \vert s)}
+$$
+
+仿照TRPO，我们的目标函数(在线的情况)为：
+$$
+J^{TRPO}(\theta)=\mathbb{E}[r(\theta) \hat A_{\theta_{old}}(s,a)]
+$$
+
+在TRPO的更新过程中，我们需要保证$\theta_{old}$和$\theta$的距离，否则会导致参数过大幅度的变动使训练过程不稳定。
+
+在PPO中，强行使得$r(\theta)$保持在1附近的领域中即$[1-\epsilon,1+\epsilon]$，来保持这一约束，在本仓库中$\epsilon = 0.2$是超参数。
+
+$$
+J^{CLIP}(\theta) = \mathbb{E}\left[ \min \left(r(\theta)\hat A_{\theta_{old}}(s,a),\text{clip}(r(\theta),1-\epsilon,1+\epsilon)\hat A_{\theta_{old}}(s,a)\right) \right]
+$$
+
+clip函数就是将$r(\theta)$截断在$[1-\epsilon,1+\epsilon]$范围内，这里违背了TRPO的一个理念：尽可能地最大化策略的更新幅度从而得到更好的回报。
+
+实际应用在Actor Critic共享参数的网络结构上面的时候，我们的目标函数还加上了关于值估计的误差项还有一个熵正则项(鼓励探索)。
+
+$$
+J^{{CLIP}^\prime}(\theta) = \mathbb{E}[J^{CLIP}(\theta) + c_1 (V_\theta(s) - V_{target})^2 + c2 \mathcal{H}(s,\pi_\theta(\cdot))]
+$$
+
+其中$c_1,c_2$为两个超参数。
+
+个人觉得PPO的优点就是收敛快，对于LunarLander来说，它只要15分钟就可以收敛，缺点是使用$\theta_{old}$会导致环境探索不充分进而导致停留在局部最小。
+
 ### 6. TRPO On-Policy
 
 #### 1. TRPO的特征
@@ -1401,12 +1431,26 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
 ### 8. TwinDelayedDeepDeterministicPolicyGradient(TD3) Off-Policy
 
+#### 1. TD3 的特征
+
 1. 双 Critic
 2. 延迟更新 Actor
 3. soft update
 4. 使用 replay buffer
 
-### 9. Diversity Is All You Need
+其实就是结合了许多之前的优点，还能加的话就加熵或者是在经验池上面做文章。
+
+### 9. Actor Critic with Experience Replay (ACER) Off-Policy
+
+#### 1. ACER的特征
+
+1. 使用Retrace Q Estimation
+2. 使用偏差校正截断重要性权重
+3. 更高效的TRPO
+
+#### 2. 具体算法
+
+### 10. Diversity Is All You Need
 
 待完成
 
