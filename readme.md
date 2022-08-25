@@ -1420,7 +1420,7 @@ $$
 
 CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 
-越来越麻烦
+#### 1. SAC的特征
 
 1. 采用分离策略网络以及值函数网络的 **AC 架构**，这里 actor 是学习策略，使 Q 值最大（即 state-action value 最大）
 2. ER 能够使用历史数据，高效采样
@@ -1429,16 +1429,76 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 5. reparameterize 使 log standard deviation 可微
 6. 一次采样多次进行梯度下降
 
+#### 2. SAC的细节
+
+SAC的目标是`同时最大化期望累计回报和策略的熵度量`：
+
+$$
+J(\theta) = \sum_{t=1}^{T} \mathbb{E}_{(s_t,a_t) \sim \rho_{\pi_\theta}}[r(s_t,a_t) + \alpha \mathcal{H}(\pi_\theta(\cdot \vert s))]
+$$
+
+其中$\mathcal{H}(\cdot)$表示熵度量,$\alpha$表示热度，用于控制熵度量的比例。
+
+熵最大化可以使策略在训练过程中可以：1.进行更多的探索， 2.捕获近似最优策略的多种模式（同等好的策略应该有一样的概率被选中）。
+
+SAC旨在学习三个函数：
+
+- 策略$\pi_\theta$，参数是$\theta$
+- soft Q Value funtion $Q_\omega$，参数是$\omega$
+- soft State-Value funtion $V_\psi$，参数是$\psi$,理论上可以用策略$\pi$和$Q$来推导出$V$,在实际情况下显式对状态价值函数建模可以使得训练过程更加稳定
+
 ### 8. TwinDelayedDeepDeterministicPolicyGradient(TD3) Off-Policy
 
 #### 1. TD3 的特征
+
+其实就是结合了许多之前的优点，还能改进的话就加熵或者是在经验池上面做文章。
 
 1. 双 Critic
 2. 延迟更新 Actor
 3. soft update
 4. 使用 replay buffer
 
-其实就是结合了许多之前的优点，还能加的话就加熵或者是在经验池上面做文章。
+#### 2. TD3的具体细节
+
+Qlearning的一个缺点就是对于值函数的过估计，这个会通过bootstrapping进一步扩大过估计，给策略学习造成负面的影响。
+
+TD3在DDPG算法的基础上进一步改进，防止值函数的过估计。使用两个值网络将动作选择和Q值更新解耦。
+
+1. 截断双Q学习：
+
+    在双Q学习中，动作选择以及Q值估计是通过两个独立的网络完成的。在DDPG中，给定两个确定性的策略网络$ (\mu_{\theta_1} \mu_{\theta_2})$和对应的两个Critic $(Q_{\omega_1},Q_{\omega_2})$ 于是双Q学习的bellman目标如下：
+
+    $$
+    \begin{aligned}
+    y_1 &= r + \gamma Q_{\omega_2}(s^\prime ,\mu_{\theta_1}(s^\prime))\\
+    y_2 &= r + \gamma Q_{\omega_1}(s^\prime ,\mu_{\theta_2}(s^\prime))
+    \end{aligned}
+    $$
+
+    由于策略变化过于缓慢，两个Actor会过于相似，从而很难作出完全独立的决策，与是截断双Q学习使用两者之间最小的估计，从而倾向于使用难以通过训练传播的欠估计误差：
+
+    $$
+    \begin{aligned}
+    y_1 &= r + \gamma \min_{i=1,2}Q_{\omega_i}(s^\prime ,\mu_{\theta_1}(s^\prime))\\
+    y_2 &= r + \gamma \min_{i=1,2}Q_{\omega_i}(s^\prime ,\mu_{\theta_2}(s^\prime))
+    \end{aligned}
+    $$
+
+2. 延迟更新目标和策略网络
+
+    在AC架构中，策略与值函数的更新深度耦合，当策略较差的时候值函数的估计会由于过估计发散，如果值函数估计不准又会使策略变差。
+
+    为了减小方差，我们更新策略的频率会低于Q值函数，我们的思想是：先等Critic拟合之后再更新Actor。这个想法类似于定期更新目标网络思想在DQN中的使用。
+
+3. 目标策略的平滑
+
+    确定性策略会过拟合到值函数的峰值上面，TD3在值函数上面引入了平滑正则化策略，在所选的动作中添加少量经过截断的随机噪声，并对小批量数据进行平均来减少方差:
+
+    $$
+    y = r + \gamma Q_{\omega} (s^\prime, \mu_\theta(s^\prime) +\epsilon)\\
+
+    \epsilon \sim clip (\mathcal{N}(0,\sigma) ,-c ,+c)
+    $$
 
 ### 9. Actor Critic with Experience Replay (ACER) Off-Policy
 
@@ -1449,6 +1509,55 @@ CODE：[SAC](<./SoftActorCritic(SAC)/SoftActorCritic>)
 3. 更高效的TRPO
 
 #### 2. 具体算法
+
+1. Retrace Q值估计
+Retrace 是一种离线的基于累计回报的Q值估计算法，它对任意的目标-策略网络$(\pi,\beta)$都有一个比较好的收敛性保证并且拥有很好的数据有效性。
+
+    我们TD学习计算误差是这样的:
+    $$
+    \delta_t = R_t + \gamma \mathbb{E}_{a \sim \pi}Q(S_{t+1},a) - Q(S_t,A_t)
+    $$
+
+    其中$R_t + \gamma \mathbb{E}
+    _
+    {a \sim \pi}Q(S
+    _
+    {t+1},a)$的观测值$r_t + \gamma \mathbb{E}_{a \sim \pi}Q(s
+    _
+    {t+1},a)$被称为TD traget ，使用期望值是因为如果我们遵循大年策略$\pi$的时候对于未来时间步我们能够做的最好估计也就是累计回报可能是多少。
+
+2. 通过校正误差往目标移动来更新Q值$ Q(S_t,A_t) \gets Q(S_t,A_t) + \alpha \delta_t $所以我们的Q值的更新幅度是与$\delta_t$高度相关的。
+
+    在离线学习中，我们需要对Q值进行重要性采样：
+
+    $$\alpha \delta_t = \Delta Q(S_t,A_t)$$
+    $$ \Delta Q^{imp}(S_t,A_t) = \gamma^t \prod_{1 \le \tau \le t} \frac{\pi(A_\tau \vert S_\tau)}{\beta(A_\tau \vert S_\tau)}\delta_t $$
+
+    中间连乘符号带来了很大的方差，而且连乘会导致这个$\delta_t$过大或者过小，过小大不了就是训练慢了，过大会导致不稳定。
+
+    所以我们需要截断一下这个Q值：
+    $$
+    \Delta Q^{ret} (S_t, A_t) = \gamma^t \prod_{1 \le \tau \le t}\min \left( \frac{\pi(A_\tau \vert S_\tau)}{\beta(A_\tau \vert S_\tau)},c\right)\delta_t
+    $$
+
+    还是通过最小化L2 Loss来训练Critic $[Q^{ret} (s,a) - Q(s,a)]^2$
+
+3. 重要性权重截断
+
+    为了减少估计策略梯度$\hat g$产生的高方差，ACER使用一个常数加一个矫正项来截断Importance Weight重要性权重，$\hat g^{acer}$代表$t$时候对于策略梯度的一个估计，我们令$ \omega_t =\frac{\pi(A_t \vert S_t)}{\beta(A_t \vert S_t)},\omega_t(a) =\frac{\pi(a_t \vert S_t)}{\beta(a_t \vert S_t)} $：
+
+    $$
+    \begin{aligned}
+    \hat g^{acer} &= \omega_t (Q^{ret}(S_t,A_t)-V_{\theta_v}(S_t)) \nabla_ \theta \ln \pi_\theta(A_t \vert S_t)\\
+    &= \min(c,\omega_t)(Q^{ret}(S_t,A_t)-V_{\omega}(S_t)) \nabla_ \theta \ln \pi_\theta(A_t \vert S_t)+\\ & \underbrace{\mathbb{E}_{a \sim \pi} \left [\max(0,\frac{\omega_t(a) -c}{\omega_t(a)}) (Q_\omega(S_t,A_t)-V_{\omega}(S_t)) \nabla_ \theta \ln \pi_\theta(A_t \vert S_t)\right]}_{校正项}
+    \end{aligned}
+    $$
+
+    其中$Q_\omega(\cdot)$以及$V_\omega(\cdot)$是由$\omega$参数化的critic预测的动作状态价值以及状态价值，加号左边的一项包含了截断重要性权重，第二项是校正项，使得上述方差估计为无偏估计。
+
+4. 高效TRPO
+
+    ACER不再去计算当前策略与更新一步之后的新策略之间的KL divergence，而是维护一个历史策略的运行平均(Running Average)并且强制新策略不会偏离这个平均策略太远。
 
 ### 10. Diversity Is All You Need
 
