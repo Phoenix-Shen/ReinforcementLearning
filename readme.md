@@ -1447,6 +1447,90 @@ SAC旨在学习三个函数：
 - soft Q Value funtion $Q_\omega$，参数是$\omega$
 - soft State-Value funtion $V_\psi$，参数是$\psi$,理论上可以用策略$\pi$和$Q$来推导出$V$,在实际情况下显式对状态价值函数建模可以使得训练过程更加稳定
 
+在SAC中，soft Q-value 和 Soft State-value 分别定义如下：
+$$
+\begin{aligned}
+Q(s_t,a_t) &= r(s_t,a_t) + \gamma \cdot \mathbb{E}_
+{s_{t+1} \sim \rho_\pi(s)}[V(s
+_{t+1})]\\
+
+V(s_t) &= \mathbb{E}_{a_t \sim \pi}[Q(s_t,a_t) - \alpha \log \pi(a_t \vert s_t)]\\
+
+\end{aligned}
+$$
+
+于是我们可以根据上面两个公式推导出：
+$$
+Q(s_t,a_t) = r(s_t,a_t) + \gamma \cdot \mathbb{E}_
+{(s_{t+1},a_{t+1}) \sim \rho_\pi}[Q(s_{t+1},a_{t+1}) - \alpha \log \pi(a_{t+1} \vert s_{t+1})]
+$$
+
+其中 $\rho_{\pi}(s)$和 $\rho_{\pi}(s,a)$是由策略$\pi(a\vert s)$导出的状态分布的状态以及状态-动作边际分布。
+
+soft state value function使用MSE来训练,其中$\mathcal{D}$代表经验池：
+$$
+J_V(\psi) = \mathbb{E}
+_
+{s_t \sim \mathcal{D}}\left[\frac {1}{2} \left(V_\psi(s_t) - \mathbb{E}[Q_\omega(s_t,a_t)-\log \pi_\theta(a_t \vert s_t)]\right)^2\right]\\
+
+\nabla_\psi J_V(\psi) = \nabla_\psi V_\psi\left(V_\psi(s_t) - \mathbb{E}[Q_\omega(s_t,a_t)-\log \pi_\theta(a_t \vert s_t)]\right)
+$$
+
+soft Q value function 通过最小化软贝尔曼残差来训练：
+$$
+J_Q(\omega) = \mathbb{E}
+_
+{(s_t,a_t) \sim \mathcal{D}}\left[\frac{1}{2} (Q_\omega(s_t,a_t)-(r(s_t,a_t)+ \gamma \mathbb{E}
+_
+{s
+_
+{t+1} \sim \rho_\pi(s)}[V_{\bar\psi}(s_{t+1})]))\right]\\
+
+\nabla_\omega J_Q(\omega) = \nabla_\omega Q_\omega(s_t,a_t)(Q_\omega(s_t,a_t) -r(s_t,a_t)-\gamma V_{\bar\psi}(s_{t+1}))
+$$
+其中$ \bar \psi$是target value function，它是一个指数移动平均值，像DQN中的target network一样进行soft update。
+
+然后SAC策略更新的目标是尝试去最小化KL散度(KL-divergence):
+$$
+\begin{aligned}
+\pi_{new} &= \arg \min_{\pi^\prime \in \prod} D_{KL }\left(\pi^\prime(\cdot \vert s_t) \vert \vert \frac{\exp (Q^{\pi_{old}}(s_t,\cdot))}{Z^{\pi_{old}}(s_t)}\right)\\
+
+&=\arg \min_{\pi^\prime \in \prod} D_{KL }\left(\pi^\prime(\cdot \vert s_t) \vert \vert \exp(Q^{\pi_{old}}(s_t,\cdot)-\log Z^{\pi_{old}}(s_t))\right)
+\end{aligned}
+$$
+
+SAC策略网络的目标函数为：
+$$
+\begin{aligned}
+J_\pi(\theta) &= \nabla_\theta D_{KL} (\pi_\theta(\cdot \vert s)\vert \vert \exp(Q_{\omega}(s_t,\cdot)-\log Z_{\omega}(s_t)))\\
+&= \mathbb{E}_
+{a_t \sim \pi} \left[- \log \left(\frac{\exp(Q_{\omega}(s_t,\cdot)-\log Z_{\omega}(s_t))}{\pi_\theta(a_t \vert s_t)}\right)\right]\\
+
+&= \mathbb{E}_
+{a_t \sim \pi} \left[\log \pi_\theta(a_t \vert s_t) - Q_\omega(s_t,a_t) + \log Z_\omega(s_t) \right]
+\end{aligned}
+$$
+其中$\prod$是潜在策略的集合，我们可以将这些策略建模为更容易处理的形式，例如$\prod$可以是高斯混合分布族。 $Z^{\pi_{old}}(s_t)$是用于正则化分布的配分函数。最小化$J_\pi(\theta)$的方式依赖于$\prod$的选择。
+
+更新方式能够保证$ Q^{\pi_{new}}(s_t,a_t) \ge Q^{\pi_{old}}(s_t,a_t) $
+
+算法具体步骤：
+
+  1. 初始化$ \theta,\omega,\psi,\bar \psi$。
+  2. 对于每轮循环，执行：
+  3. （在实际操作中，一次与环境交互，采取多次梯度下降是最好的）
+  4. 对于每轮环境，执行：
+  5. $ a_t \sim \pi_\theta(a_t \vert s_t)$
+  6. $s_{t+1} \sim \rho_\pi(s_{t+1} \vert s_t,a_t)$
+  7. $\mathcal{D} \gets \mathcal{D} \cup \mathcal{D}{(s_t,a_t,r(s_t,a_t) ,s_{t+1})} $
+  8. 对于每轮的梯度下降步骤，执行：
+  9. $\psi \gets \psi - \lambda_V \nabla_\psi J_V(\psi)$
+  10. $\omega \gets \omega - \lambda_Q \nabla_\omega J_Q(\omega)$
+  11. $\theta \gets \theta - \lambda_\pi \nabla_\theta J_\pi(\theta)$
+  12. $\bar \psi \gets \tau \psi + (1-\tau) \hat \psi$
+
+之后还出现了带有自动热度调整的SAC算法，在代码库中这两种都实现了。
+
 ### 8. TwinDelayedDeepDeterministicPolicyGradient(TD3) Off-Policy
 
 #### 1. TD3 的特征
@@ -1722,3 +1806,7 @@ Retrace 是一种离线的基于累计回报的Q值估计算法，它对任意�
 
 1. OpenAI spinning up 好好看看
 2. 补充理论知识
+3. ACER的代码重构一下
+4. TRPO的代码需要重写
+5. MADDPG的代码
+6. 增加课程学习的相关内容
