@@ -162,6 +162,9 @@ where the \* mark means the algorithm is important and worth diving into it
          高斯分布/正态分布：$p(x)=1/(\sigma (2π)^2)\exp[-(x-\mu)^2/2\sigma^2]$
 
          直接求 $F(x)$关于 $P(x)$的定积分有时候很难，我们抽按照 $p(x)$的分布抽 $n$ 个样本，计算 $Q_n=\sum \frac {f(x_i)} {n}$，即 $Q_n$ 是 $ \mathbb{E}[f(x)]$
+11. 关于TD学习
+
+    TD 学习 temporal difference,与蒙特卡洛方法类似，时差(TD)学习是一个无模型(model free)方法，它从每轮的经验数据中学习。不同的是，TD 学习可以从不完整的一轮数据中学习，因此我们无需让代理一直执行到环境为终止态。
 
 ---
 
@@ -1643,9 +1646,33 @@ Retrace 是一种离线的基于累计回报的Q值估计算法，它对任意�
 
     ACER不再去计算当前策略与更新一步之后的新策略之间的KL divergence，而是维护一个历史策略的运行平均(Running Average)并且强制新策略不会偏离这个平均策略太远。
 
-### 10. Diversity Is All You Need
+### 10. 总结
 
-待完成
+- DQN、Qlearning、Sarsa 等都在学习状态或者行为价值函数，然后再根据价值函数来选择未来的行为，而策略梯度直接学习策略本身
+- 策略梯度方法主要特点在于直接对策略进行建模，通常建模为由 theta 参数化的函数 $\pi_\theta(a \vert s)$，回报函数的值收到该策略的直接影响，于是我们可以用多种方法来最大化回报函数
+- Actor-Critic：学习策略和价值函数
+- Asynchronous Advantage Actor Critic：侧重于并行训练
+- Advantage Actor Critic：引入协调器，收敛更快，性能比 A3C 更好
+- Deterministic Policy Gradient：将环境建模为一个确定性的决策：$a=\mu(s)$
+- Deep Deterministic Policy Gradient:结合了 DPG 和 DQN 的 AC 架构，DDPG 算法在学习一个确定性策略的同时通过Actor Critic框架将其扩展到连续的动作空间中
+- Trust Region Policy Optimization：为了提升训练的稳定性，我们应该避免更新一步就使得策略发生剧烈变化的参数更新。置信区间策略优化通过在每次迭代时对策略更新的幅度强制施加 KL 散度约束来实现上述理念。
+- Proximal Policy Optimization：实现了 TRPO 的性能，通过使用一个截断的替代目标来简化算法
+- Actor Critic with Experience Replay:离线的 A3C 算法，使用了一系列操作来克服离线算法的不稳定性
+- Soft Actor Critic：将策略的熵度量纳入回报函数中用以鼓励探索：我们希望学习到一种尽可能随机行动的策略，同时仍然能够在任务中完成目标。它是一个遵循最大熵强化学习框架的离线演员-评论家模型。一个先例工作是软 Q 学习。
+- Twin Delayed Deep Deterministic:在 DDPG 算法的基础上应用了很多新的改进从而防止值函数的过估计现象
+- CONCLUSION
+  - 尽量减少方差并保持偏差来稳定训练过程
+  - 使用离线方法来保持高探索度
+  - 使用经验回放来提高效率
+  - 可以学习确定性的策略（deterministic）
+  - 避免对值函数的过度估计（over estimation）
+  - 使用目标网络，目标网络更新较慢(周期性更新或者是软更新)
+  - 使用批量归一化(batch norm)
+  - 使用熵规范化后的奖励
+  - Actor和Critic在前几层共享参数，但是需要仔细考虑是否要共享
+  - 在策略更新的过程中保持KL散度约束
+  - 使用新的策略优化方法(K-FAC)
+  - 使用熵最大化来鼓励探索
 
 ---
 
@@ -1671,6 +1698,8 @@ Retrace 是一种离线的基于累计回报的Q值估计算法，它对任意�
 
 ## 5. 杂谈&经验
 
+### 1. 关于Pytorch和Python
+
 - Tensor.to(device)操作要细心，有可能梯度为 None 因为.to(device)是一次操作，之后的 tensor 有一个 grad_fn=copy 什么的，此时的 tensor 不再是叶子结点。
 - nn.parameter()通常，我们的参数都是一些常见的结构（卷积、全连接等）里面的计算参数。而当我们的网络有一些其他的设计时，会需要一些额外的参数同样很着整个网络的训练进行学习更新，最后得到最优的值，经典的例子有注意力机制中的权重参数、Vision Transformer 中的 class token 和 positional embedding 等。
 - tensor.clone()=原来张量的拷贝，而且 require_grad=True
@@ -1692,59 +1721,41 @@ Retrace 是一种离线的基于累计回报的Q值估计算法，它对任意�
       return self.net(x).squeeze(1)
   ```
 
-- 关于 nn.Module.eval()
+### 2. 关于 nn.Module.eval()
 
-  - net.eval()并不是一种局部禁用梯度计算的机制,不与 requiregrad=False 等价
+- net.eval()并不是一种局部禁用梯度计算的机制,不与 requiregrad=False 等价
 
-  - 从功能上来说，eval 和 t.no_grad 和 inference 模式是一样的， eval 会影响到模型的训练当且仅当某些模块出现在你的网络中，如 BatchNorm 何 Dropout2d 之类的
+- 从功能上来说，eval 和 t.no_grad 和 inference 模式是一样的， eval 会影响到模型的训练当且仅当某些模块出现在你的网络中，如 BatchNorm 何 Dropout2d 之类的
 
-  - 如果你的网络中出现了 nn.Dropout 或者 nn.Batchnorm2d 这种模块，需要调用 model.eval()和 model.train()，因为它们在两种模式中的表现不一样。
+- 如果你的网络中出现了 nn.Dropout 或者 nn.Batchnorm2d 这种模块，需要调用 model.eval()和 model.train()，因为它们在两种模式中的表现不一样。
 
-  - 不管怎样还是推荐使用 model.train()和 model.eval()，因为你正在使用的模型可能在 eval 和 train 两种模式下表现不同，而你自己不知道。
+- 不管怎样还是推荐使用 model.train()和 model.eval()，因为你正在使用的模型可能在 eval 和 train 两种模式下表现不同，而你自己不知道。
 
-- TD 学习 temporal difference,与蒙特卡洛方法类似，时差(TD)学习是一个无模型(model free)方法，它从每轮的经验数据中学习。不同的是，TD 学习可以从不完整的一轮数据中学习，因此我们无需让代理一直执行到环境为终止态。
+### 3. 关于GYM 环境
 
-- `PG算法大家族`
-  - DQN、Qlearning、Sarsa 等都在学习状态或者行为价值函数，然后再根据价值函数来选择未来的行为，而策略梯度直接学习策略本身
-  - 策略梯度方法主要特点在于直接对策略进行建模，通常建模为由 theta 参数化的函数 $\pi_\theta(a \vert s)$，回报函数的值收到该策略的直接影响，于是我们可以用多种方法来最大化回报函数
-  - Actor-Critic：学习策略和价值函数
-  - Asynchronous Advantage Actor Critic：侧重于并行训练
-  - Advantage Actor Critic：引入协调器，收敛更快，性能比 A3C 更好
-  - Deterministic Policy Gradient：将环境建模为一个确定性的决策：$a=\mu(s)$
-  - Deep Deterministic Policy Gradient:结合了 DPG 和 DQN 的 AC 架构，DDPG 算法在学习一个确定性策略的同时通过Actor Critic框架将其扩展到连续的动作空间中
-  - Trust Region Policy Optimization：为了提升训练的稳定性，我们应该避免更新一步就使得策略发生剧烈变化的参数更新。置信区间策略优化通过在每次迭代时对策略更新的幅度强制施加 KL 散度约束来实现上述理念。
-  - Proximal Policy Optimization：实现了 TRPO 的性能，通过使用一个截断的替代目标来简化算法
-  - Actor Critic with Experience Replay:离线的 A3C 算法，使用了一系列操作来克服离线算法的不稳定性
-  - Soft Actor Critic：将策略的熵度量纳入回报函数中用以鼓励探索：我们希望学习到一种尽可能随机行动的策略，同时仍然能够在任务中完成目标。它是一个遵循最大熵强化学习框架的离线演员-评论家模型。一个先例工作是软 Q 学习。
-  - Twin Delayed Deep Deterministic:在 DDPG 算法的基础上应用了很多新的改进从而防止值函数的过估计现象
-  - CONCLUSION
-    - 尽量减少方差并保持偏差来稳定训练过程
-    - 使用离线方法来保持高探索度
-    - 使用经验回放来提高效率
-    - 可以学习确定性的策略（deterministic）
-    - 避免对值函数的过度估计（over estimation）
-- GYM 环境
-
-  - 经典控制问题，discrete
-  - Atari Games
-  - Mujuco
+- 经典控制问题，discrete
+- Atari Games
+- Mujuco
 
 - Copy 和 DeepCopy：是否生成了新的对象？
 - Soft Update 的时候，要用 param.data.copy\_不要直接用 param.copy\_，会报错 a leaf Variable that requires grad is being used in an in-place operation.
 
-- 关于 Actor 的输出：
+### 4. 关于 Actor 的输出
 
-  - 连续动作
-    - Actor 输出 mean 和 std，比如说 SAC 里面的，之后根据 mean 和 std 的正态分布进行采样，保持随机性
-  - 离散动作
-    1. Actor 输出动作的概率，而不是由 mean 和 std 所决定的密度函数，根据概率进行采样，如 AC 里面的，根据概率进行采样来保持随机性
-  - 梯度传播问题
+- 连续动作
+
+  Actor 输出 mean 和 std，比如说 SAC 里面的，之后根据 mean 和 std 的正态分布进行采样，保持随机性
+- 离散动作
+
+  Actor 输出动作的概率，而不是由 mean 和 std 所决定的密度函数，根据概率进行采样，如 AC 里面的，根据概率进行采样来保持随机性
+- 梯度传播问题
     1. 对于带权重的参数更新，如 PG，AC，A3C，PPO，使用采样动作的 log_prob 进行梯度回传
     2. 对于要将采样动作放进 Critic 里面计算动作-状态价值的，如 SAC，DDPG，TD3，等，如果他们需要对动作进行采样（尤其是 SAC，采用 action~N(mean,std)进行采样），那么必须使用使用重参数技巧使梯度得以回传，否则直接丢进 critic 就行。
 
-- 关于使用经验池的**AC 架构**算法调参
-  - 所谓的 AC 架构算法有，DDPG TD3 SAC DQN with PER DQN with HER 等等，他们不是采用带权重的梯度上升，所以是 AC 架构
-  - 超参数一般有
+### 5. 关于使用经验池的**AC 架构**算法调参
+
+- 所谓的 AC 架构算法有，DDPG TD3 SAC DQN with PER DQN with HER 等等，他们不是采用带权重的梯度上升，所以是 AC 架构
+- 超参数一般有
 
     ```python
     mem_size
@@ -1755,8 +1766,8 @@ Retrace 是一种离线的基于累计回报的Q值估计算法，它对任意�
     lr_a
     ```
 
-  - 其中对于性能(收敛速度)影响较大的是 tau,lr_c,lr_a,batch_size
-  - 一定要选好这几个参数，不然网络收敛速度很慢，较差的参数要四五个小时，较好的，半个小时就行
+- 其中对于性能(收敛速度)影响较大的是 tau,lr_c,lr_a,batch_size
+- 一定要选好这几个参数，不然网络收敛速度很慢，较差的参数要四五个小时，较好的，半个小时就行
 
 ---
 
