@@ -8,7 +8,7 @@
 
 - 此外，`TRPO`我似乎没有搞懂，代码并没有调试，请不要运行TRPO的代码。
 
-- 有些公式无法显示不知道为什么，`git clone 到本地使用VSCODE能够完整显示`，如果遇到bug，请给我提issue，O(∩_∩)O。
+- 有些公式无法显示不知道为什么，`git clone 到本地使用VSCODE能够完整显示`，代码基本上都经过运行调试并能够生成tensorboard记录，如果遇到bug，请给我提issue，O(∩_∩)O。
 
 ## 进度
 
@@ -192,7 +192,7 @@ where the \* mark means the algorithm is important and worth diving into it
 
 ### 1. Qlearning - off_policy TD control
 
-建议**对比下面的[Sarsa](#2-sarsa-state-action-reward-state-action---onpolicy-td-control)算法来看**
+建议**对比下面的[Sarsa](# 2. Sarsa (State-Action-Reward-State-Action) - on_policy TD control)算法来看**
 
 - QLearning 训练`最优的动作-价值函数` $ Q^*(s,a)$，TD Target是 $y_t=r_t + \gamma \ \underset{a}{max} Q^*(s_{t+1},a) $，DQN就是这个模式。
 
@@ -652,7 +652,9 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
 #### 1. 具体推导（简单版本）
 
-  这里是不严谨的推导，便于直观地上手，我们假设 $Q_\pi$ 不依赖于 $\theta$，要查看详细的推导，请移步至[本文的这里](#4-policy-gradient-算法的详细推导),具体的过程以及一系列讲解请查看[这个网站](https://paperexplained.cn/articles/article/detail/31/)
+  这里是不严谨的推导，便于直观地上手，我们假设 $Q_\pi$ 不依赖于 $\theta$，要查看详细的推导，请移步至
+  [本文的这里](#4-policy-gradient-算法的详细推导有点难),具体的过程以及一系列讲解请查看
+  [这个网站](https://paperexplained.cn/articles/article/detail/31/)
 
   $$V(s_t;\mathbf{\theta})=\Sigma_a \pi(a \vert s_t;\mathbf{\theta})Q_{\pi}(s_t,a)$$
 
@@ -726,7 +728,7 @@ def forward(self, x: t.Tensor) -> t.Tensor:
       由于$Q_{\pi}(s_t,a_t) = \mathbb{E}[U_t]$,我们可以使用$u_t$来去近似$Q_{\pi}(s_t,a_t)$，这种方法显而易见有一个缺点：玩完一局游戏才能进行更新，低效。
   2. 使用神经网络去近似$Q_{\pi}$
 
-      这就是下面的[ActorCritic Methods](#2-actor-critic-on-policy)
+      这就是下面的[ActorCritic Methods](#2-actor-critic-on-policy-and-advantage-actor-critic-on-policy)
 
 #### 3. REINFORCE with Baseline
 
@@ -1646,7 +1648,52 @@ Retrace 是一种离线的基于累计回报的Q值估计算法，它对任意�
 
     ACER不再去计算当前策略与更新一步之后的新策略之间的KL divergence，而是维护一个历史策略的运行平均(Running Average)并且强制新策略不会偏离这个平均策略太远。
 
-### 10. 总结
+### 10. Multi-agent DDPG Off-Policy
+
+[MADDPG 论文](https://arxiv.org/pdf/1706.02275.pdf)
+
+[参考](https://tomaxent.com/2019/04/14/%E7%AD%96%E7%95%A5%E6%A2%AF%E5%BA%A6%E6%96%B9%E6%B3%95/)
+
+#### 1. MADDPG的特征
+
+- 中心化Critic+ 去中心化Actor
+- Agent能够使用估计的其它Agent的策略进行学习
+- 策略集成(policy ensembing)能够减少方差
+
+#### 2. MADDPG的具体细节
+
+MADDPG将DDPG扩展到多智能体的环境当中，其中包含多个智能体在仅仅依靠局部信息的情况下进行协作完成任务，从单个智能体的角度来看，环境是非平稳的，因为其它智能体的策略在很快地更新并且一直是未知的。MADDPG是一个经过重新设计的ActorCriti算法，专门用于处理这种不断变化的环境以及智能体的互动。
+
+这个问题可以建模为多智能体斑斑的MDP，也被称为马尔科夫游戏，其中共有$N$个智能体，公共的状态空间为$\mathcal{S}$，每个智能体都有自己的动作空间$\mathcal{A}_1,\dots,\mathcal{A}_N$,以及观察空间$\mathcal{O}_1,\dots,\mathcal{O}_N$，状态转移函数包括所有的状态、动作以及观察空间：$\mathcal{T}: \mathcal{S}\times \mathcal{A}_1 \times \dots \mathcal{A}_N \mapsto \mathcal{S} $,每个智能体自己的随机策略仅仅用到属于自己的观察以及动作:$\pi_{\theta_i} : \mathcal{O}_i \times \mathcal{A}_i \mapsto [0,1]$,或者是一个确定性的策略：
+$\mu_{\theta_i}:\mathcal{O}_i  \mapsto \mathcal{A}_i$
+
+我们令$ \vec o = o_1,\dots,o_N, \vec \mu = \mu_1,\dots,\mu_N$并且策略是由$\vec \theta = \theta_1, \dots, \theta_N$初始化的。
+
+MADDPG中的Critic为第$i$个智能体学习一个中心化的动作-值函数$ Q_i^{\vec \mu}(\vec o,a_1,\dots,a_N)$，其中$a_1 \in \mathcal{A}_1,\dots a_N \in \mathcal{A}_N $是每个智能体的动作，每一个$Q_i^{\vec \mu}, i=1,\dots ,N$都是独立学习的,因此每个智能体可以拥有任意形式的回报函数，包括竞争环境中相互冲突的回报函数。同时每个智能体的Actor也是独立探索以及独立更新参数$\theta$。
+
+Actor更新:
+
+$$
+\nabla_{\theta_i} J(\theta_i) = \mathbb{E}_{\vec a, a\sim D}\left[\nabla_{a_i} Q_i^{\vec \mu} (\vec o,a_1,\dots,a_N)\nabla_{\theta_i}\mu_{\theta_i}(o_i) \vert_ {a_i = \mu_{\theta_i}(o_i)}\right]
+$$
+
+Critic更新:
+
+$$
+\mathcal{L}_{\theta_i} = \mathbb{E}_{\vec o,a_1,\dots,a_N,r_1,\dots,r_N,\vec{o ^\prime}}[(Q_i^{\vec \mu} (\vec o,a_1,\dots,a_N) - y)^2]\\
+
+y = \underbrace{r_i + \gamma Q_i^{\vec {\mu^\prime}} (\vec o^\prime,{a_1^\prime},\dots,a^\prime_N) \vert_ {a_j^\prime = \mu_{\theta_j}^\prime}}_{TD \ Target}
+$$
+
+其中$\vec \mu^\prime$是延迟软更新参数的目标策略
+
+为了缓解多智能体合作或者竞争带来的高方差，MADDPG提出了策略集成：
+
+1. 一个Agent训练K个策略
+2. 随机选取一个策略用于轨迹采样(OPENAI称之为Rollout)
+3. 使用K个策略的集成梯度来进行参数更新
+
+### 11. 总结
 
 - DQN、Qlearning、Sarsa 等都在学习状态或者行为价值函数，然后再根据价值函数来选择未来的行为，而策略梯度直接学习策略本身
 - 策略梯度方法主要特点在于直接对策略进行建模，通常建模为由 theta 参数化的函数 $\pi_\theta(a \vert s)$，回报函数的值收到该策略的直接影响，于是我们可以用多种方法来最大化回报函数
