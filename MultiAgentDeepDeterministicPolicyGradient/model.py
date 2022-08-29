@@ -1,4 +1,4 @@
-from tkinter.tix import TCL_DONT_WAIT
+from tensorboardX import SummaryWriter
 import torch as t
 import torch.nn as nn
 import torch.nn.functional as F
@@ -61,7 +61,8 @@ class MADDPG(object):
         action_dim: int,
         batch_size: int,
         capacity: int,
-        n_expolre: int,
+        n_explore: int,
+        n_episodes: int,
         reward_decay: float,
         tau: float,
         lr: float,
@@ -70,6 +71,7 @@ class MADDPG(object):
         max_steps=1000,
         reward_scale=1,
         soft_update_interval=100,
+        seed=100,
     ) -> None:
 
         self.n_agents = n_agents
@@ -77,7 +79,7 @@ class MADDPG(object):
         self.obs_dim = obs_dim
         self.batch_size = batch_size
         self.capacity = capacity
-        self.n_expolre = n_expolre
+        self.n_explore = n_explore
         self.reward_decay = reward_decay
         self.tau = tau
         self.lr = lr
@@ -87,6 +89,8 @@ class MADDPG(object):
         self.max_steps = max_steps
         self.reward_scale = reward_scale
         self.soft_update_interval = soft_update_interval
+        self.seed = seed
+        self.n_epsiodes = n_episodes
         # actor and critic
         self.actors = [
             Actor(self.obs_dim, self.action_dim) for _ in range(self.n_agents)
@@ -126,7 +130,6 @@ class MADDPG(object):
         self.var = [1.0 for i in range(self.n_agents)]
         # record the learning procedure
         self.steps_done = 0
-        self.episodes_done = 0
         # memory
         self.memory = ReplayBuffer(self.capacity)
 
@@ -272,4 +275,30 @@ class MADDPG(object):
                 self._soft_update()
 
         return a_loss, c_loss
+
+    def learn(self):
+
+        # set seed
+        np.random.seed(self.seed)
+        t.seed(self.seed)
+        self.env.seed(self.seed)
+        # writer
+        writer = SummaryWriter(
+            logdir="./MultiAgentDeepDeterministicPolicyGradient/logs"
+        )
+        # begin main loop
+        for i_episode in range(self.n_epsiodes):
+            total_reward, rr = self.collect_experience()
+
+            if i_episode >= self.n_explore:
+                for _ in range(self.max_steps):
+                    loss_a, loss_c = self.update_policy()
+                    self.steps_done += 1
+        # record the data to a file
+        writer.add_scalar("total_reward", total_reward, i_episode)
+        writer.add_scalar("rr", rr, i_episode)
+        writer.add_scalar("loss_a", loss_a, i_episode)
+        writer.add_scalar("loss_c", loss_c, i_episode)
+
+        print("done")
 
