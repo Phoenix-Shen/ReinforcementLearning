@@ -170,6 +170,8 @@ where the \* mark means the algorithm is important and worth diving into it
 
 ## 2. 价值学习 Value Based Leaning --学习 $Q^*(s,a)$
 
+- 关于Qlearning的收敛性证明，请查看[这里](./QLearningReconstruction/readme.md)
+
 - $U_t$ 被定义为折扣回报或者是折扣奖励，那么我们关于策略 π 的动作-价值函数 $Q_{\pi}(s_t,a_t)$等于 $U_t$ 的期望（因为 $U_t$ 求不出来，所以要求期望），叫做期望回报。
 
 - 那么当前的 $Q_{\pi}$ 只与当前的状态和动作 $s_t$ 和 $a_t$ 有关，它反映了当前这个状态下执行动作 $a_t$ 的好坏
@@ -1857,6 +1859,8 @@ $$
 - [lilianweng的博客 - Policy Gradient Methods](https://lilianweng.github.io/posts/2018-04-08-policy-gradient/) , 建议有时间可以看看他的主页，里头也有一些东西，比如Transformer，课程学习等等
 
 - [上面博客的中文版](https://tomaxent.com/2019/04/14/%E7%AD%96%E7%95%A5%E6%A2%AF%E5%BA%A6%E6%96%B9%E6%B3%95/) 有人翻译过来了
+
+- [DAVID SILVER公开课](https://www.davidsilver.uk/teaching/)
 
 ---
 
