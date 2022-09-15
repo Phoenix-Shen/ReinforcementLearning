@@ -1,0 +1,26 @@
+# env settings
+scenario_name: simple_tag
+max_episode_length: 100
+time_steps: 2000000
+
+num_advs: 1
+
+# training hyperparameters
+lr_actor: 0.0001
+lr_critic: 0.001
+# exploration factor
+epsilon: 0.1
+noise_rate: 0.1
+# reward decay
+gamma: 0.95
+# soft update rate
+tau: 0.01
+
+# experience
+batch_size: 256
+buffer_size: 500000
+
+# settings about saving models and logs
+save_dir:
+save_frequency:
+model_dir:
