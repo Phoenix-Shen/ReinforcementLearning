@@ -2,7 +2,6 @@
 scenario_name: simple_tag
 max_episode_length: 100
 time_steps: 2000000
-
 num_advs: 1
 
 # training hyperparameters
@@ -15,12 +14,16 @@ noise_rate: 0.1
 gamma: 0.95
 # soft update rate
 tau: 0.01
-
+cuda: False
 # experience
 batch_size: 256
 buffer_size: 500000
 
 # settings about saving models and logs
-save_dir:
-save_frequency:
-model_dir:
+log_dir: .\MultiAgentDeepDeterministicPolicyGradient\logs
+save_dir: .\MultiAgentDeepDeterministicPolicyGradient\models
+
+# evaluation settings
+eval_interval: 10000
+eval_episodes: 10
+eval_episodes_len: 100

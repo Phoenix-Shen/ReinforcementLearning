@@ -8,6 +8,8 @@ import gym
 import tqdm
 import numpy as np
 from memory import MemoryBuffer
+import os
+import datetime
 
 
 class Actor(nn.Module):
@@ -33,6 +35,7 @@ class Actor(nn.Module):
         )
 
     def forward(self, obs: Tensor) -> Tensor:
+
         out = self.net.forward(obs)
 
         actions = self.action_high * out
@@ -46,7 +49,10 @@ class Actor(nn.Module):
             mu = np.random.uniform(-self.action_high, self.action_high, self.action_dim)
 
         else:
-            inputs = t.tensor(obs, dtype=t.float32).unsqueeze(0)
+
+            inputs = t.tensor(
+                obs, dtype=t.float32, device=next(self.parameters()).device
+            ).unsqueeze(0)
             pi = self.forward(inputs).squeeze()
             # deterministic policy
             mu = pi.cpu().numpy()
@@ -84,6 +90,12 @@ class Critic(nn.Module):
             actions[i] = actions[i] / self.action_high
         actions = t.cat(actions, dim=1)
 
+        # to the certain device
+        param_device = next(self.parameters()).device
+        if obs.device != param_device:
+            obs = obs.to(param_device)
+            actions = actions.to(param_device)
+
         q_value = self.net.forward(t.cat([obs, actions], dim=1))
         return q_value
 
@@ -109,6 +121,10 @@ class MADDPG(object):
         batch_size,
         gamma,
         tau,
+        eval_interval,
+        eval_episodes,
+        eval_episodes_len,
+        cuda: bool,
     ):
         # save parameters to member variables
         self.time_steps = time_steps
@@ -122,6 +138,9 @@ class MADDPG(object):
         self.batch_size = batch_size
         self.gamma = gamma
         self.tau = tau
+        self.eval_interval = eval_interval
+        self.eval_episodes = eval_episodes
+        self.eval_episodes_len = eval_episodes_len
         # init actors ,critics and optimizers
         self.actors = list[Actor]()
         self.critics = list[Critic]()
@@ -129,7 +148,7 @@ class MADDPG(object):
         self.target_critics = list[Critic]()
         self.optimizer_a = list[optim.Optimizer]()
         self.optimizer_c = list[optim.Optimizer]()
-
+        self.device = "cuda" if cuda else "cpu"
         for i in range(n_agents):
             self.actors.append(Actor(action_high, obs_dims[i], action_dims[i]))
             self.critics.append(Critic(action_high, obs_dims, action_dims))
@@ -141,14 +160,18 @@ class MADDPG(object):
             # optimizers
             self.optimizer_a.append(optim.Adam(self.actors[i].parameters(), lr=lr_a))
             self.optimizer_c.append(optim.Adam(self.critics[i].parameters(), lr=lr_c))
+
+            self.actors[i] = self.actors[i].to(self.device)
+            self.critics[i] = self.critics[i].to(self.device)
+            self.target_actors[i] = self.target_actors[i].to(self.device)
+            self.target_critics[i] = self.target_critics[i].to(self.device)
+
         self.buffer = MemoryBuffer(mem_capacity, obs_dims, action_dims, self.n_agents)
         self.writer = SummaryWriter(log_dir=log_dir)
 
     def learn(self):
 
-        returns = []
-
-        for time_step in tqdm(range(self.time_steps)):
+        for time_step in tqdm.tqdm(range(self.time_steps)):
             if time_step % self.episode_limit == 0:
                 s = self.env.reset()
 
@@ -168,7 +191,7 @@ class MADDPG(object):
                     [0, np.random.rand() * 2 - 1, 0, np.random.rand() * 2 - 1, 0]
                 )
 
-            s_next, r, done, _ = self.env.step(actions)
+            s_next, r, _, _ = self.env.step(actions)
             self.buffer.store_transition(
                 s[: self.n_agents], mu, r[: self.n_agents], s_next[: self.n_agents]
             )
@@ -178,7 +201,7 @@ class MADDPG(object):
                 transitions = self.buffer.sample(self.batch_size)
                 # call update_policy function
                 actor_losses, critic_losses = self._update_policy(transitions)
-                for index, actor_loss, critic_loss in enumerate(
+                for index, (actor_loss, critic_loss) in enumerate(
                     zip(actor_losses, critic_losses)
                 ):
                     self.writer.add_scalar(
@@ -192,6 +215,14 @@ class MADDPG(object):
             self.noise_rate = max(0.05, self.noise_rate - 0.0000005)
             self.epsilon = max(0.05, self.epsilon - 0.0000005)
 
+            # call eval function
+            if time_step != 0 and time_step % self.eval_interval == 0:
+                mean_reward = self._evaluate()
+                self.writer.add_scalar("eval_reward", mean_reward, time_step)
+
+        self._save_model()
+        print("training finished and the model has been saved")
+
     def _update_policy(self, transitions: dict):
         # to tensor
         for key in transitions.keys():
@@ -204,9 +235,9 @@ class MADDPG(object):
             r = transitions["r_%d" % i]
             o, mu, o_next = [], [], []
             for j in range(self.n_agents):
-                o.append(transitions["o_%d" % j])
-                mu.append(transitions["a_%d" % j])
-                o_next.append(transitions["o_next_%d" % j])
+                o.append(transitions["o_%d" % j].to(self.device))
+                mu.append(transitions["a_%d" % j].to(self.device))
+                o_next.append(transitions["o_next_%d" % j].to(self.device))
             # calculate Q-Target
             mu_next = []
             with t.no_grad():
@@ -244,7 +275,7 @@ class MADDPG(object):
 
         return actor_losses, critic_losses
 
-    def _soft_update_target(self):
+    def _soft_update_target(self) -> None:
         for i in range(self.n_agents):
             for target_param, param in zip(
                 self.target_actors[i].parameters(), self.actors[i].parameters()
@@ -259,3 +290,50 @@ class MADDPG(object):
                 target_param.data.copy_(
                     (1 - self.tau) * target_param.data + self.tau * param.data
                 )
+
+    def _evaluate(self) -> float:
+        returns = []
+        for _ in range(self.eval_episodes):
+            s = self.env.reset()
+            rewards = 0
+            for _ in range(self.eval_episodes_len):
+                actions = []
+                with t.no_grad():
+                    for index, actor in enumerate(self.actors):
+                        action = actor.select_action(s[index], 0, 0)
+                        actions.append(action)
+
+                    for _ in range(self.n_agents, self.n_players):
+                        actions.append(
+                            [
+                                0,
+                                np.random.rand() * 2 - 1,
+                                0,
+                                np.random.rand() * 2 - 1,
+                                0,
+                            ]
+                        )
+                    s_next, r, _, _ = self.env.step(actions)
+                    rewards += r[0]
+                    s = s_next
+            returns.append(rewards)
+
+        return sum(returns) / self.eval_episodes
+
+    def _save_model(self):
+
+        check_point = {}
+
+        for index, (actor, critic) in enumerate(zip(self.actors, self.critics)):
+            check_point["actor_%d" % index] = actor
+            check_point["critic_%d" % index] = critic
+
+        t.save(
+            check_point,
+            os.path.join(
+                self.save_dir,
+                "ckpt_{}.pth".format(
+                    datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+                ),
+            ),
+        )
