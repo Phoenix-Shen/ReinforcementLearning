@@ -46,7 +46,8 @@ class Actor(nn.Module):
     ) -> np.ndarray:
         # random exploration
         if np.random.uniform() < epsilon:
-            mu = np.random.uniform(-self.action_high, self.action_high, self.action_dim)
+            mu = np.random.uniform(-self.action_high,
+                                   self.action_high, self.action_dim)
 
         else:
 
@@ -152,21 +153,27 @@ class MADDPG(object):
         for i in range(n_agents):
             self.actors.append(Actor(action_high, obs_dims[i], action_dims[i]))
             self.critics.append(Critic(action_high, obs_dims, action_dims))
-            self.target_actors.append(Actor(action_high, obs_dims[i], action_dims[i]))
-            self.target_critics.append(Critic(action_high, obs_dims, action_dims))
+            self.target_actors.append(
+                Actor(action_high, obs_dims[i], action_dims[i]))
+            self.target_critics.append(
+                Critic(action_high, obs_dims, action_dims))
             # load_state_dict
             self.target_actors[i].load_state_dict(self.actors[i].state_dict())
-            self.target_critics[i].load_state_dict(self.critics[i].state_dict())
+            self.target_critics[i].load_state_dict(
+                self.critics[i].state_dict())
             # optimizers
-            self.optimizer_a.append(optim.Adam(self.actors[i].parameters(), lr=lr_a))
-            self.optimizer_c.append(optim.Adam(self.critics[i].parameters(), lr=lr_c))
+            self.optimizer_a.append(optim.Adam(
+                self.actors[i].parameters(), lr=lr_a))
+            self.optimizer_c.append(optim.Adam(
+                self.critics[i].parameters(), lr=lr_c))
 
             self.actors[i] = self.actors[i].to(self.device)
             self.critics[i] = self.critics[i].to(self.device)
             self.target_actors[i] = self.target_actors[i].to(self.device)
             self.target_critics[i] = self.target_critics[i].to(self.device)
 
-        self.buffer = MemoryBuffer(mem_capacity, obs_dims, action_dims, self.n_agents)
+        self.buffer = MemoryBuffer(
+            mem_capacity, obs_dims, action_dims, self.n_agents)
         self.writer = SummaryWriter(log_dir=log_dir)
 
     def learn(self):
@@ -191,7 +198,7 @@ class MADDPG(object):
                     [0, np.random.rand() * 2 - 1, 0, np.random.rand() * 2 - 1, 0]
                 )
 
-            s_next, r, _, _ = self.env.step(actions)
+            s_next, r, done, _ = self.env.step(actions)
             self.buffer.store_transition(
                 s[: self.n_agents], mu, r[: self.n_agents], s_next[: self.n_agents]
             )
@@ -232,7 +239,7 @@ class MADDPG(object):
         # train each agent
         for i in range(self.n_agents):
 
-            r = transitions["r_%d" % i]
+            r = transitions["r_%d" % i].to(self.device)
             o, mu, o_next = [], [], []
             for j in range(self.n_agents):
                 o.append(transitions["o_%d" % j].to(self.device))
@@ -252,7 +259,7 @@ class MADDPG(object):
                 q_target = r.unsqueeze(1) + self.gamma * q_next
 
             # comput td target and use the square of td residual as the loss
-            q_value = self.target_critics[i].forward(o, mu)
+            q_value = self.critics[i].forward(o, mu)
             critic_loss = t.mean((q_target - q_value) ** 2)
 
             # actor loss, Actor's goal is to make Critic's scoring higher
@@ -285,7 +292,8 @@ class MADDPG(object):
                 )
 
             for target_param, param in zip(
-                self.target_critics[i].parameters(), self.critics[i].parameters()
+                self.target_critics[i].parameters(
+                ), self.critics[i].parameters()
             ):
                 target_param.data.copy_(
                     (1 - self.tau) * target_param.data + self.tau * param.data
