@@ -4,18 +4,20 @@
 
 - Note that the algorithm code comes from some experts in the field of reinforcement learning or I refactored the algorithms myself.
 
-- 本仓库中的强化学习算法来自于Medium、YouTube、CSDN等等网站，详细的信息请见该readme下面的“参考资料”这一小节，或许会对您有些帮助
+- 本仓库中的强化学习算法来自于Medium、YouTube、CSDN等等网站，详细的信息请见该readme下面的“参考资料”这一小节，或许会对您有些帮助。
 
 - 此外，`TRPO`我似乎没有搞懂，代码并没有调试，请不要运行TRPO的代码。
 
 - 有些公式无法显示不知道为什么，`git clone 到本地使用VSCODE能够完整显示`，代码基本上都经过运行调试并能够生成tensorboard记录，如果遇到bug，请给我提issue，O(∩_∩)O。
+
+- 最近在搞MARL，后期会添加一些MARL的算法。
 
 ## 进度
 
 where the \* mark means the algorithm is important and worth diving into it
 
 |         method         | done |
-| :--------------------: | ---- |
+| :-------------------- | :----: |
 |      \*Qlearning       | √    |
 |         Sarsa          | √    |
 |      SarsaLambda       | √    |
@@ -32,6 +34,8 @@ where the \* mark means the algorithm is important and worth diving into it
 |          \*TRPO        | √    |
 |         \*PPO          | √    |
 |          DPPO          | √    |
+|          Multi-Agent DDPG          | √    |
+|          Multi-Agent PPO          | ×     |
 |         DIAYN          | ×    |
 
 ---
@@ -1867,8 +1871,6 @@ $$
 ## 7. TODO
 
 1. OpenAI spinning up 好好看看
-2. 补充理论知识
-3. ACER的代码重构一下
-4. TRPO的代码需要重写
-5. MADDPG的代码
-6. 增加课程学习的相关内容
+2. ACER的代码重构一下
+3. TRPO的代码需要重写
+4. 增加课程学习的相关内容
