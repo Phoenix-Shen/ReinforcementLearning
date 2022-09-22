@@ -1,7 +1,7 @@
 # env settings
 scenario_name: simple_tag
 max_episode_length: 100
-time_steps: 500
+time_steps: 2000000
 num_advs: 1
 
 # training hyperparameters

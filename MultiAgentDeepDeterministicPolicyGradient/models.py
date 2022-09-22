@@ -260,7 +260,7 @@ class MADDPG(object):
 
             # comput td target and use the square of td residual as the loss
             q_value = self.critics[i].forward(o, mu)
-            critic_loss = t.mean((q_target - q_value) ** 2)
+            critic_loss = t.mean((q_target - q_value) *(q_target - q_value))
 
             # actor loss, Actor's goal is to make Critic's scoring higher
             mu[i] = self.actors[i].forward(o[i])
