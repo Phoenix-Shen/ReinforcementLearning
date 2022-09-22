@@ -14,7 +14,7 @@ noise_rate: 0.1
 gamma: 0.95
 # soft update rate
 tau: 0.01
-cuda: True
+cuda: False
 # experience
 batch_size: 256
 buffer_size: 500000
@@ -24,6 +24,6 @@ log_dir: .\MultiAgentDeepDeterministicPolicyGradient\logs
 save_dir: .\MultiAgentDeepDeterministicPolicyGradient\models
 
 # evaluation settings
-eval_interval: 10000
+eval_interval: 1000
 eval_episodes: 10
 eval_episodes_len: 100

@@ -250,7 +250,7 @@ class MADDPG(object):
             with t.no_grad():
                 # get next actions
                 for j in range(self.n_agents):
-                    mu_next.append(self.target_actors[j].forward(o[j]))
+                    mu_next.append(self.target_actors[j].forward(o_next[j]))
 
                 # get Q-Value of next observations
                 # no need to detach the tensor because we already used t.no_grad()
