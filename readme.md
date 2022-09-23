@@ -532,7 +532,8 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
   Q_{\pi}(s_t,a_t) &= \mathbb{E}[U_t \vert S_t=s_t,A_t= a_t]\\
 
-  V_{\pi}(s_t)&=\mathbb{E}*A[Q*{\pi}(s_t,A)], A \sim \pi (\cdot \vert s_t)
+  V_{\pi}(s_t)&=\mathbb{E}_
+  A[Q_{\pi}(s_t,A)], A \sim \pi (\cdot \vert s_t)
 
   \end{aligned}
   $$

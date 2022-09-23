@@ -24,13 +24,13 @@ class Actor(nn.Module):
         self.action_high = action_high
         self.action_dim = action_dim
         self.net = nn.Sequential(
-            nn.Linear(obs_dim, 256),
+            nn.Linear(obs_dim, 64),
             nn.ReLU(),
-            nn.Linear(256, 256),
+            nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(256, 256),
+            nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(256, action_dim),
+            nn.Linear(64, action_dim),
             nn.Tanh(),
         )
 
@@ -46,8 +46,7 @@ class Actor(nn.Module):
     ) -> np.ndarray:
         # random exploration
         if np.random.uniform() < epsilon:
-            mu = np.random.uniform(-self.action_high,
-                                   self.action_high, self.action_dim)
+            mu = np.random.uniform(-self.action_high, self.action_high, self.action_dim)
 
         else:
 
@@ -61,7 +60,7 @@ class Actor(nn.Module):
             noise = noise_rate * self.action_high * np.random.randn(*mu.shape)
             mu += noise
             mu = np.clip(mu, -self.action_high, self.action_high)
-        return mu
+        return mu.copy()
 
 
 class Critic(nn.Module):
@@ -75,13 +74,13 @@ class Critic(nn.Module):
         self.action_high = action_high
         # critic should give scores for all agents' actions
         self.net = nn.Sequential(
-            nn.Linear(sum(obs_dims) + sum(action_dims), 256),
+            nn.Linear(sum(obs_dims) + sum(action_dims), 64),
             nn.ReLU(),
-            nn.Linear(256, 256),
+            nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(256, 256),
+            nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(256, 1),
+            nn.Linear(64, 1),
         )
 
     def forward(self, obs: Tensor, actions: Tensor) -> Tensor:
@@ -153,27 +152,21 @@ class MADDPG(object):
         for i in range(n_agents):
             self.actors.append(Actor(action_high, obs_dims[i], action_dims[i]))
             self.critics.append(Critic(action_high, obs_dims, action_dims))
-            self.target_actors.append(
-                Actor(action_high, obs_dims[i], action_dims[i]))
-            self.target_critics.append(
-                Critic(action_high, obs_dims, action_dims))
+            self.target_actors.append(Actor(action_high, obs_dims[i], action_dims[i]))
+            self.target_critics.append(Critic(action_high, obs_dims, action_dims))
             # load_state_dict
             self.target_actors[i].load_state_dict(self.actors[i].state_dict())
-            self.target_critics[i].load_state_dict(
-                self.critics[i].state_dict())
+            self.target_critics[i].load_state_dict(self.critics[i].state_dict())
             # optimizers
-            self.optimizer_a.append(optim.Adam(
-                self.actors[i].parameters(), lr=lr_a))
-            self.optimizer_c.append(optim.Adam(
-                self.critics[i].parameters(), lr=lr_c))
+            self.optimizer_a.append(optim.Adam(self.actors[i].parameters(), lr=lr_a))
+            self.optimizer_c.append(optim.Adam(self.critics[i].parameters(), lr=lr_c))
 
             self.actors[i] = self.actors[i].to(self.device)
             self.critics[i] = self.critics[i].to(self.device)
             self.target_actors[i] = self.target_actors[i].to(self.device)
             self.target_critics[i] = self.target_critics[i].to(self.device)
 
-        self.buffer = MemoryBuffer(
-            mem_capacity, obs_dims, action_dims, self.n_agents)
+        self.buffer = MemoryBuffer(mem_capacity, obs_dims, action_dims, self.n_agents)
         self.writer = SummaryWriter(log_dir=log_dir)
 
     def learn(self):
@@ -260,7 +253,7 @@ class MADDPG(object):
 
             # comput td target and use the square of td residual as the loss
             q_value = self.critics[i].forward(o, mu)
-            critic_loss = t.mean((q_target - q_value) *(q_target - q_value))
+            critic_loss = t.mean((q_target - q_value) * (q_target - q_value))
 
             # actor loss, Actor's goal is to make Critic's scoring higher
             mu[i] = self.actors[i].forward(o[i])
@@ -268,32 +261,31 @@ class MADDPG(object):
 
             # then perform gradient descent
             self.optimizer_a[i].zero_grad()
-            self.optimizer_c[i].zero_grad()
-            critic_loss.backward()
             actor_loss.backward()
             self.optimizer_a[i].step()
+            self.optimizer_c[i].zero_grad()
+            critic_loss.backward()
             self.optimizer_c[i].step()
 
             actor_losses.append(actor_loss.item())
             critic_losses.append(critic_loss.item())
 
-        # then soft update the target network
-        self._soft_update_target()
+            # then soft update the target network
+            self._soft_update_target(i)
 
         return actor_losses, critic_losses
 
-    def _soft_update_target(self) -> None:
-        for i in range(self.n_agents):
-            for target_param, param in zip(
+    def _soft_update_target(self,i) -> None:
+        
+        for target_param, param in zip(
                 self.target_actors[i].parameters(), self.actors[i].parameters()
             ):
                 target_param.data.copy_(
                     (1 - self.tau) * target_param.data + self.tau * param.data
                 )
 
-            for target_param, param in zip(
-                self.target_critics[i].parameters(
-                ), self.critics[i].parameters()
+        for target_param, param in zip(
+                self.target_critics[i].parameters(), self.critics[i].parameters()
             ):
                 target_param.data.copy_(
                     (1 - self.tau) * target_param.data + self.tau * param.data

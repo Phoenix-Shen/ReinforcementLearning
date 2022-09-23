@@ -3,7 +3,7 @@ from utils import load_cfg, make_env
 
 
 if __name__ == "__main__":
-    args = load_cfg(r"MultiAgentDeepDeterministicPolicyGradient\config.yaml")
+    args = load_cfg(r"MultiAgentDeepDeterministicPolicyGradient/config.yaml")
     env, args = make_env(args)
 
     agent = MADDPG(

@@ -15,3 +15,11 @@
 ## 优化思路
 
 多Agent需要执行for循环，能否把它变成多线程呢，这样就可以大大加快速度了。
+
+## 结果
+
+![reward](./figs/reward.jpg)
+
+![aloss](./figs/al.jpg)
+
+![closs](./figs/cl.jpg)
