@@ -10,7 +10,7 @@ writer = SummaryWriter("./DeepDeterministicPolicyGradient/logs")
 
 def generate_env(env_name: str):
     env = gym.make(env_name)
-    env.seed(1)  # reproducible
+    # env.seed(1)  # reproducible
     env = env.unwrapped
     N_F = env.observation_space.shape[0]
     N_A = env.action_space
@@ -18,17 +18,17 @@ def generate_env(env_name: str):
 
 
 # HYPER PARAMETERS
-env, N_states, _ = generate_env("Pendulum-v0")
+env, N_states, _ = generate_env("Pendulum-v1")
 MAX_EPISODES = 200
 MAX_EP_STEPS = 1000
 MEMORY_CAPACITY = 50000
-RENDER = True
+RENDER = False
 STD = 3.0
 LR_A = 1e-4
 LR_C = 2e-4
 # TRAIN
 ddpg = DDPG(N_states, 1, MEMORY_CAPACITY, 100, lr_a=LR_A, lr_c=LR_C)
-writer.add_graph(ddpg.actor, input_to_model=t.rand([1, 3]))
+# writer.add_graph(ddpg.actor, input_to_model=t.rand([1, 3]))
 
 
 total_step = 0

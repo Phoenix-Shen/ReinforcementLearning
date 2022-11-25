@@ -100,6 +100,14 @@ class DDPG(nn.Module):
         self.memory = np.zeros(
             (memory_size, self.n_features*2+1+self.n_actions))
         self.memory_pointer = 0
+        # DEVICE
+        self.device = t.device(
+            "cuda:0" if t.cuda.is_available() else "cpu")
+        # TO DEVICE
+        self.actor.to(self.device)
+        self.critic.to(self.device)
+        self.actor_target.to(self.device)
+        self.critic_target.to(self.device)
 
     def sample_from_memory(self):
         index = np.random.choice(self.memory_size, size=self.batch_size)
@@ -117,7 +125,7 @@ class DDPG(nn.Module):
         self.memory_pointer += 1
 
     def choose_action(self, s):
-        return self.actor(t.FloatTensor(s)).detach().numpy()
+        return self.actor(t.tensor(s, device=self.device)).detach().cpu().numpy()
 
     def learn(self):
         # COPY PARAMETERS
@@ -128,13 +136,14 @@ class DDPG(nn.Module):
         # EXTRACT MEMORY
         batch_memory = self.sample_from_memory()
 
-        b_s = t.FloatTensor(batch_memory[:, :self.n_features])
+        b_s = t.FloatTensor(
+            batch_memory[:, :self.n_features]).to(self.device)
         b_a = t.FloatTensor(
-            batch_memory[:, self.n_features:self.n_features+self.n_actions])
+            batch_memory[:, self.n_features:self.n_features+self.n_actions]).to(self.device)
         b_r = t.FloatTensor(
-            batch_memory[:, self.n_features+self.n_actions:self.n_features+self.n_actions+1])
+            batch_memory[:, self.n_features+self.n_actions:self.n_features+self.n_actions+1]).to(self.device)
         b_s_ = t.FloatTensor(
-            batch_memory[:, self.n_features+self.n_actions+1:])
+            batch_memory[:, self.n_features+self.n_actions+1:]).to(self.device)
 
         # TRAIN ACTOR
         a = self.actor(b_s)
