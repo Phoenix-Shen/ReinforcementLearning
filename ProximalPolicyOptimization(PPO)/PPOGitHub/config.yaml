@@ -1,0 +1,26 @@
+device: cpu
+state_dim: 4
+action_dim: 2
+hidden_dim: 256
+lr_actor: 0.0003
+lr_critic: 0.001
+eps_clip: 0.2
+buffer_size: 1000
+entropy_weight: 0.01
+# number of gradient descent epochs in an training epoch
+epochs: 80
+# batch_size is effective if batch mode is enabled
+batch_mode: False
+batch_size: 128
+gamma: 0.99
+lambda: 0.97
+# the main iteration number
+training_epochs: 1000000
+# max length of a game
+max_episode_length: 200
+# how many steps should we perform an update?
+update_interval: 1000
+
+log_path: ./ProximalPolicyOptimization(PPO)/PPOGitHub/results
+actor_path: ProximalPolicyOptimization(PPO)\PPOGitHub\results\2023-01-06 14-32-51\saved_models\actor_22000.pth
+critic_path: ProximalPolicyOptimization(PPO)\PPOGitHub\results\2023-01-06 14-32-51\saved_models\critic_22000.pth

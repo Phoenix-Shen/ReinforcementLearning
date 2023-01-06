@@ -1,9 +1,5 @@
 # 强化学习
 
-## 目录
-
-[TOC]
-
 ## 写在前面
 
 - Note that the algorithm code comes from some experts in the field of reinforcement learning or I refactored the algorithms myself.
@@ -12,9 +8,10 @@
 
 - 此外，`TRPO`我似乎没有搞懂，代码并没有调试，请不要运行TRPO的代码。
 
-- 有些公式无法显示不知道为什么，`git clone 到本地使用VSCODE能够完整显示`，代码基本上都经过运行调试并能够生成tensorboard记录，如果遇到bug，请给我提issue，O(∩_∩)O。
+- 有些公式无法显示不知道为什么，`git clone 到本地使用VSCODE或者别的Markdown渲染软件能够完整显示`，代码基本上都经过运行调试并能够生成tensorboard记录.
+- 如果遇到bug，请给我提issue，O(∩_∩)O。
 
-- 最近在搞MARL，后期会添加一些MARL的算法。
+- ~~最近在搞MARL，后期会添加一些MARL的算法。~~
 
 ## 进度
 
@@ -39,8 +36,7 @@ where the \* mark means the algorithm is important and worth diving into it
 |         \*PPO          | √    |
 |          DPPO          | √    |
 |          Multi-Agent DDPG          | √    |
-|          Multi-Agent PPO          | ×     |
-|         DIAYN          | ×    |
+|          TEMPPO          | ×     |
 
 ---
 
