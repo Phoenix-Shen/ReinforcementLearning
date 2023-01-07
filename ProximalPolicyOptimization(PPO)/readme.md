@@ -1,6 +1,6 @@
 # PPO onpolicy 算法 - OPENAI BASELINE
 
-写了两个版本
+写了两个版本，一个是discrete一个是continuous,虽然PPO十分优秀，但是PPO有一个致命缺点，就是容易陷入LocalMinimum，可以在PPOGitHub上尝试LunarLander-v2，在PPOMedium上尝试LunarLanderContinuous-v2，两者都会陷入局部最优，得不到满的奖励（大概250）。
 
 - 一个版本是从[Medium上面抄下来的](https://medium.com/analytics-vidhya/coding-ppo-from-scratch-with-pytorch-part-1-4-613dfc1b14c8),在[PPOMedium](./PPOMedium/)这个文件夹下面
 - 另外一个版本是从[GITHUB](https://github.com/tomasspangelo/proximal-policy-optimization)上面抄的，增加了熵，然后我自己重构了一下代码，让它更易读,在[PPOGitHub](./PPOGitHub/)这个文件夹下面
@@ -13,8 +13,10 @@
 
 - LunarLanderContinuous-v2
 
-![lunarlander](./LunarLander.png)
+![lunarlander](./LunarLanderContinuous.png)
 
+- LunarLander-v2
+![v2](./LunarLander.png)
 - 主要为了解决 actor critic 训练步长的问题，在这里实现了 ppo-clip
 - On-policy 是要用 $π_θ$ 收集数据，当 $θ$ 更新了，我们就要重新进行数据收集。
 - 这个方法十分慢，我们能不能使用 $\pi_{\theta^\prime}$收集数据，把这个数据给 $π_θ$ 使用进行训练，由于 $\theta^\prime$是不变的，那我们就可以进行数据重用。

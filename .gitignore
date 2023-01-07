@@ -8,3 +8,5 @@
 **/events.*
 # datasets
 PytorchAndPythonLearning/Pytorch/dataset
+# results
+**/results/

@@ -10,6 +10,6 @@ if __name__ == '__main__':
     with open(args.config_file, 'r') as stream:
         config = yaml.load(stream, Loader=yaml.FullLoader)
     print(config)
-    env = make_env('CartPole-v1')
+    env = make_env('LunarLander-v2')
     algo = PPOClip(config)
     algo.learn(env)
