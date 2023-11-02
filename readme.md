@@ -2,6 +2,7 @@
 
 ## 写在前面
 
+- 2023.11.02: 有很多人反映gym代码报错，这是因为Gym新版本调用`env.step(),env.reset()`返回的值多了一个东西，详情请见[这个issue](https://github.com/Phoenix-Shen/ReinforcementLearning/issues/3),解决方法是修改代码，或者按照我提供的requirements.txt安装环境。
 - Note that the algorithm code comes from some experts in the field of reinforcement learning or I refactored the algorithms myself.
 
 - 本仓库中的强化学习算法来自于Medium、YouTube、CSDN等等网站，详细的信息请见该readme下面的“参考资料”这一小节，或许会对您有些帮助。
@@ -739,7 +740,7 @@ def forward(self, x: t.Tensor) -> t.Tensor:
 
 #### 3. REINFORCE with Baseline
 
-- 关于baseline可以在[策略学习](#3-策略学习-policy-based-learning---学习策略-pias)这里看到
+- 关于baseline可以在[策略学习](#3-策略学习-policy-based-learning---学习策略)这里看到
 
 - 我们有随机策略梯度：
     $$
